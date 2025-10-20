@@ -69,7 +69,7 @@
                     </div>
 
                     <script>
-                        // Optionally, prevent double click by disabling the button after click
+                        // Prevent double click by disabling the button after click
                         document.getElementById('reload-update-btn').addEventListener('click', function(e) {
                             this.disabled = true;
                             this.innerText = '<?= __('Processing...') ?>';

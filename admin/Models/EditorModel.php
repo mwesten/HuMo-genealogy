@@ -1285,7 +1285,7 @@ class EditorModel extends AdminBaseModel
                     'event_kind' => 'profession',
                     'event_event' => $_POST["event_profession"],
                     'event_gedcom' => '',
-                    'event_date' => 'event_date_profession',
+                    'event_date' => $this->editor_cls->date_process("event_date_profession"),
                     'event_place' => $event_place,
                     'event_text' => $event_text
                 ];
@@ -1312,7 +1312,7 @@ class EditorModel extends AdminBaseModel
                     'event_kind' => 'religion',
                     'event_event' => $_POST["event_religion"],
                     'event_gedcom' => 'RELI',
-                    'event_date' => 'event_date_religion',
+                    'event_date' => $this->editor_cls->date_process("event_date_religion"),
                     'event_place' => $event_place,
                     'event_text' => $event_text
                 ];
