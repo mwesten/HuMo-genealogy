@@ -270,7 +270,7 @@ class EventManager
             $stmt->bindValue(':event_connect_kind2', $data['event_connect_kind2'], PDO::PARAM_STR);
         }
         if (isset($data['event_connect_id2'])) {
-            $stmt->bindValue(':event_connect_id2', $data['event_connect_id2'], PDO::PARAM_INT);
+            $stmt->bindValue(':event_connect_id2', $data['event_connect_id2'], PDO::PARAM_STR);
         }
 
         //echo $sql.' '.$family->fam_id.' '.$data['event_connect_id'];
