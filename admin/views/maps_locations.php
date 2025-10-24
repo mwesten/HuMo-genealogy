@@ -511,7 +511,7 @@ if (isset($_POST['loc_delete2']) && is_numeric($_POST['location_id'])) {
                                 SET location_location = :location_location,
                                 location_lat = :location_lat,
                                 location_lng = :location_lng,
-                                location_status = ''
+                                location_status = NULL
                                 WHERE location_id = :location_id");
                             $stmt->bindValue(':location_location', $_POST['location_location'], PDO::PARAM_STR);
                             $stmt->bindValue(':location_lat', floatval($_POST['location_lat']));
@@ -562,7 +562,7 @@ if (isset($_POST['loc_delete2']) && is_numeric($_POST['location_id'])) {
                                 SET location_location = :location_location,
                                 location_lat = :location_lat,
                                 location_lng = :location_lng,
-                                location_status = ''
+                                location_status = NULL
                                 WHERE location_id = :location_id");
                             $stmt->bindValue(':location_location', $_POST['add_name'], PDO::PARAM_STR);
                             $stmt->bindValue(':location_lat', floatval($_POST['location_lat']));
