@@ -46,31 +46,33 @@ class EventManager
         $event_authority = isset($data['authority']) ? $data['authority'] : null;
         $event_date_hebnight = isset($data['event_date_hebnight']) ? $data['event_date_hebnight'] : '';
 
-        // *** Generate new order number ***
+        // *** Check order number ***
         if (!isset($data['event_id'])) {
-            // *** Default value for new event ***
-            //$event_order = 1;
-
-            // Also check event_gedcom?
-            $event_sql = "SELECT * FROM humo_events
+            if (isset($data['event_order']) && is_numeric($data['event_order'])) {
+                $event_order = $data['event_order'];
+            } else {
+                // *** Generate a new order number ***
+                // Also check event_gedcom?
+                $event_sql = "SELECT * FROM humo_events
                 WHERE event_tree_id = :tree_id
                 AND event_connect_kind = :event_connect_kind
                 AND event_connect_id = :event_connect_id
                 AND event_kind = :event_kind
                 ORDER BY event_order DESC LIMIT 0,1";
-            $event_qry = $this->dbh->prepare($event_sql);
-            $event_qry->bindValue(':tree_id', $data['tree_id'], PDO::PARAM_STR);
-            $event_qry->bindValue(':event_connect_kind', $data['event_connect_kind'], PDO::PARAM_STR);
-            $event_qry->bindValue(':event_connect_id', $data['event_connect_id'], PDO::PARAM_STR);
-            $event_qry->bindValue(':event_kind', $data['event_kind'], PDO::PARAM_STR);
-            $event_qry->execute();
-            $eventDb = $event_qry->fetch(PDO::FETCH_OBJ);
+                $event_qry = $this->dbh->prepare($event_sql);
+                $event_qry->bindValue(':tree_id', $data['tree_id'], PDO::PARAM_STR);
+                $event_qry->bindValue(':event_connect_kind', $data['event_connect_kind'], PDO::PARAM_STR);
+                $event_qry->bindValue(':event_connect_id', $data['event_connect_id'], PDO::PARAM_STR);
+                $event_qry->bindValue(':event_kind', $data['event_kind'], PDO::PARAM_STR);
+                $event_qry->execute();
+                $eventDb = $event_qry->fetch(PDO::FETCH_OBJ);
 
-            if (isset($eventDb->event_order)) {
-                $event_order = $eventDb->event_order;
-                $event_order++;
-            } else {
-                $event_order = 1;
+                if (isset($eventDb->event_order)) {
+                    $event_order = $eventDb->event_order;
+                    $event_order++;
+                } else {
+                    $event_order = 1;
+                }
             }
         }
 
