@@ -58,6 +58,7 @@ class Migration21
             INSERT INTO humo_relations_persons (relation_id, relation_gedcomnumber, person_id, person_gedcomnumber, person_age, tree_id, relation_type, relation_order, partner_order)
             VALUES (:relation_id, :relation_gedcomnumber, :person_id, :person_gedcomnumber, :person_age, :tree_id, :relation_type, :relation_order, :partner_order)
         ");
+        $this->dbh->beginTransaction();
         while ($pers = $persStmt->fetch(PDO::FETCH_ASSOC)) {
             $famIds = explode(';', $pers['pers_fams']);
             $order = 1;
@@ -93,6 +94,8 @@ class Migration21
                 }
             }
         }
+        // *** Commit data in database ***
+        $this->dbh->commit();
 
         // *** Move fam_children data to humo_relations_children table ***
         $famStmt = $this->dbh->query("SELECT fam_id, fam_gedcomnumber, fam_tree_id, fam_children FROM humo_families WHERE fam_children IS NOT NULL AND fam_children != ''");
@@ -101,6 +104,7 @@ class Migration21
             VALUES (:tree_id, :relation_id, :relation_gedcomnumber, :person_id, :person_gedcomnumber, :relation_type, :relation_order)
         ");
         $stmt = $this->dbh->prepare("SELECT pers_id, pers_gedcomnumber FROM humo_persons WHERE pers_tree_id = :tree_id AND pers_gedcomnumber = :gedcomnumber");
+        $this->dbh->beginTransaction();
         while ($fam = $famStmt->fetch(PDO::FETCH_ASSOC)) {
             $children = explode(';', $fam['fam_children']);
             $order = 1;
@@ -122,6 +126,8 @@ class Migration21
                 }
             }
         }
+        // *** Commit data in database ***
+        $this->dbh->commit();
 
         $this->dbh->exec("
             ALTER TABLE humo_relations_persons
