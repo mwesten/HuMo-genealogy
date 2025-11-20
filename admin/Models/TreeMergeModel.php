@@ -858,13 +858,16 @@ class TreeMergeModel extends AdminBaseModel
                                 $spo2 = $this->dbh->query($qry);
                                 $spo2Db = $spo2->fetch(PDO::FETCH_OBJ);
                                 if ($spo2->rowCount() > 0 && ($spo1Db->pers_lastname == $spo2Db->pers_lastname && substr($spo1Db->pers_firstname, 0, $this->humo_option["merge_chars"]) === substr($spo2Db->pers_firstname, 0, $this->humo_option["merge_chars"]))) {
-                                    $string1 = $spo1Db->pers_gedcomnumber . '@' . $spo2Db->pers_gedcomnumber . ';';
-                                    $string2 = $spo2Db->pers_gedcomnumber . '@' . $spo1Db->pers_gedcomnumber . ';';
-                                    // make sure this pair doesn't already exist in the string
-                                    if (strstr($this->relatives_merge, $string1) === false && strstr($this->relatives_merge, $string2) === false) {
-                                        $this->relatives_merge .= $string1;
+                                    // Check GEDCOM numbers, otherwise left and right could be the same person
+                                    if ($spo1Db->pers_gedcomnumber != $spo2Db->pers_gedcomnumber) {
+                                        $string1 = $spo1Db->pers_gedcomnumber . '@' . $spo2Db->pers_gedcomnumber . ';';
+                                        $string2 = $spo2Db->pers_gedcomnumber . '@' . $spo1Db->pers_gedcomnumber . ';';
+                                        // make sure this pair doesn't already exist in the string
+                                        if (strstr($this->relatives_merge, $string1) === false && strstr($this->relatives_merge, $string2) === false) {
+                                            $this->relatives_merge .= $string1;
+                                        }
+                                        $this->db_functions->update_settings('rel_merge_' . $this->tree_id, $this->relatives_merge);
                                     }
-                                    $this->db_functions->update_settings('rel_merge_' . $this->tree_id, $this->relatives_merge);
                                 }
                             }
                         }
