@@ -1369,7 +1369,6 @@ elseif ($trees['step'] == '4') {
     <div id="information"></div>
 
 
-
     <!-- Process relations and children from temp table -->
     <?php
     $dbh->exec("
@@ -1386,13 +1385,15 @@ elseif ($trees['step'] == '4') {
         $dbh->beginTransaction();
     }
 
-    // *** Process partners/ spouses ***
+    // *** Process partners/ spouses (processed from 1 HUSB and 1 WIFE) ***
     $relations_qry = $dbh->query("SELECT * FROM humo_temp_relations_persons WHERE relation_type='partner'");
     while ($relation = $relations_qry->fetch(PDO::FETCH_ASSOC)) {
-        // *** Get persons and relation order (only in table if there are multiple relations!) ***
+        // *** Get persons and relation order (only in table if there are multiple relations! Processed from 1 FAMS) ***
         $order_qry = $dbh->query("SELECT * FROM humo_temp_relations_persons
             WHERE relation_type='order' AND relation_gedcomnumber='" . $relation['relation_gedcomnumber'] . "'
             AND person_gedcomnumber='" . $relation['person_gedcomnumber'] . "' AND tree_id='" . $trees['tree_id'] . "'");
+
+        //echo $trees['tree_id'] . ' ' . $relation['relation_gedcomnumber'] . ' ' . $relation['person_gedcomnumber'] . ' ' . $order['relation_order'] . '<br>';
         $order = $order_qry->fetch(PDO::FETCH_ASSOC);
 
         if (isset($order['relation_order'])) {
@@ -1405,7 +1406,8 @@ elseif ($trees['step'] == '4') {
             $person_id = $order->person_id;
         } else {
             $person_id = null;
-            $person_stmt = $dbh->prepare("SELECT pers_id FROM humo_persons WHERE pers_gedcomnumber = :person_gedcomnumber AND pers_tree_id = :tree_id LIMIT 1");
+            $person_stmt = $dbh->prepare("SELECT pers_id FROM humo_persons
+                WHERE pers_gedcomnumber = :person_gedcomnumber AND pers_tree_id = :tree_id LIMIT 1");
             $person_stmt->execute([
                 ':person_gedcomnumber' => $relation['person_gedcomnumber'],
                 ':tree_id' => $trees['tree_id']
@@ -1450,6 +1452,7 @@ elseif ($trees['step'] == '4') {
             }
         }
     }
+
 
     // *** Process children ***
     $relations_qry = $dbh->query("SELECT * FROM humo_temp_relations_persons WHERE relation_type='child'");
@@ -1502,7 +1505,6 @@ elseif ($trees['step'] == '4') {
 
     // *** Remove temp table ***
     $dbh->exec("DROP TABLE IF EXISTS humo_temp_relations_persons;");
-
 
     $total = 1;
     $i = 0;
