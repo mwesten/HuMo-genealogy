@@ -874,6 +874,7 @@ elseif ($trees['step'] == '3') {
             relation_gedcomnumber VARCHAR(30) DEFAULT NULL,
             person_id INT UNSIGNED NOT NULL,
             person_gedcomnumber VARCHAR(30) DEFAULT NULL,
+            person_age VARCHAR(15) CHARACTER SET utf8,
             tree_id SMALLINT(5) NOT NULL,
             relation_type VARCHAR(20) DEFAULT NULL,
             relation_order TINYINT UNSIGNED DEFAULT NULL,
@@ -1420,8 +1421,8 @@ elseif ($trees['step'] == '4') {
 
         $stmt = $dbh->prepare("
             INSERT INTO humo_relations_persons 
-            (relation_id, person_id, tree_id, relation_gedcomnumber, person_gedcomnumber, relation_order, partner_order, relation_type)
-            VALUES (:relation_id, :person_id, :tree_id, :relation_gedcomnumber, :person_gedcomnumber, :relation_order, :partner_order, 'partner')
+            (relation_id, person_id, tree_id, relation_gedcomnumber, person_gedcomnumber, person_age, relation_order, partner_order, relation_type)
+            VALUES (:relation_id, :person_id, :tree_id, :relation_gedcomnumber, :person_gedcomnumber, :person_age, :relation_order, :partner_order, 'partner')
             ");
 
         try {
@@ -1430,6 +1431,7 @@ elseif ($trees['step'] == '4') {
                 ':relation_gedcomnumber' => $relation['relation_gedcomnumber'],
                 ':person_id' => $person_id,
                 ':person_gedcomnumber' => $relation['person_gedcomnumber'],
+                ':person_age' => $relation['person_age'],
                 ':tree_id' => $trees['tree_id'],
                 ':relation_order' => $relation_order,
                 ':partner_order' => $relation['partner_order']

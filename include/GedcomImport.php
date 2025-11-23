@@ -3269,6 +3269,7 @@ class GedcomImport
                 }
 
                 $this->relations_persons_nr++;
+                $partner1_index = $this->relations_persons_nr;
                 $this->relations_persons['person_gedcomnumber'][$this->relations_persons_nr] = $partner_gedcomnumber;
                 $this->relations_persons['person_age'][$this->relations_persons_nr] = '';
                 $this->relations_persons['relation_type'][$this->relations_persons_nr] = 'partner';
@@ -3290,6 +3291,7 @@ class GedcomImport
                 }
 
                 $this->relations_persons_nr++;
+                $partner2_index = $this->relations_persons_nr;
                 $this->relations_persons['person_gedcomnumber'][$this->relations_persons_nr] = $partner_gedcomnumber;
                 $this->relations_persons['person_age'][$this->relations_persons_nr] = '';
                 $this->relations_persons['relation_type'][$this->relations_persons_nr] = 'partner';
@@ -3471,7 +3473,7 @@ class GedcomImport
                     }
                     if ($this->buffer[5] === '3 AGE') {
                         $this->processed = true;
-                        $this->relations_persons['person_age'][$this->relations_persons_nr] = substr($this->buffer[0], 6);
+                        $this->relations_persons['person_age'][$partner1_index] = substr($this->buffer[0], 6);
                     }
                 }
                 // *** Woman age ***
@@ -3483,7 +3485,7 @@ class GedcomImport
                     }
                     if ($this->buffer[5] === '3 AGE') {
                         $this->processed = true;
-                        $this->relations_persons['person_age'][$this->relations_persons_nr] = substr($this->buffer[0], 6);
+                        $this->relations_persons['person_age'][$partner2_index] = substr($this->buffer[0], 6);
                     }
                 }
             }
@@ -3749,7 +3751,7 @@ class GedcomImport
                     }
                     if ($this->buffer[5] === '3 AGE') {
                         $this->processed = true;
-                        $this->relations_persons['person_age'][$this->relations_persons_nr] = substr($this->buffer[0], 6);
+                        $this->relations_persons['person_age'][$partner1_index] = substr($this->buffer[0], 6);
                     }
                 }
                 // *** Woman age ***
@@ -3761,7 +3763,7 @@ class GedcomImport
                     }
                     if ($this->buffer[5] === '3 AGE') {
                         $this->processed = true;
-                        $this->relations_persons['person_age'][$this->relations_persons_nr] = substr($this->buffer[0], 6);
+                        $this->relations_persons['person_age'][$partner2_index] = substr($this->buffer[0], 6);
                     }
                 }
             }
@@ -4386,11 +4388,13 @@ class GedcomImport
         $relation_order = 0;
         $partner_order = 0;
         $person_gedcomnumber = 0;
+        $person_age = '';
         $sql = "INSERT IGNORE INTO humo_temp_relations_persons SET
             tree_id = :tree_id,
             relation_id = :relation_id,
             relation_gedcomnumber = :relation_gedcomnumber,
             person_gedcomnumber = :person_gedcomnumber,
+            person_age = :person_age,
             relation_type = :relation_type,
             relation_order = :relation_order,
             partner_order = :partner_order";
@@ -4418,18 +4422,23 @@ class GedcomImport
                     $person_gedcomnumber = $this->relations_persons['person_gedcomnumber'][$i];
                 }
 
+                if (isset($this->relations_persons['person_age'][$i])) {
+                    $person_age = $this->relations_persons['person_age'][$i];
+                }
+
                 try {
                     $stmt->execute([
                         ':tree_id' => $this->tree_id,
                         ':relation_id' => $fam_id,
                         ':relation_gedcomnumber' => $gedcomnumber,
                         ':person_gedcomnumber' => $person_gedcomnumber,
+                        ':person_age' => $person_age,
                         ':relation_type' => $this->relations_persons['relation_type'][$i],
                         ':relation_order' => $relation_order,
                         ':partner_order' => $partner_order
                     ]);
                 } catch (PDOException $e) {
-                    //echo 'Error save relation_persons: ' . $e->getMessage();
+                    echo 'Error save relation_persons: ' . $e->getMessage().'<br>';
                 }
             }
 
@@ -5207,7 +5216,8 @@ class GedcomImport
             }
 
             //if ($this->buffer[6] == '1 DATE') {
-            if (substr($this->buffer[0], 2, 4) === 'DATE') {
+            //if (substr($this->buffer[0], 2, 4) === 'DATE') {
+            if ($this->level[1] === 'DATA' && substr($this->buffer[0], 2, 4) === 'DATE') {
                 $this->processed = true;
                 $source["source_date"] = substr($this->buffer[0], 7);
             }
