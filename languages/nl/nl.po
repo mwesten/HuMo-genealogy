@@ -2,8 +2,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: HuMo-genealogy\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-11-15 11:12+0100\n"
-"PO-Revision-Date: 2025-11-15 11:12+0100\n"
+"POT-Creation-Date: 2025-11-20 14:35+0100\n"
+"PO-Revision-Date: 2025-11-20 14:35+0100\n"
 "Last-Translator: Huub Mons\n"
 "Language-Team: \n"
 "Language: nl_NL\n"
@@ -60,8 +60,8 @@ msgid "creating connections..."
 msgstr "connections aanmaken..."
 
 #: admin/Migrations/Migration20.php:382 admin/Migrations/Migration20.php:401
-#: admin/Migrations/Migration20.php:420 admin/Migrations/Migration21.php:152
-#: admin/Migrations/Migration21.php:171
+#: admin/Migrations/Migration20.php:420 admin/Migrations/Migration21.php:158
+#: admin/Migrations/Migration21.php:177
 #, php-format
 msgid "Minor problem: constraint %s failed."
 msgstr "Klein probleem: beperking %s is mislukt."
@@ -148,7 +148,7 @@ msgid "Changed favicon icon."
 msgstr "Het favicon icoon is gewijzigd."
 
 #: admin/Models/AdminSettingsModel.php:159
-#: admin/Models/AdminSettingsModel.php:178 admin/Models/EditorModel.php:2679
+#: admin/Models/AdminSettingsModel.php:178 admin/Models/EditorModel.php:2692
 msgid "Photo upload failed, check folder rights"
 msgstr "De foto upload is mislukt, controleer de map rechten"
 
@@ -189,7 +189,7 @@ msgid "Sex"
 msgstr "Sekse"
 
 #: admin/Models/AdminSourcesModel.php:57 admin/Models/AdminSourcesModel.php:63
-#: admin/views/editor_person.php:712 admin/views/editor_relation.php:1395
+#: admin/views/editor_person.php:712 admin/views/editor_relation.php:1396
 #: app/Model/TreeIndexModel.php:981 app/Model/TreeIndexModel.php:983
 #: googlemaps/namesearch.php:195 include/PersonData.php:266
 #: include/PersonData.php:267 include/PersonData.php:269
@@ -201,7 +201,7 @@ msgid "born"
 msgstr "geboren"
 
 #: admin/Models/AdminSourcesModel.php:69 admin/views/editor_person.php:1082
-#: admin/views/editor_relation.php:1428 app/Model/TimelineModel.php:81
+#: admin/views/editor_relation.php:1429 app/Model/TimelineModel.php:81
 #: app/Model/TreeIndexModel.php:990 app/Model/TreeIndexModel.php:992
 #: googlemaps/namesearch.php:198 include/PersonData.php:431
 #: include/PersonData.php:432 include/PersonData.php:434
@@ -211,7 +211,7 @@ msgid "baptised"
 msgstr "gedoopt"
 
 #: admin/Models/AdminSourcesModel.php:75 admin/Models/AdminSourcesModel.php:81
-#: admin/views/editor_person.php:1169 admin/views/editor_relation.php:1447
+#: admin/views/editor_person.php:1169 admin/views/editor_relation.php:1448
 #: app/Model/TreeIndexModel.php:999 app/Model/TreeIndexModel.php:1001
 #: googlemaps/namesearch.php:204 include/PersonData.php:584
 #: include/PersonData.php:585 include/PersonData.php:587
@@ -223,14 +223,14 @@ msgid "died"
 msgstr "overleden"
 
 #: admin/Models/AdminSourcesModel.php:87 admin/views/editor_person.php:1473
-#: admin/views/editor_relation.php:1466 app/Model/TimelineModel.php:107
+#: admin/views/editor_relation.php:1467 app/Model/TimelineModel.php:107
 #: googlemaps/namesearch.php:207 include/PersonData.php:755 views/list.php:269
 #: views/list.php:277 views/list.php:625
 msgid "buried"
 msgstr "begraven"
 
-#: admin/Models/AdminSourcesModel.php:93 include/ShowSources.php:116
-#: include/ShowSources.php:246 include/ShowSourcesFootnotes.php:44
+#: admin/Models/AdminSourcesModel.php:93 include/ShowSources.php:128
+#: include/ShowSources.php:320
 msgid "source"
 msgstr "bron"
 
@@ -245,36 +245,36 @@ msgstr "persoon"
 #: admin/views/partial/editor_addresses.php:298
 #: app/Controller/AddressController.php:29
 #: app/Controller/AddressesController.php:39
-#: app/Controller/CmsPagesController.php:31 include/TreeMerge.php:439
+#: app/Controller/CmsPagesController.php:31 include/TreeMerge.php:638
 #: views/address.php:14 views/source.php:117
 msgid "Address"
 msgstr "Adres"
 
-#: admin/Models/AdminSourcesModel.php:111 admin/views/editor_relation.php:490
-#: admin/views/editor_relation.php:731 include/MarriageCls.php:65
+#: admin/Models/AdminSourcesModel.php:111 admin/views/editor_relation.php:491
+#: admin/views/editor_relation.php:732 include/MarriageCls.php:65
 #: include/MarriageCls.php:171 include/MarriageCls.php:173
 #: include/MarriageCls.php:175 include/PersonData.php:1283
 msgid "Living together"
 msgstr "Samenwonend"
 
-#: admin/Models/AdminSourcesModel.php:117 admin/views/editor_relation.php:572
+#: admin/Models/AdminSourcesModel.php:117 admin/views/editor_relation.php:573
 msgid "Notice of Marriage"
 msgstr "Ondertrouw"
 
-#: admin/Models/AdminSourcesModel.php:123 admin/views/editor_relation.php:641
+#: admin/Models/AdminSourcesModel.php:123 admin/views/editor_relation.php:642
 #: views/list_places_families.php:55
 msgid "Marriage"
 msgstr "Huwelijk"
 
-#: admin/Models/AdminSourcesModel.php:129 admin/views/editor_relation.php:796
+#: admin/Models/AdminSourcesModel.php:129 admin/views/editor_relation.php:797
 msgid "Religious Notice of Marriage"
 msgstr "Ondertrouw religieus"
 
-#: admin/Models/AdminSourcesModel.php:135 admin/views/editor_relation.php:869
+#: admin/Models/AdminSourcesModel.php:135 admin/views/editor_relation.php:870
 msgid "Religious Marriage"
 msgstr "Huwelijk religieus"
 
-#: admin/Models/AdminSourcesModel.php:141 admin/views/editor_relation.php:963
+#: admin/Models/AdminSourcesModel.php:141 admin/views/editor_relation.php:964
 msgid "Divorce"
 msgstr "Scheiding"
 
@@ -291,39 +291,39 @@ msgstr "relatie"
 
 #: admin/Models/AdminSourcesModel.php:172
 #: admin/Models/AdminSourcesModel.php:179 admin/views/editor_person.php:1747
-#: admin/views/editor_person.php:1760 admin/views/editor_relation.php:1126
-#: admin/views/editor_relation.php:1137 app/Model/TreeIndexModel.php:1025
+#: admin/views/editor_person.php:1760 admin/views/editor_relation.php:1127
+#: admin/views/editor_relation.php:1138 app/Model/TreeIndexModel.php:1025
 #: include/EditorEvent.php:40 include/EditorEvent.php:939
-#: include/TreeMerge.php:448
+#: include/TreeMerge.php:647
 msgid "Event"
 msgstr "Gebeurtenis"
 
-#: admin/Models/EditorModel.php:363
+#: admin/Models/EditorModel.php:369
 msgid "Person disconnected from relations."
 msgstr "Persoon losgekoppeld van ouders."
 
-#: admin/Models/EditorModel.php:366
+#: admin/Models/EditorModel.php:372
 msgid "Person disconnected from parents."
 msgstr "Persoon losgekoppeld van ouders."
 
-#: admin/Models/EditorModel.php:390
+#: admin/Models/EditorModel.php:396
 msgid "Person is removed"
 msgstr "Persoon is verwijderd"
 
-#: admin/Models/EditorModel.php:1331
+#: admin/Models/EditorModel.php:1337
 msgid "Marriage is removed!"
 msgstr "Huwelijk is verwijderd!"
 
-#: admin/Models/EditorModel.php:1656
+#: admin/Models/EditorModel.php:1669
 msgid "Parents are selected!"
 msgstr "Ouders zijn gekoppeld!"
 
-#: admin/Models/EditorModel.php:1660
+#: admin/Models/EditorModel.php:1673
 msgid "Manual selected family isn't an existing family in the family tree!"
 msgstr ""
 "Handmatig geselecteerde familie is geen bestaande familie in de stamboom!"
 
-#: admin/Models/EditorModel.php:1679
+#: admin/Models/EditorModel.php:1692
 msgid ""
 "Child already has parents connected! Are you sure you want to connect this "
 "child?"
@@ -331,12 +331,12 @@ msgstr ""
 "Dit kind heeft al gekoppelde ouders! Weet je zeker dat je dit kind wilt "
 "koppelen?"
 
-#: admin/Models/EditorModel.php:1683 admin/Models/EditorModel.php:2998
-#: admin/Models/EditorModel.php:3489 admin/Models/EditorModel.php:3861
+#: admin/Models/EditorModel.php:1696 admin/Models/EditorModel.php:3011
+#: admin/Models/EditorModel.php:3502 admin/Models/EditorModel.php:3874
 #: admin/views/edit_address.php:31 admin/views/edit_cms_pages.php:37
 #: admin/views/edit_cms_pages.php:59 admin/views/edit_repository.php:33
 #: admin/views/edit_source.php:82 admin/views/editor.php:290
-#: admin/views/editor.php:304 admin/views/editor_relation.php:386
+#: admin/views/editor.php:304 admin/views/editor_relation.php:387
 #: admin/views/editor_user_settings.php:91 admin/views/gedcom_export.php:378
 #: admin/views/gedcom_export.php:388 admin/views/gedcom_export.php:399
 #: admin/views/gedcom_export.php:438 admin/views/gedcom_import.php:85
@@ -360,12 +360,12 @@ msgstr ""
 msgid "Yes"
 msgstr "Ja"
 
-#: admin/Models/EditorModel.php:1684 admin/Models/EditorModel.php:2999
-#: admin/Models/EditorModel.php:3490 admin/Models/EditorModel.php:3862
+#: admin/Models/EditorModel.php:1697 admin/Models/EditorModel.php:3012
+#: admin/Models/EditorModel.php:3503 admin/Models/EditorModel.php:3875
 #: admin/views/edit_address.php:32 admin/views/edit_cms_pages.php:38
 #: admin/views/edit_cms_pages.php:60 admin/views/edit_repository.php:34
 #: admin/views/edit_source.php:83 admin/views/editor.php:291
-#: admin/views/editor.php:305 admin/views/editor_relation.php:387
+#: admin/views/editor.php:305 admin/views/editor_relation.php:388
 #: admin/views/editor_user_settings.php:92 admin/views/gedcom_export.php:379
 #: admin/views/gedcom_export.php:389 admin/views/gedcom_export.php:400
 #: admin/views/gedcom_export.php:437 admin/views/gedcom_import.php:86
@@ -389,31 +389,31 @@ msgstr "Ja"
 msgid "No"
 msgstr "Nee"
 
-#: admin/Models/EditorModel.php:2726
+#: admin/Models/EditorModel.php:2739
 msgid "No valid picture, media or document file"
 msgstr "Geen geldige afbeelding, media of document bestand"
 
-#: admin/Models/EditorModel.php:2978 admin/Models/EditorModel.php:3488
+#: admin/Models/EditorModel.php:2991 admin/Models/EditorModel.php:3501
 msgid "Are you sure you want to remove this event?"
 msgstr "Weet je zeker dat je deze gebeurtenis wilt verwijderen?"
 
-#: admin/Models/EditorModel.php:2993
+#: admin/Models/EditorModel.php:3006
 msgid "Also remove colour marks of"
 msgstr "Verwijder ook kleuren markering van"
 
-#: admin/Models/EditorModel.php:2994 admin/views/gedcom_export.php:228
+#: admin/Models/EditorModel.php:3007 admin/views/gedcom_export.php:228
 #: app/Model/FamilyModel.php:277 include/EditorEvent.php:865
 #: include/PersonPopup.php:86 views/hourglass.php:163
 msgid "Descendants"
 msgstr "Afstammelingen"
 
-#: admin/Models/EditorModel.php:2995 admin/views/gedcom_export.php:232
+#: admin/Models/EditorModel.php:3008 admin/views/gedcom_export.php:232
 #: app/Model/AncestorModel.php:140 include/EditorEvent.php:866
 #: include/PersonPopup.php:94 views/hourglass.php:143
 msgid "Ancestors"
 msgstr "Voorouders"
 
-#: admin/Models/EditorModel.php:3858 admin/views/notes.php:84
+#: admin/Models/EditorModel.php:3871 admin/views/notes.php:84
 msgid "Are you sure you want to remove this note?"
 msgstr "Weet u zeker dat u deze notitie wilt verwijderen?"
 
@@ -442,7 +442,7 @@ msgid "Person"
 msgstr "Persoon"
 
 #: admin/Models/TreeCheckChangesModel.php:134 admin/views/editor.php:382
-#: admin/views/editor_relation.php:175 admin/views/editor_relation.php:178
+#: admin/views/editor_relation.php:176 admin/views/editor_relation.php:179
 #: admin/views/statistics_families.php:70
 #: admin/views/statistics_general.php:287
 #: app/Controller/DescendantChartController.php:97
@@ -643,7 +643,7 @@ msgstr "Berekende geboortedatum"
 
 #: admin/index.php:603 admin/views/editor.php:1076
 #: admin/views/editor_person.php:651 admin/views/groups.php:419
-#: app/Model/ChatGenealogyApiModel.php:395
+#: app/Model/ChatGenealogyApiModel.php:469
 msgid "Privacy filter"
 msgstr "Privacyfilter"
 
@@ -651,7 +651,7 @@ msgstr "Privacyfilter"
 msgid "Gedcom export"
 msgstr "GEDCOM-export"
 
-#: admin/index.php:607 admin/views/backup.php:31
+#: admin/index.php:607 admin/views/backup.php:32
 #: admin/views/index_admin.php:365 admin/views/index_admin.php:369
 #: admin/views/menu.php:91
 msgid "Database backup"
@@ -670,7 +670,7 @@ msgstr "Personen en gezinnen"
 #: admin/index.php:615 admin/views/edit_source.php:67
 #: admin/views/groups.php:336 admin/views/menu.php:103
 #: app/Controller/SourcesController.php:31 include/ShowSourcesFootnotes.php:26
-#: include/TreeMerge.php:590 views/ancestor_report_pdf.php:283
+#: include/TreeMerge.php:789 views/ancestor_report_pdf.php:283
 #: views/family_pdf.php:545 views/family_top_line.php:53 views/help.php:86
 #: views/layout.php:601 views/sources.php:20
 msgid "Sources"
@@ -964,7 +964,7 @@ msgstr "Upload is mislukt, controleer de map rechten"
 msgid "3. Upload humo-gen_update.zip:"
 msgstr "3. Upload humo-gen_update.zip:"
 
-#: admin/update/install_update.php:605 admin/views/backup.php:130
+#: admin/update/install_update.php:605 admin/views/backup.php:131
 #: admin/views/gedcom_import.php:65 admin/views/settings.php:102
 #: admin/views/settings.php:657 include/EditorEvent.php:1269
 msgid "Upload"
@@ -1008,7 +1008,7 @@ msgstr "Bezoekers"
 
 #: admin/views/admin_statistics.php:21 admin/views/admin_statistics.php:207
 #: admin/views/admin_statistics.php:330 admin/views/tree_check_changes.php:54
-#: app/Model/ChatGenealogyApiModel.php:302
+#: app/Model/ChatGenealogyApiModel.php:305
 msgid "Families"
 msgstr "Gezinnen"
 
@@ -1193,21 +1193,21 @@ msgstr "nov"
 msgid "dec"
 msgstr "dec"
 
-#: admin/views/backup.php:27
+#: admin/views/backup.php:28
 #, php-format
 msgid "%s backup"
 msgstr "%s back-up"
 
-#: admin/views/backup.php:34 admin/views/backup.php:53
-#: admin/views/backup.php:77
+#: admin/views/backup.php:35 admin/views/backup.php:54
+#: admin/views/backup.php:78
 msgid "Create backup file"
 msgstr "Maak een back-upbestand"
 
-#: admin/views/backup.php:37 admin/views/backup.php:166
+#: admin/views/backup.php:38 admin/views/backup.php:167
 msgid "Restore database"
 msgstr "Herstel database"
 
-#: admin/views/backup.php:45
+#: admin/views/backup.php:46
 #, php-format
 msgid ""
 "If you use %s to edit in the family tree, then create multiple backups. "
@@ -1227,11 +1227,11 @@ msgstr ""
 "stamboom back-up! Maar het bevat alle basis genealogische data.<br>\n"
 "3) Gebruik de %s back-up bladzijde."
 
-#: admin/views/backup.php:84
+#: admin/views/backup.php:85
 msgid "Download backup file"
 msgstr "Download back-upbestand"
 
-#: admin/views/backup.php:85
+#: admin/views/backup.php:86
 msgid ""
 "We recommend downloading the most recent backup file in case the data on "
 "your server (including the backup file) might get deleted or corrupted."
@@ -1240,12 +1240,12 @@ msgstr ""
 "de gegevens op je server (inclusief het back-upbestand) verwijderd of "
 "beschadigd raken."
 
-#: admin/views/backup.php:97 admin/views/backup.php:151
-#: admin/views/backup.php:157
+#: admin/views/backup.php:98 admin/views/backup.php:152
+#: admin/views/backup.php:158
 msgid "Restore database from backup file"
 msgstr "Herstel database van back-upbestand"
 
-#: admin/views/backup.php:101
+#: admin/views/backup.php:102
 msgid ""
 "Upload has failed. You may wish to try again or choose to place the file in "
 "the admin/backup_files folder yourself with an ftp program or the control "
@@ -1255,14 +1255,14 @@ msgstr ""
 "admin/backup_files map met een ftp-programma of het controle paneel van de "
 "webhost"
 
-#: admin/views/backup.php:107
+#: admin/views/backup.php:108
 msgid ""
 "Invalid backup file: has to be file with extension \".sql\" or \".sql.zip\""
 msgstr ""
 "Ongeldige back-up: het bestand moet een extensie hebben \".sql\" of "
 "\".sql.zip\""
 
-#: admin/views/backup.php:115
+#: admin/views/backup.php:116
 #, php-format
 msgid ""
 "Here you can restore your entire database from a backup made with %s (if "
@@ -1271,32 +1271,32 @@ msgstr ""
 "Hier kun je de volledige database herstellen van een back-up gemaakt met %s "
 "(indien aanwezig) of van een .sql of .sql.zip back-up op je computer."
 
-#: admin/views/backup.php:122
+#: admin/views/backup.php:123
 msgid "Optional: upload a database backup file"
 msgstr "Optioneel: upload een database back-upbestand"
 
-#: admin/views/backup.php:144
+#: admin/views/backup.php:145
 msgid "Starting to restore database. This may take some time. Please wait..."
 msgstr "Herstel wordt gestart. Dit kan even duren. Moment alstublieft..."
 
-#: admin/views/backup.php:160
+#: admin/views/backup.php:161
 msgid "Most recent backup!"
 msgstr "Meest recente back-up!"
 
-#: admin/views/backup.php:171 admin/views/index_admin.php:368
+#: admin/views/backup.php:172 admin/views/index_admin.php:368
 msgid "No backup file found!"
 msgstr "Geen back-upbestand gevonden!"
 
-#: admin/views/backup.php:209
+#: admin/views/backup.php:212
 msgid "Creating backup file. This may take some time. Please wait..."
 msgstr ""
 "Back-upbestand wordt gemaakt. Dit kan even duren, moment alstublieft..."
 
-#: admin/views/backup.php:237
+#: admin/views/backup.php:247
 msgid "Skipped backup of table:"
 msgstr "Back-up overgeslagen van tabel:"
 
-#: admin/views/backup.php:318
+#: admin/views/backup.php:332
 msgid ""
 "A backup file was saved to the server. We strongly suggest you download a "
 "copy to your computer in case you might need it later."
@@ -1304,11 +1304,11 @@ msgstr ""
 "Het back-upbestand is op de server opgeslagen. We raden sterk aan om een "
 "kopie te downloaden naar je computer."
 
-#: admin/views/backup.php:354
+#: admin/views/backup.php:422
 msgid "Processed lines..."
 msgstr "Verwerkte regels..."
 
-#: admin/views/backup.php:407
+#: admin/views/backup.php:475
 msgid "Database has been restored successfully!"
 msgstr "De database is succesvol hersteld!"
 
@@ -1385,8 +1385,8 @@ msgstr "GEDCOM-nummer (ID)"
 #: admin/views/editor.php:666 admin/views/editor_media_select.php:83
 #: admin/views/editor_person.php:186 admin/views/editor_person.php:268
 #: admin/views/editor_person.php:356 admin/views/editor_person_select.php:129
-#: admin/views/editor_relation.php:283 admin/views/editor_relation.php:450
-#: admin/views/editor_relation.php:469 admin/views/editor_relation.php:1312
+#: admin/views/editor_relation.php:284 admin/views/editor_relation.php:451
+#: admin/views/editor_relation.php:470 admin/views/editor_relation.php:1313
 #: admin/views/editor_relation_select.php:161
 #: admin/views/editor_sources.php:296 admin/views/gedcom_export.php:161
 #: admin/views/language_editor.php:246 admin/views/maps_locations.php:671
@@ -1423,7 +1423,7 @@ msgstr ""
 #: admin/views/edit_cms_pages.php:116 admin/views/edit_repository.php:71
 #: admin/views/edit_repository.php:231 admin/views/edit_source.php:137
 #: admin/views/edit_source.php:352 admin/views/editor_person.php:1300
-#: admin/views/editor_person.php:1875 admin/views/editor_relation.php:1195
+#: admin/views/editor_person.php:1875 admin/views/editor_relation.php:1196
 #: admin/views/index_admin.php:543 admin/views/thumbs.php:812
 #: include/CalculateDates.php:406 include/CalculateDates.php:432
 #: include/CalculateDates.php:541 include/CalculateDates.php:567
@@ -1444,12 +1444,12 @@ msgstr "Geen geldig adres nummer."
 #: admin/views/editor_person.php:1032 admin/views/editor_person.php:1108
 #: admin/views/editor_person.php:1240 admin/views/editor_person.php:1385
 #: admin/views/editor_person.php:1461 admin/views/editor_person.php:1651
-#: admin/views/editor_person.php:1710 admin/views/editor_relation.php:517
-#: admin/views/editor_relation.php:593 admin/views/editor_relation.php:686
-#: admin/views/editor_relation.php:820 admin/views/editor_relation.php:895
-#: admin/views/editor_relation.php:992 admin/views/editor_relation.php:1404
-#: admin/views/editor_relation.php:1437 admin/views/editor_relation.php:1456
-#: admin/views/editor_relation.php:1475 admin/views/editor_sources.php:150
+#: admin/views/editor_person.php:1710 admin/views/editor_relation.php:518
+#: admin/views/editor_relation.php:594 admin/views/editor_relation.php:687
+#: admin/views/editor_relation.php:821 admin/views/editor_relation.php:896
+#: admin/views/editor_relation.php:993 admin/views/editor_relation.php:1405
+#: admin/views/editor_relation.php:1438 admin/views/editor_relation.php:1457
+#: admin/views/editor_relation.php:1476 admin/views/editor_sources.php:150
 #: admin/views/editor_sources.php:243
 #: admin/views/partial/editor_addresses.php:172 include/EditorEvent.php:1128
 #: include/ShowSourcePDF.php:82 views/address.php:27 views/list.php:264
@@ -1465,12 +1465,12 @@ msgstr "Plaats"
 #: admin/views/editor_person.php:1034 admin/views/editor_person.php:1111
 #: admin/views/editor_person.php:1243 admin/views/editor_person.php:1388
 #: admin/views/editor_person.php:1464 admin/views/editor_person.php:1653
-#: admin/views/editor_person.php:1712 admin/views/editor_relation.php:520
-#: admin/views/editor_relation.php:596 admin/views/editor_relation.php:689
-#: admin/views/editor_relation.php:823 admin/views/editor_relation.php:898
-#: admin/views/editor_relation.php:995 admin/views/editor_relation.php:1407
-#: admin/views/editor_relation.php:1440 admin/views/editor_relation.php:1459
-#: admin/views/editor_relation.php:1478 admin/views/editor_sources.php:152
+#: admin/views/editor_person.php:1712 admin/views/editor_relation.php:521
+#: admin/views/editor_relation.php:597 admin/views/editor_relation.php:690
+#: admin/views/editor_relation.php:824 admin/views/editor_relation.php:899
+#: admin/views/editor_relation.php:996 admin/views/editor_relation.php:1408
+#: admin/views/editor_relation.php:1441 admin/views/editor_relation.php:1460
+#: admin/views/editor_relation.php:1479 admin/views/editor_sources.php:152
 #: admin/views/partial/editor_addresses.php:175 include/EditorEvent.php:1131
 #: views/list.php:105 views/list_places_families.php:92
 msgid "Start typing to search for a place."
@@ -1501,11 +1501,11 @@ msgstr "Telefoon"
 #: admin/views/editor_person.php:1055 admin/views/editor_person.php:1140
 #: admin/views/editor_person.php:1323 admin/views/editor_person.php:1409
 #: admin/views/editor_person.php:1499 admin/views/editor_person.php:1528
-#: admin/views/editor_person.php:1553 admin/views/editor_relation.php:549
-#: admin/views/editor_relation.php:617 admin/views/editor_relation.php:767
-#: admin/views/editor_relation.php:844 admin/views/editor_relation.php:919
-#: admin/views/editor_relation.php:1033 admin/views/editor_relation.php:1073
-#: admin/views/editor_relation.php:1096 admin/views/editor_sources.php:35
+#: admin/views/editor_person.php:1553 admin/views/editor_relation.php:550
+#: admin/views/editor_relation.php:618 admin/views/editor_relation.php:768
+#: admin/views/editor_relation.php:845 admin/views/editor_relation.php:920
+#: admin/views/editor_relation.php:1034 admin/views/editor_relation.php:1074
+#: admin/views/editor_relation.php:1097 admin/views/editor_sources.php:35
 #: admin/views/editor_sources.php:100 admin/views/editor_sources.php:128
 #: admin/views/partial/editor_addresses.php:270
 #: app/Controller/SourceController.php:26 include/EditorEvent.php:1158
@@ -1525,10 +1525,10 @@ msgstr "Sluiten"
 #: admin/views/editor_person.php:1047 admin/views/editor_person.php:1132
 #: admin/views/editor_person.php:1315 admin/views/editor_person.php:1401
 #: admin/views/editor_person.php:1491 admin/views/editor_person.php:1658
-#: admin/views/editor_person.php:1717 admin/views/editor_relation.php:541
-#: admin/views/editor_relation.php:609 admin/views/editor_relation.php:759
-#: admin/views/editor_relation.php:836 admin/views/editor_relation.php:911
-#: admin/views/editor_relation.php:1025 admin/views/editor_relation.php:1065
+#: admin/views/editor_person.php:1717 admin/views/editor_relation.php:542
+#: admin/views/editor_relation.php:610 admin/views/editor_relation.php:760
+#: admin/views/editor_relation.php:837 admin/views/editor_relation.php:912
+#: admin/views/editor_relation.php:1026 admin/views/editor_relation.php:1066
 #: admin/views/editor_sources.php:164 admin/views/groups.php:579
 #: admin/views/groups.php:596 admin/views/partial/editor_addresses.php:225
 #: admin/views/settings_homepage.php:99 admin/views/settings_homepage.php:149
@@ -1560,8 +1560,8 @@ msgstr "Toevoegen"
 #: admin/views/edit_rename_place.php:76 admin/views/edit_repository.php:227
 #: admin/views/edit_repository.php:230 admin/views/edit_source.php:349
 #: admin/views/edit_source.php:351 admin/views/editor_person.php:395
-#: admin/views/editor_person.php:1874 admin/views/editor_relation.php:404
-#: admin/views/editor_relation.php:1193 admin/views/editor_sources.php:38
+#: admin/views/editor_person.php:1874 admin/views/editor_relation.php:405
+#: admin/views/editor_relation.php:1194 admin/views/editor_sources.php:38
 #: admin/views/index_admin.php:141 admin/views/language_editor.php:260
 #: admin/views/maps_worldmap.php:103 admin/views/maps_worldmap.php:138
 #: admin/views/prefix_editor.php:25 admin/views/tree_merge_settings.php:98
@@ -1625,7 +1625,7 @@ msgid "Remove page"
 msgstr "Verwijder bladzijde"
 
 #: admin/views/edit_cms_pages.php:82 admin/views/edit_cms_pages.php:207
-#: admin/views/editor_relation.php:163 admin/views/editor_relation.php:1240
+#: admin/views/editor_relation.php:164 admin/views/editor_relation.php:1241
 #: admin/views/editor_sources.php:57
 #: admin/views/partial/editor_addresses.php:77
 #: admin/views/settings_homepage.php:80 admin/views/tree_admin.php:50
@@ -1634,8 +1634,8 @@ msgid "Drag to change order (saves automatically)"
 msgstr "Sleep om de volgorde te wijzigen (wordt automatisch opgeslagen)"
 
 #: admin/views/edit_cms_pages.php:82 admin/views/edit_cms_pages.php:207
-#: admin/views/editor_relation.php:163 admin/views/editor_relation.php:1221
-#: admin/views/editor_relation.php:1240 admin/views/editor_sources.php:57
+#: admin/views/editor_relation.php:164 admin/views/editor_relation.php:1222
+#: admin/views/editor_relation.php:1241 admin/views/editor_sources.php:57
 #: admin/views/partial/editor_addresses.php:77
 #: admin/views/settings_homepage.php:80 admin/views/tree_admin.php:50
 #: include/EditorEvent.php:520
@@ -1801,7 +1801,7 @@ msgstr "Geen geldig bewaarplaats nummer."
 #: admin/views/editor.php:1066 admin/views/editor_person.php:616
 #: admin/views/editor_sources.php:136 include/EditorEvent.php:66
 #: include/EditorEventSelection.php:15 include/EditorEventSelection.php:19
-#: include/ShowSourcePDF.php:41 include/TreeMerge.php:473 views/source.php:38
+#: include/ShowSourcePDF.php:41 include/TreeMerge.php:672 views/source.php:38
 #: views/source.php:115 views/sources.php:56
 msgid "Title"
 msgstr "Titel"
@@ -1812,11 +1812,11 @@ msgstr "Titel"
 #: admin/views/editor_person.php:1101 admin/views/editor_person.php:1233
 #: admin/views/editor_person.php:1378 admin/views/editor_person.php:1454
 #: admin/views/editor_person.php:1644 admin/views/editor_person.php:1703
-#: admin/views/editor_relation.php:510 admin/views/editor_relation.php:586
-#: admin/views/editor_relation.php:679 admin/views/editor_relation.php:813
-#: admin/views/editor_relation.php:888 admin/views/editor_relation.php:985
-#: admin/views/editor_relation.php:1398 admin/views/editor_relation.php:1431
-#: admin/views/editor_relation.php:1450 admin/views/editor_relation.php:1469
+#: admin/views/editor_relation.php:511 admin/views/editor_relation.php:587
+#: admin/views/editor_relation.php:680 admin/views/editor_relation.php:814
+#: admin/views/editor_relation.php:889 admin/views/editor_relation.php:986
+#: admin/views/editor_relation.php:1399 admin/views/editor_relation.php:1432
+#: admin/views/editor_relation.php:1451 admin/views/editor_relation.php:1470
 #: admin/views/editor_sources.php:143 admin/views/editor_sources.php:236
 #: admin/views/partial/editor_addresses.php:232
 #: app/Model/TreeIndexModel.php:1025 include/EditorEvent.php:1106
@@ -1833,7 +1833,7 @@ msgid "E-mail"
 msgstr "E-mail"
 
 #: admin/views/edit_repository.php:209 admin/views/editor_person.php:1749
-#: admin/views/editor_relation.php:1127 include/EditorEvent.php:72
+#: admin/views/editor_relation.php:1128 include/EditorEvent.php:72
 #: include/MarriageCls.php:781 include/PersonData.php:1108
 msgid "URL/ Internet link"
 msgstr "URL/ Internet link"
@@ -1931,20 +1931,20 @@ msgid "Archive"
 msgstr "Archief"
 
 #: admin/views/edit_source.php:277 admin/views/editor_sources.php:214
-#: include/ShowSourcePDF.php:124 include/tfpdf/tFPDFextend.php:1125
+#: include/ShowSourcePDF.php:124 include/tfpdf/tFPDFextend.php:1197
 #: views/source.php:76
 msgid "Page"
 msgstr "Bladzijde"
 
 #: admin/views/edit_source.php:321 admin/views/editor.php:88
 #: admin/views/editor_person.php:400 admin/views/editor_person.php:1859
-#: admin/views/editor_relation.php:409 admin/views/editor_sources.php:177
+#: admin/views/editor_relation.php:410 admin/views/editor_sources.php:177
 #: admin/views/notes.php:227 admin/views/partial/editor_notes.php:50
 msgid "Added by"
 msgstr "Toegevoegd door"
 
 #: admin/views/edit_source.php:334 admin/views/editor.php:90
-#: admin/views/editor_person.php:406 admin/views/editor_relation.php:415
+#: admin/views/editor_person.php:406 admin/views/editor_relation.php:416
 #: admin/views/editor_sources.php:189 admin/views/partial/editor_notes.php:56
 msgid "Changed by"
 msgstr "Gewijzigd door"
@@ -1977,9 +1977,9 @@ msgid "or ID:"
 msgstr "of ID:"
 
 #: admin/views/editor.php:255 admin/views/editor_person.php:355
-#: admin/views/editor_relation.php:282 admin/views/editor_relation.php:1311
+#: admin/views/editor_relation.php:283 admin/views/editor_relation.php:1312
 #: admin/views/gedcom_export.php:159 include/EditorEvent.php:599
-#: include/EditorEvent.php:769 include/TreeMerge.php:159
+#: include/EditorEvent.php:769 include/TreeMerge.php:358
 msgid "GEDCOM number (ID)"
 msgstr "GEDCOM-nummer (ID)"
 
@@ -2009,12 +2009,12 @@ msgstr "Weet je zeker dat je dit kind wilt loskoppelen?"
 msgid "Browse"
 msgstr "Bladeren"
 
-#: admin/views/editor.php:548 admin/views/editor_relation.php:432
-#: admin/views/editor_relation.php:642 include/MarriageCls.php:906
+#: admin/views/editor.php:548 admin/views/editor_relation.php:433
+#: admin/views/editor_relation.php:643 include/MarriageCls.php:906
 msgid "marriage/ relation"
 msgstr "huwelijk/ relatie"
 
-#: admin/views/editor.php:550 admin/views/editor_relation.php:730
+#: admin/views/editor.php:550 admin/views/editor_relation.php:731
 #: include/MarriageCls.php:394 include/MarriageCls.php:400
 #: include/MarriageCls.php:409 include/MarriageCls.php:410
 msgid "Married"
@@ -2032,8 +2032,8 @@ msgstr "Gehuwd"
 msgid " to: "
 msgstr " met: "
 
-#: admin/views/editor.php:567 admin/views/editor_relation.php:1219
-#: include/TreeMerge.php:224 views/family.php:481 views/family_rtf.php:393
+#: admin/views/editor.php:567 admin/views/editor_relation.php:1220
+#: include/TreeMerge.php:423 views/family.php:481 views/family_rtf.php:393
 msgid "Children"
 msgstr "Kinderen"
 
@@ -2064,8 +2064,8 @@ msgid "N.N."
 msgstr "N.N."
 
 #: admin/views/editor.php:595 admin/views/editor_person.php:297
-#: admin/views/editor_relation.php:183 admin/views/editor_relation.php:426
-#: admin/views/editor_relation.php:458
+#: admin/views/editor_relation.php:184 admin/views/editor_relation.php:427
+#: admin/views/editor_relation.php:459
 #: admin/views/editor_relation_select.php:178
 #: admin/views/tree_check_invalid.php:254 include/CalculateDates.php:323
 #: include/CalculateDates.php:343 include/CalculateDates.php:356
@@ -2168,7 +2168,7 @@ msgid "Suffix"
 msgstr "Navoegsel"
 
 #: admin/views/editor.php:1079 admin/views/editor_person.php:653
-#: include/TreeMerge.php:180
+#: include/TreeMerge.php:379
 msgid "alive"
 msgstr "levend"
 
@@ -2189,7 +2189,7 @@ msgstr "vrouw"
 #: admin/views/editor.php:1111 admin/views/editor_person.php:1611
 #: admin/views/editor_person.php:1634 admin/views/editor_person.php:1637
 #: include/EditorEvent.php:38 include/EditorEvent.php:882
-#: include/TreeMerge.php:445 views/list.php:328 views/list.php:335
+#: include/TreeMerge.php:644 views/list.php:328 views/list.php:335
 msgid "Profession"
 msgstr "Beroep"
 
@@ -2229,11 +2229,11 @@ msgstr "ouders"
 msgid "Add parents"
 msgstr "Ouders toevoegen"
 
-#: admin/views/editor_person.php:315 include/TreeMerge.php:214
+#: admin/views/editor_person.php:315 include/TreeMerge.php:413
 msgid "Father"
 msgstr "Vader"
 
-#: admin/views/editor_person.php:331 include/TreeMerge.php:219
+#: admin/views/editor_person.php:331 include/TreeMerge.php:418
 msgid "Mother"
 msgstr "Moeder"
 
@@ -2250,7 +2250,7 @@ msgstr "leeftijd"
 msgid "year"
 msgstr "jaar"
 
-#: admin/views/editor_person.php:391 admin/views/editor_relation.php:399
+#: admin/views/editor_person.php:391 admin/views/editor_relation.php:400
 #: admin/views/gedcom_export.php:216 views/descendant_chart.php:213
 #: views/list.php:309 views/list.php:357 views/list_names.php:38
 #: views/outline_report.php:81 views/stats_firstnames.php:94
@@ -2258,7 +2258,7 @@ msgstr "jaar"
 msgid "All"
 msgstr "Alle"
 
-#: admin/views/editor_person.php:413 admin/views/editor_relation.php:422
+#: admin/views/editor_person.php:413 admin/views/editor_relation.php:423
 msgid "Info"
 msgstr "Info"
 
@@ -2291,32 +2291,32 @@ msgstr "om"
 msgid "hour"
 msgstr "uur"
 
-#: admin/views/editor_person.php:748 admin/views/editor_relation.php:1414
-#: include/TreeMerge.php:170
+#: admin/views/editor_person.php:748 admin/views/editor_relation.php:1415
+#: include/TreeMerge.php:369
 msgid "birth time"
 msgstr "geboorte tijd"
 
-#: admin/views/editor_person.php:753 admin/views/editor_relation.php:1419
+#: admin/views/editor_person.php:753 admin/views/editor_relation.php:1420
 #: include/PersonName.php:81
 msgid "stillborn child"
 msgstr "levenloos geboren kind"
 
 #: admin/views/editor_person.php:811 include/PersonData.php:332
 #: include/PersonData.php:333 include/PersonData.php:335
-#: include/PersonData.php:336 include/TreeMerge.php:453 include/Witness.php:181
+#: include/PersonData.php:336 include/TreeMerge.php:652 include/Witness.php:181
 msgid "birth declaration"
 msgstr "geboorteaangifte"
 
 #: admin/views/editor_person.php:826 admin/views/editor_person.php:1096
 #: admin/views/editor_person.php:1374 admin/views/editor_person.php:1450
-#: admin/views/editor_relation.php:674 admin/views/editor_relation.php:883
+#: admin/views/editor_relation.php:675 admin/views/editor_relation.php:884
 #: include/EditorEvent.php:56 include/Witness.php:54 include/Witness.php:78
 #: views/list.php:395 views/list.php:402
 msgid "witness"
 msgstr "getuige"
 
 #: admin/views/editor_person.php:826 admin/views/editor_person.php:1374
-#: admin/views/editor_relation.php:674 include/EditorEvent.php:44
+#: admin/views/editor_relation.php:675 include/EditorEvent.php:44
 #: include/EditorEvent.php:650 include/Witness.php:57
 msgid "officiator"
 msgstr "ambtenaar"
@@ -2343,12 +2343,12 @@ msgstr "Bar Mitzvah"
 
 #: admin/views/editor_person.php:1087 admin/views/editor_person.php:1117
 #: include/PersonData.php:380 include/PersonData.php:382
-#: include/PersonData.php:888 include/TreeMerge.php:181
+#: include/PersonData.php:888 include/TreeMerge.php:380
 msgid "religion"
 msgstr "religie"
 
 #: admin/views/editor_person.php:1096 admin/views/editor_person.php:1450
-#: admin/views/editor_relation.php:883 include/EditorEvent.php:42
+#: admin/views/editor_relation.php:884 include/EditorEvent.php:42
 #: include/EditorEvent.php:646 include/Witness.php:74
 msgid "clergy"
 msgstr "voorganger"
@@ -2365,7 +2365,7 @@ msgstr "peetvader"
 #: include/PersonData.php:515 include/PersonData.php:524
 #: include/PersonData.php:527 include/PersonData.php:550
 #: include/PersonData.php:552 include/PersonData.php:560
-#: include/TreeMerge.php:176
+#: include/TreeMerge.php:375
 msgid "cause of death"
 msgstr "doodsoorzaak"
 
@@ -2436,7 +2436,7 @@ msgstr ""
 "Als overlijdensjaar en leeftijd is ingevuld, dan wordt het geboortejaar "
 "automatisch ingevuld (als die niet is ingevuld)."
 
-#: admin/views/editor_person.php:1266 include/TreeMerge.php:175
+#: admin/views/editor_person.php:1266 include/TreeMerge.php:374
 msgid "death time"
 msgstr "ovl. tijd"
 
@@ -2446,7 +2446,7 @@ msgstr "oorzaak"
 
 #: admin/views/editor_person.php:1359 include/PersonData.php:652
 #: include/PersonData.php:653 include/PersonData.php:655
-#: include/PersonData.php:656 include/TreeMerge.php:460 include/Witness.php:193
+#: include/PersonData.php:656 include/TreeMerge.php:659 include/Witness.php:193
 msgid "death declaration"
 msgstr "overlijdensaangifte"
 
@@ -2459,7 +2459,7 @@ msgid "method of burial"
 msgstr "methode van begraven"
 
 #: admin/views/editor_person.php:1474 include/PersonData.php:747
-#: include/TreeMerge.php:177
+#: include/TreeMerge.php:376
 msgid "cremation"
 msgstr "crematie"
 
@@ -2479,14 +2479,14 @@ msgstr "geschonken aan de wetenschap"
 msgid "Text for person"
 msgstr "Tekst bij persoon"
 
-#: admin/views/editor_person.php:1549 include/ShowSources.php:82
-#: include/ShowSources.php:190 include/ShowSources.php:266
+#: admin/views/editor_person.php:1549 include/ShowSources.php:88
+#: include/ShowSources.php:207 include/ShowSources.php:340
 msgid "Source for person"
 msgstr "Bron bij persoon"
 
 #: admin/views/editor_person.php:1571 admin/views/editor_person.php:1574
-#: admin/views/editor_person.php:1582 include/ShowSources.php:316
-#: include/ShowSourcesFootnotes.php:71 include/TreeMerge.php:182
+#: admin/views/editor_person.php:1582 include/ShowSources.php:390
+#: include/ShowSourcesFootnotes.php:73 include/TreeMerge.php:381
 msgid "own code"
 msgstr "eigen code"
 
@@ -2511,14 +2511,14 @@ msgstr ""
 "images map bijv. 'person.gif', en zet 'person' in het eigen code veld."
 
 #: admin/views/editor_person.php:1671 admin/views/editor_person.php:1693
-#: admin/views/editor_person.php:1696 admin/views/editor_relation.php:941
-#: admin/views/editor_relation.php:944 include/EditorEvent.php:78
+#: admin/views/editor_person.php:1696 admin/views/editor_relation.php:942
+#: admin/views/editor_relation.php:945 include/EditorEvent.php:78
 #: include/EditorEvent.php:902
 msgid "Religion"
 msgstr "Religie"
 
 #: admin/views/editor_person.php:1741 admin/views/editor_person.php:1746
-#: admin/views/editor_relation.php:1120 admin/views/editor_relation.php:1125
+#: admin/views/editor_relation.php:1121 admin/views/editor_relation.php:1126
 #: include/EditorEvent.php:956 views/list.php:84 views/list.php:85
 #: views/list.php:925
 msgid "Events"
@@ -2533,11 +2533,11 @@ msgstr "Adoptie"
 msgid "Colour mark by person"
 msgstr "Kleur markering bij persoon"
 
-#: admin/views/editor_person.php:1755 admin/views/editor_relation.php:1132
+#: admin/views/editor_person.php:1755 admin/views/editor_relation.php:1133
 msgid "Add event"
 msgstr "Gebeurtenis toevoegen"
 
-#: admin/views/editor_person.php:1760 admin/views/editor_relation.php:1137
+#: admin/views/editor_person.php:1760 admin/views/editor_relation.php:1138
 msgid "For items like:"
 msgstr "Voor items zoals:"
 
@@ -2549,16 +2549,16 @@ msgstr "gedoopt als kind"
 msgid "depart"
 msgstr "vertrokken"
 
-#: admin/views/editor_person.php:1760 admin/views/editor_relation.php:1137
+#: admin/views/editor_person.php:1760 admin/views/editor_relation.php:1138
 msgid "etc."
 msgstr "etc."
 
-#: admin/views/editor_person.php:1802 admin/views/editor_relation.php:1165
+#: admin/views/editor_person.php:1802 admin/views/editor_relation.php:1166
 msgid "GEDCOM tags"
 msgstr "GEDCOM-items"
 
 #: admin/views/editor_person.php:1807 admin/views/editor_person.php:1809
-#: admin/views/editor_relation.php:1170 admin/views/editor_relation.php:1172
+#: admin/views/editor_relation.php:1171 admin/views/editor_relation.php:1173
 #, php-format
 msgid "There are %d unprocessed GEDCOM tags."
 msgstr "Er zijn %d onverwerkte GEDCOM-items."
@@ -2582,63 +2582,63 @@ msgstr "Verwijder persoon"
 msgid "Select person"
 msgstr "Selecteer persoon"
 
-#: admin/views/editor_relation.php:261 admin/views/editor_relation.php:263
-#: admin/views/editor_relation.php:287 admin/views/editor_relation.php:1380
-#: admin/views/editor_relation.php:1492
+#: admin/views/editor_relation.php:262 admin/views/editor_relation.php:264
+#: admin/views/editor_relation.php:288 admin/views/editor_relation.php:1381
+#: admin/views/editor_relation.php:1493
 msgid "Add relation"
 msgstr "Relatie toevoegen"
 
-#: admin/views/editor_relation.php:263
+#: admin/views/editor_relation.php:264
 msgid "Add new relation to this person"
 msgstr "Nieuwe relatie toevoegen bij deze persoon"
 
-#: admin/views/editor_relation.php:275
+#: admin/views/editor_relation.php:276
 msgid "Or add relation with existing person:"
 msgstr "Of voeg een relatie toe met een bestaand persoon:"
 
-#: admin/views/editor_relation.php:382
+#: admin/views/editor_relation.php:383
 msgid "If you continue, ALL children will be disconnected automatically!"
 msgstr "Als je doorgaat, dan worden ALLE kinderen automatisch losgekoppeld!"
 
-#: admin/views/editor_relation.php:384
+#: admin/views/editor_relation.php:385
 msgid "Are you sure to remove this mariage?"
 msgstr "Weet je zeker dat je dit huwelijk wilt verwijderen?"
 
-#: admin/views/editor_relation.php:436
+#: admin/views/editor_relation.php:437
 msgid "Person 1 should be the man. Switch person 1 and person 2."
 msgstr "Persoon 1 moet de man zijn. Wissel persoon 1 en persoon 2 om."
 
-#: admin/views/editor_relation.php:437
+#: admin/views/editor_relation.php:438
 msgid "Switch Persons"
 msgstr "Verwissel personen"
 
-#: admin/views/editor_relation.php:443 views/relations.php:160
+#: admin/views/editor_relation.php:444 views/relations.php:160
 msgid "Select person 1"
 msgstr "Selecteer persoon 1"
 
-#: admin/views/editor_relation.php:462 views/relations.php:288
+#: admin/views/editor_relation.php:463 views/relations.php:288
 msgid "Select person 2"
 msgstr "Selecteer persoon 2"
 
-#: admin/views/editor_relation.php:500 include/MarriageCls.php:191
+#: admin/views/editor_relation.php:501 include/MarriageCls.php:191
 #: include/MarriageCls.php:211
 msgid "End living together"
 msgstr "Einde samenwonen"
 
-#: admin/views/editor_relation.php:527
+#: admin/views/editor_relation.php:528
 msgid "End date"
 msgstr "Einddatum"
 
-#: admin/views/editor_relation.php:649 admin/views/editor_relation.php:722
-#: admin/views/editor_relation.php:724 admin/views/editor_relation.php:729
+#: admin/views/editor_relation.php:650 admin/views/editor_relation.php:723
+#: admin/views/editor_relation.php:725 admin/views/editor_relation.php:730
 msgid "Marriage/ Related"
 msgstr "Gehuwd/ relatie"
 
-#: admin/views/editor_relation.php:696
+#: admin/views/editor_relation.php:697
 msgid "Age person 1"
 msgstr "Leeftijd persoon 1"
 
-#: admin/views/editor_relation.php:704
+#: admin/views/editor_relation.php:705
 msgid ""
 "If birth year of man or woman is empty it will be calculated automatically "
 "using age by marriage."
@@ -2646,114 +2646,114 @@ msgstr ""
 "Als geboortejaar van de man of vrouw leeg is, dan wordt deze automatisch "
 "berekend op basis van de leeftijd bij het huwelijk."
 
-#: admin/views/editor_relation.php:713
+#: admin/views/editor_relation.php:714
 msgid "Age person 2"
 msgstr "Leeftijd persoon 2"
 
-#: admin/views/editor_relation.php:732 include/MarriageCls.php:68
+#: admin/views/editor_relation.php:733 include/MarriageCls.php:68
 #: include/PersonData.php:1286
 msgid "Living apart together"
 msgstr "LAT relatie"
 
-#: admin/views/editor_relation.php:733 include/MarriageCls.php:72
+#: admin/views/editor_relation.php:734 include/MarriageCls.php:72
 #: include/PersonData.php:1289
 msgid "Intentionally unmarried mother"
 msgstr "Bewust ongehuwde moeder"
 
-#: admin/views/editor_relation.php:734 include/MarriageCls.php:78
+#: admin/views/editor_relation.php:735 include/MarriageCls.php:78
 #: include/PersonData.php:1292
 msgid "Homosexual"
 msgstr "Homosexuele relatie"
 
-#: admin/views/editor_relation.php:735
+#: admin/views/editor_relation.php:736
 msgid "Non_marital"
 msgstr "Ongehuwd"
 
-#: admin/views/editor_relation.php:736 include/MarriageCls.php:87
+#: admin/views/editor_relation.php:737 include/MarriageCls.php:87
 #: include/MarriageCls.php:94 include/PersonData.php:1298
 #: include/PersonData.php:1301
 msgid "Extramarital"
 msgstr "Buitenechtelijk"
 
-#: admin/views/editor_relation.php:737 include/MarriageCls.php:101
+#: admin/views/editor_relation.php:738 include/MarriageCls.php:101
 #: include/PersonData.php:1304
 msgid "Partner"
 msgstr "Partner"
 
-#: admin/views/editor_relation.php:738 include/MarriageCls.php:105
+#: admin/views/editor_relation.php:739 include/MarriageCls.php:105
 msgid "Registered partnership"
 msgstr "Geregistreerd partnerschap"
 
-#: admin/views/editor_relation.php:739 include/MarriageCls.php:109
+#: admin/views/editor_relation.php:740 include/MarriageCls.php:109
 #: include/PersonData.php:1310
 msgid "Unknown relation"
 msgstr "Onbekende relatie"
 
-#: admin/views/editor_relation.php:745 admin/views/editor_relation.php:1007
+#: admin/views/editor_relation.php:746 admin/views/editor_relation.php:1008
 msgid "Registrar"
 msgstr "Instantie"
 
-#: admin/views/editor_relation.php:1056
+#: admin/views/editor_relation.php:1057
 msgid "Divorce (use this checkbox for a divorce without further data)."
 msgstr ""
 "Scheiding (gebruik dit selectievakje voor een scheiding zonder verdere "
 "gegevens)."
 
-#: admin/views/editor_relation.php:1062
+#: admin/views/editor_relation.php:1063
 msgid "Text by relation"
 msgstr "Tekst bij relatie"
 
-#: admin/views/editor_relation.php:1092
+#: admin/views/editor_relation.php:1093
 msgid "Source by relation"
 msgstr "Bron bij relatie"
 
-#: admin/views/editor_relation.php:1137 include/LanguageEventName.php:47
+#: admin/views/editor_relation.php:1138 include/LanguageEventName.php:47
 msgid "Marriage contract"
 msgstr "Huwelijkscontract"
 
-#: admin/views/editor_relation.php:1137 include/LanguageEventName.php:48
+#: admin/views/editor_relation.php:1138 include/LanguageEventName.php:48
 msgid "Marriage license"
 msgstr "Huwelijkstoestemming"
 
-#: admin/views/editor_relation.php:1199
+#: admin/views/editor_relation.php:1200
 msgid "Delete relation"
 msgstr "Verwijder relatie"
 
-#: admin/views/editor_relation.php:1221
+#: admin/views/editor_relation.php:1222
 msgid "Use this icon to order children (drag and drop)"
 msgstr ""
 "Gebruik dit icoon om kinderen op volgorde te zetten (slepen en neerzetten)"
 
-#: admin/views/editor_relation.php:1222
+#: admin/views/editor_relation.php:1223
 msgid "Or automatically order children:"
 msgstr "Of kinderen automatisch op volgorde zetten:"
 
-#: admin/views/editor_relation.php:1223
+#: admin/views/editor_relation.php:1224
 msgid "Automatic order children"
 msgstr "Automatisch kinderen op volgorde zetten"
 
-#: admin/views/editor_relation.php:1229
+#: admin/views/editor_relation.php:1230
 msgid "Children are re-ordered."
 msgstr "Volgorde kinderen is gewijzigd."
 
-#: admin/views/editor_relation.php:1229
+#: admin/views/editor_relation.php:1230
 msgid "No changes in order of children."
 msgstr "Geen wijzigingen in de volgorde van de kinderen."
 
-#: admin/views/editor_relation.php:1246
+#: admin/views/editor_relation.php:1247
 msgid "Disconnect child"
 msgstr "Kind loskoppelen"
 
-#: admin/views/editor_relation.php:1266 admin/views/editor_relation.php:1268
-#: admin/views/editor_relation.php:1380 admin/views/editor_relation.php:1494
+#: admin/views/editor_relation.php:1267 admin/views/editor_relation.php:1269
+#: admin/views/editor_relation.php:1381 admin/views/editor_relation.php:1495
 msgid "Add child"
 msgstr "Kind toevoegen"
 
-#: admin/views/editor_relation.php:1304
+#: admin/views/editor_relation.php:1305
 msgid "Or add existing person as a child:"
 msgstr "Of voeg een bestaand persoon toe als kind:"
 
-#: admin/views/editor_relation.php:1316
+#: admin/views/editor_relation.php:1317
 msgid "Select child"
 msgstr "Selecteer kind"
 
@@ -2770,7 +2770,8 @@ msgid "Results are limited, use search to find more parents."
 msgstr ""
 "Resultaten zijn beperkt, gebruik de zoek optie om meer ouders te vinden."
 
-#: admin/views/editor_sources.php:200
+#: admin/views/editor_sources.php:200 include/ShowSources.php:239
+#: include/tfpdf/tFPDFextend.php:967
 msgid "Source citation"
 msgstr "Bronvermelding"
 
@@ -4239,11 +4240,11 @@ msgstr "Tabellen aanmaken:"
 #: admin/views/install.php:459 admin/views/install.php:478
 #: admin/views/install.php:507 admin/views/install.php:525
 #: admin/views/install.php:562 admin/views/install.php:591
-#: admin/views/install.php:657 admin/views/install.php:680
-#: admin/views/install.php:717 admin/views/install.php:745
-#: admin/views/install.php:779 admin/views/install.php:809
-#: admin/views/install.php:847 admin/views/install.php:870
-#: admin/views/install.php:904 admin/views/install.php:937
+#: admin/views/install.php:657 admin/views/install.php:681
+#: admin/views/install.php:718 admin/views/install.php:746
+#: admin/views/install.php:780 admin/views/install.php:810
+#: admin/views/install.php:848 admin/views/install.php:871
+#: admin/views/install.php:905 admin/views/install.php:938
 #, php-format
 msgid "create table: %s."
 msgstr "tabel aanmaken: %s."
@@ -4254,16 +4255,16 @@ msgstr "tabel aanmaken: %s."
 msgid "filling table: %s."
 msgstr "tabel vullen: %s."
 
-#: admin/views/install.php:970
+#: admin/views/install.php:971
 msgid "No errors above? This means that the database has been processed!"
 msgstr "Geen foutmeldingen hierboven? Dan zijn de tabellen aangemaakt!"
 
-#: admin/views/install.php:971
+#: admin/views/install.php:972
 #, php-format
 msgid "All updates completed, go to: %s"
 msgstr "Alle updates voltooid, ga naar: %s"
 
-#: admin/views/install.php:971 admin/views/menu.php:51
+#: admin/views/install.php:972 admin/views/menu.php:51
 #: admin/views/update.php:218
 msgid "Main menu"
 msgstr "Hoofdmenu"
@@ -4701,7 +4702,7 @@ msgstr "Goedgekeurd"
 msgid "Priority"
 msgstr "Prioriteit"
 
-#: admin/views/partial/editor_addresses.php:11 include/TreeMerge.php:670
+#: admin/views/partial/editor_addresses.php:11 include/TreeMerge.php:869
 #: views/addresses.php:12 views/layout.php:614
 msgid "Addresses"
 msgstr "Adressen"
@@ -5277,7 +5278,7 @@ msgstr "Positie"
 #: admin/views/settings_homepage.php:28 admin/views/statistics_general.php:70
 #: admin/views/tree_check_changes.php:68
 #: admin/views/tree_check_integrity.php:32
-#: app/Model/ChatGenealogyApiModel.php:300 views/stats_persons.php:5
+#: app/Model/ChatGenealogyApiModel.php:303 views/stats_persons.php:5
 #: views/stats_tree.php:10
 msgid "Item"
 msgstr "Item"
@@ -6096,7 +6097,7 @@ msgid "All editors"
 msgstr "Alle editors"
 
 #: admin/views/tree_check_changes.php:51
-#: app/Model/ChatGenealogyApiModel.php:301 views/help.php:68
+#: app/Model/ChatGenealogyApiModel.php:304 views/help.php:68
 #: views/layout.php:576 views/statistics.php:25
 msgid "Persons"
 msgstr "Personen"
@@ -6261,7 +6262,7 @@ msgstr "Details"
 #: admin/views/tree_check_consistency.php:974
 #: admin/views/tree_check_consistency.php:997
 #: admin/views/tree_check_consistency.php:1004
-#: admin/views/tree_check_consistency.php:1013 include/TreeMerge.php:168
+#: admin/views/tree_check_consistency.php:1013 include/TreeMerge.php:367
 msgid "birth date"
 msgstr "geboortedatum"
 
@@ -6276,7 +6277,7 @@ msgstr "geboortedatum"
 #: admin/views/tree_check_consistency.php:765
 #: admin/views/tree_check_consistency.php:794
 #: admin/views/tree_check_consistency.php:965
-#: admin/views/tree_check_consistency.php:977 include/TreeMerge.php:171
+#: admin/views/tree_check_consistency.php:977 include/TreeMerge.php:370
 msgid "baptism date"
 msgstr "doopdatum"
 
@@ -6291,7 +6292,7 @@ msgstr "doopdatum"
 #: admin/views/tree_check_consistency.php:722
 #: admin/views/tree_check_consistency.php:753
 #: admin/views/tree_check_consistency.php:968
-#: admin/views/tree_check_consistency.php:980 include/TreeMerge.php:173
+#: admin/views/tree_check_consistency.php:980 include/TreeMerge.php:372
 msgid "death date"
 msgstr "overlijdensdatum"
 
@@ -6306,7 +6307,7 @@ msgstr "overlijdensdatum"
 #: admin/views/tree_check_consistency.php:736
 #: admin/views/tree_check_consistency.php:769
 #: admin/views/tree_check_consistency.php:971
-#: admin/views/tree_check_consistency.php:983 include/TreeMerge.php:178
+#: admin/views/tree_check_consistency.php:983 include/TreeMerge.php:377
 msgid "burial date"
 msgstr "begrafenisdatum"
 
@@ -6369,7 +6370,7 @@ msgstr "kerkelijk huwelijk"
 msgid "church marriage notice"
 msgstr "kerkelijk ondertrouw"
 
-#: admin/views/tree_check_consistency.php:699 include/TreeMerge.php:209
+#: admin/views/tree_check_consistency.php:699 include/TreeMerge.php:408
 msgid "Spouse"
 msgstr "Echtgenoot/te"
 
@@ -6762,12 +6763,12 @@ msgid "You may wish to proceed with duplicate merge or manual merge."
 msgstr "U kunt doorgaan met dubbelen combineren of handmatig combineren."
 
 #: admin/views/tree_merge.php:296 admin/views/tree_merge.php:368
-#: admin/views/tree_merge_settings.php:35 include/TreeMerge.php:133
+#: admin/views/tree_merge_settings.php:35 include/TreeMerge.php:324
 msgid "Duplicate merge"
 msgstr "Dubbelen combineren"
 
 #: admin/views/tree_merge.php:301 admin/views/tree_merge.php:380
-#: include/TreeMerge.php:137
+#: include/TreeMerge.php:328
 msgid "Manual merge"
 msgstr "Handmatig combineren"
 
@@ -7318,7 +7319,7 @@ msgid "Welcome"
 msgstr "Welkom"
 
 #: app/Model/ChatGenealogyApiModel.php:80
-#: app/Model/ChatGenealogyApiModel.php:157
+#: app/Model/ChatGenealogyApiModel.php:163
 msgid "born in"
 msgstr "geboren in"
 
@@ -7327,7 +7328,7 @@ msgid "how many"
 msgstr "hoeveel"
 
 #: app/Model/ChatGenealogyApiModel.php:90
-#: app/Model/ChatGenealogyApiModel.php:342
+#: app/Model/ChatGenealogyApiModel.php:416
 msgid "children of"
 msgstr "kinderen van"
 
@@ -7339,7 +7340,12 @@ msgstr "de handleiding"
 msgid "help"
 msgstr "help"
 
-#: app/Model/ChatGenealogyApiModel.php:106
+#: app/Model/ChatGenealogyApiModel.php:107
+#: app/Model/ChatGenealogyApiModel.php:344
+msgid "show"
+msgstr "toon"
+
+#: app/Model/ChatGenealogyApiModel.php:112
 msgid ""
 "Sorry, I did not understand your question. Here are some examples of "
 "questions you can ask:"
@@ -7347,119 +7353,134 @@ msgstr ""
 "Sorry, ik begrijp je vraag niet. Hier zijn enkele voorbeelden van vragen die "
 "je kunt stellen:"
 
-#: app/Model/ChatGenealogyApiModel.php:115 views/chat_genealogy.php:38
+#: app/Model/ChatGenealogyApiModel.php:121 views/chat_genealogy.php:38
 msgid "Hi! I can help you search your family tree. Try asking:"
 msgstr ""
 "Hallo! Ik kan je helpen bij het zoeken naar je stamboom. Probeer eens te "
 "vragen:"
 
-#: app/Model/ChatGenealogyApiModel.php:122
+#: app/Model/ChatGenealogyApiModel.php:128
 msgid "Here are some examples of questions you can ask:"
 msgstr "Hier zijn enkele voorbeelden van vragen die je kunt stellen:"
 
-#: app/Model/ChatGenealogyApiModel.php:132
-#: app/Model/ChatGenealogyApiModel.php:164
-#: app/Model/ChatGenealogyApiModel.php:200 views/chat_genealogy.php:40
+#: app/Model/ChatGenealogyApiModel.php:138
+#: app/Model/ChatGenealogyApiModel.php:170
+#: app/Model/ChatGenealogyApiModel.php:206 views/chat_genealogy.php:40
 msgid "Who was born in Amsterdam in 1850?"
 msgstr "Wie werden geboren in Amsterdam in 1850?"
 
-#: app/Model/ChatGenealogyApiModel.php:133 views/chat_genealogy.php:41
+#: app/Model/ChatGenealogyApiModel.php:139 views/chat_genealogy.php:41
 msgid "How many persons are in my tree?"
 msgstr "Hoeveel personen staan er in mijn stamboom?"
 
-#: app/Model/ChatGenealogyApiModel.php:134
-#: app/Model/ChatGenealogyApiModel.php:346
-#: app/Model/ChatGenealogyApiModel.php:352 views/chat_genealogy.php:42
+#: app/Model/ChatGenealogyApiModel.php:140
+#: app/Model/ChatGenealogyApiModel.php:420
+#: app/Model/ChatGenealogyApiModel.php:426 views/chat_genealogy.php:42
 msgid "Show children of Jan Pietersen"
 msgstr "Toon kinderen van Jan Pietersen"
 
-#: app/Model/ChatGenealogyApiModel.php:135 views/chat_genealogy.php:43
+#: app/Model/ChatGenealogyApiModel.php:141 views/chat_genealogy.php:43
 msgid "Show me the manual"
 msgstr "Toon de handleiding"
 
-#: app/Model/ChatGenealogyApiModel.php:140 views/chat_genealogy.php:48
+#: app/Model/ChatGenealogyApiModel.php:146 views/chat_genealogy.php:48
 msgid "Extra options for editors/admins:"
 msgstr "Extra opties voor redacteuren/beheerders:"
 
-#: app/Model/ChatGenealogyApiModel.php:145
+#: app/Model/ChatGenealogyApiModel.php:151
 msgid "If the selected language doesn't work well, try asking in English."
 msgstr ""
 "Als de geselecteerde taal niet goed werkt, probeer dan de vraag in het "
 "Engels te stellen."
 
-#: app/Model/ChatGenealogyApiModel.php:163
-#: app/Model/ChatGenealogyApiModel.php:199
+#: app/Model/ChatGenealogyApiModel.php:169
+#: app/Model/ChatGenealogyApiModel.php:205
 msgid "Please specify a place and/or year. Example:"
 msgstr "Geef een plaats en/of jaar op. Voorbeeld:"
 
-#: app/Model/ChatGenealogyApiModel.php:246
+#: app/Model/ChatGenealogyApiModel.php:252
+#: app/Model/ChatGenealogyApiModel.php:394
 msgid "Some persons could not be displayed due to privacy settings."
 msgstr "Enkele personen zijn niet weergegeven vanwege privacy beperkingen."
 
-#: app/Model/ChatGenealogyApiModel.php:251 app/Model/MapsModel.php:316
+#: app/Model/ChatGenealogyApiModel.php:256
+#: app/Model/ChatGenealogyApiModel.php:404 app/Model/MapsModel.php:316
 msgid "Results are limited."
 msgstr "Resultaten zijn beperkt."
 
-#: app/Model/ChatGenealogyApiModel.php:255
+#: app/Model/ChatGenealogyApiModel.php:260
 #, php-format
 msgid "Found %d persons:"
 msgstr "%d personen gevonden:"
 
-#: app/Model/ChatGenealogyApiModel.php:274
+#: app/Model/ChatGenealogyApiModel.php:277
 #, php-format
 msgid "The selected family tree contains %d persons and %d families."
 msgstr "De geselecteerde stamboom bevat %d personen en %d gezinnen."
 
-#: app/Model/ChatGenealogyApiModel.php:300
+#: app/Model/ChatGenealogyApiModel.php:303
 msgid "Value"
 msgstr "Waarde"
 
-#: app/Model/ChatGenealogyApiModel.php:303 views/stats_tree.php:18
+#: app/Model/ChatGenealogyApiModel.php:306 views/stats_tree.php:18
 msgid "Latest update"
 msgstr "Laatste update"
 
-#: app/Model/ChatGenealogyApiModel.php:331 app/Model/TreeIndexModel.php:362
+#: app/Model/ChatGenealogyApiModel.php:334 app/Model/TreeIndexModel.php:362
 msgid "Show more statistics"
 msgstr "Meer statistieken weergeven"
 
-#: app/Model/ChatGenealogyApiModel.php:346
+#: app/Model/ChatGenealogyApiModel.php:348
+#: app/Model/ChatGenealogyApiModel.php:420
 msgid "Please specify a person. Example:"
 msgstr "Geef een persoon op. Voorbeeld:"
 
-#: app/Model/ChatGenealogyApiModel.php:352
+#: app/Model/ChatGenealogyApiModel.php:348
+#: app/Model/ChatGenealogyApiModel.php:359
+msgid "Show Jan Pietersen"
+msgstr "Toon Jan Pietersen"
+
+#: app/Model/ChatGenealogyApiModel.php:359
+#: app/Model/ChatGenealogyApiModel.php:426
 msgid "Please specify a person name. Example:"
 msgstr "Geef een persoonsnaam op. Voorbeeld:"
 
-#: app/Model/ChatGenealogyApiModel.php:372
+#: app/Model/ChatGenealogyApiModel.php:380
+#: app/Model/ChatGenealogyApiModel.php:446
 msgid "No person found matching:"
 msgstr "Geen overeenkomende personen gevonden:"
 
-#: app/Model/ChatGenealogyApiModel.php:395
-#: app/Model/ChatGenealogyApiModel.php:397
+#: app/Model/ChatGenealogyApiModel.php:398
+#, php-format
+msgid "Found %d person(s) matching '%s':"
+msgstr "%d personen gevonden die overeenkomen met '%s':"
+
+#: app/Model/ChatGenealogyApiModel.php:469
+#: app/Model/ChatGenealogyApiModel.php:471
 msgid "Parent:"
 msgstr "Ouder:"
 
-#: app/Model/ChatGenealogyApiModel.php:433
+#: app/Model/ChatGenealogyApiModel.php:507
 msgid "No children found for the specified person(s)."
 msgstr "Er zijn geen kinderen gevonden voor de opgegeven persoon/personen."
 
-#: app/Model/ChatGenealogyApiModel.php:446
+#: app/Model/ChatGenealogyApiModel.php:520
 msgid "No children were found in the family tree for the detected relations."
 msgstr ""
 "Er zijn geen kinderen gevonden in de stamboom voor de gedetecteerde relaties."
 
-#: app/Model/ChatGenealogyApiModel.php:450
+#: app/Model/ChatGenealogyApiModel.php:524
 msgid "Some children could not be displayed due to privacy settings."
 msgstr ""
 "Sommige kinderen konden vanwege privacyinstellingen niet worden weergegeven."
 
-#: app/Model/ChatGenealogyApiModel.php:453
+#: app/Model/ChatGenealogyApiModel.php:527
 #, php-format
 msgid "Found %d children for person(s) matching '%s':"
 msgstr "%d kinderen gevonden voor persoon/personen die overeenkomen met '%s':"
 
 # Birth
-#: app/Model/ChatGenealogyApiModel.php:499 include/AncestorBox.php:68
+#: app/Model/ChatGenealogyApiModel.php:573 include/AncestorBox.php:68
 #: include/Editor_cls.php:324 include/PersonPopup.php:172
 #: views/ancestor_sheet.php:99 views/ancestor_sheet_pdf.php:116
 #: views/ancestor_sheet_pdf.php:384 views/descendant_chart.php:319
@@ -7662,7 +7683,7 @@ msgstr "schoonmoeder"
 #: app/Model/RelationsModel.php:3306 app/Model/RelationsModel.php:3310
 #: app/Model/RelationsModel.php:3313 app/Model/RelationsModel.php:3391
 #: app/Model/RelationsModel.php:3428 app/Model/RelationsModel.php:3430
-#: include/TreeMerge.php:147 views/ancestor_report_pdf.php:41
+#: include/TreeMerge.php:346 views/ancestor_report_pdf.php:41
 #: views/ancestor_report_pdf.php:55 views/ancestor_report_rtf.php:70
 #: views/ancestor_sheet.php:31 views/ancestor_sheet_pdf.php:308
 #: views/ancestor_sheet_pdf.php:327 views/descendant_chart.php:128
@@ -8381,12 +8402,12 @@ msgid "funeral leader"
 msgstr "uitvaartleider"
 
 #: include/EditorEvent.php:64 include/EditorEventSelection.php:18
-#: include/TreeMerge.php:470
+#: include/TreeMerge.php:669
 msgid "Title of Nobility"
 msgstr "Predikaat"
 
 #: include/EditorEvent.php:70 include/EditorEventSelection.php:20
-#: include/TreeMerge.php:476
+#: include/TreeMerge.php:675
 msgid "Title of Lordship"
 msgstr "Heerlijkheid"
 
@@ -9101,150 +9122,153 @@ msgstr "telefoon"
 msgid "Missing image"
 msgstr "Afbeelding ontbreekt"
 
-#: include/ShowSources.php:77 include/ShowSources.php:180
-#: include/ShowSources.php:263
+#: include/ShowSources.php:83 include/ShowSources.php:197
+#: include/ShowSources.php:337
 msgid "Sources for person"
 msgstr "Bronnen bij persoon"
 
-#: include/ShowSources.php:79 include/ShowSources.php:203
-#: include/ShowSources.php:284
+#: include/ShowSources.php:85 include/ShowSources.php:220
+#: include/ShowSources.php:358
 msgid "Sources for family"
 msgstr "Bronnen bij gezin"
 
-#: include/ShowSources.php:84 include/ShowSources.php:213
-#: include/ShowSources.php:287
+#: include/ShowSources.php:90 include/ShowSources.php:230
+#: include/ShowSources.php:361
 msgid "Source for family"
 msgstr "Bron bij gezin"
 
-#: include/ShowSources.php:113 include/ShowSources.php:216
-#: include/ShowSources.php:243
+#: include/ShowSources.php:125 include/ShowSources.php:233
+#: include/ShowSources.php:317
 msgid "sources"
 msgstr "bronnen"
 
-#: include/ShowSources.php:332
-msgid "source text"
-msgstr "bron tekst"
-
-#: include/ShowSourcesFootnotes.php:86
-msgid "extra text"
-msgstr "extra tekst"
-
-#: include/ShowSourcesFootnotes.php:103 views/source.php:349
+#: include/ShowSources.php:272 include/tfpdf/tFPDFextend.php:1005
+#: views/source.php:349
 msgid "role"
 msgstr "rol"
 
-#: include/ShowSourcesFootnotes.php:108 include/ShowSourcesFootnotes.php:112
+#: include/ShowSources.php:282 include/ShowSources.php:291
+#: include/tfpdf/tFPDFextend.php:1018 include/tfpdf/tFPDFextend.php:1031
 #: views/source.php:353
 msgid "page"
 msgstr "bladzijde"
 
-#: include/TreeMerge.php:135
+#: include/TreeMerge.php:326
 msgid "Surrounding relatives check"
 msgstr "Familieleden combineren"
 
-#: include/TreeMerge.php:147
+#: include/TreeMerge.php:333
+#, php-format
+msgid "Score %d%% match"
+msgstr "Score %d%% overeenkomst"
+
+#: include/TreeMerge.php:335
+msgid "points"
+msgstr "punten"
+
+#: include/TreeMerge.php:346
 msgid "Nr. "
 msgstr "Nr. "
 
-#: include/TreeMerge.php:151
+#: include/TreeMerge.php:350
 msgid " relatives to check"
 msgstr " familieleden te onderzoeken"
 
-#: include/TreeMerge.php:155
+#: include/TreeMerge.php:354
 msgid "Person 1: "
 msgstr "Persoon 1: "
 
-#: include/TreeMerge.php:156
+#: include/TreeMerge.php:355
 msgid "Person 2: "
 msgstr "Persoon 2: "
 
-#: include/TreeMerge.php:165
+#: include/TreeMerge.php:364
 msgid "last name"
 msgstr "achternaam"
 
-#: include/TreeMerge.php:166
+#: include/TreeMerge.php:365
 msgid "first name"
 msgstr "voornaam"
 
-#: include/TreeMerge.php:167
+#: include/TreeMerge.php:366
 msgid "patronym"
 msgstr "patroniem"
 
-#: include/TreeMerge.php:169
+#: include/TreeMerge.php:368
 msgid "birth place"
 msgstr "geb. pl."
 
-#: include/TreeMerge.php:172
+#: include/TreeMerge.php:371
 msgid "baptism place"
 msgstr "doopplaats"
 
-#: include/TreeMerge.php:174
+#: include/TreeMerge.php:373
 msgid "death place"
 msgstr "overlijdensplaats"
 
-#: include/TreeMerge.php:179
+#: include/TreeMerge.php:378
 msgid "burial place"
 msgstr "begrafenisplaats"
 
-#: include/TreeMerge.php:183
+#: include/TreeMerge.php:382
 msgid "stillborn"
 msgstr "levenloos geboren jongen"
 
-#: include/TreeMerge.php:184
+#: include/TreeMerge.php:383
 msgid "general text"
 msgstr "instellingen algemeen"
 
-#: include/TreeMerge.php:185
+#: include/TreeMerge.php:384
 msgid "name text"
 msgstr "tekst bij naam"
 
-#: include/TreeMerge.php:186
+#: include/TreeMerge.php:385
 msgid "birth text"
 msgstr "geboortedatum"
 
-#: include/TreeMerge.php:187
+#: include/TreeMerge.php:386
 msgid "baptism text"
 msgstr "tekst bij doop"
 
-#: include/TreeMerge.php:188
+#: include/TreeMerge.php:387
 msgid "death text"
 msgstr "tekst bij overlijden"
 
-#: include/TreeMerge.php:189
+#: include/TreeMerge.php:388
 msgid "burial text"
 msgstr "tekst bij begraven"
 
-#: include/TreeMerge.php:206
+#: include/TreeMerge.php:405
 msgid "Relatives"
 msgstr "Familieleden"
 
-#: include/TreeMerge.php:289 include/TreeMerge.php:313
+#: include/TreeMerge.php:488 include/TreeMerge.php:512
 msgid "Read text"
 msgstr "Toon de tekst"
 
-#: include/TreeMerge.php:310 include/TreeMerge.php:521
-#: include/TreeMerge.php:555 include/TreeMerge.php:610
-#: include/TreeMerge.php:686
+#: include/TreeMerge.php:509 include/TreeMerge.php:720
+#: include/TreeMerge.php:754 include/TreeMerge.php:809
+#: include/TreeMerge.php:885
 msgid "(no data)"
 msgstr "(geen gegevens)"
 
-#: include/TreeMerge.php:442
+#: include/TreeMerge.php:641
 msgid "Picture"
 msgstr "Afbeelding"
 
-#: include/TreeMerge.php:456 include/Witness.php:187
+#: include/TreeMerge.php:655 include/Witness.php:187
 msgid "baptism witness"
 msgstr "doopgetuige"
 
-#: include/TreeMerge.php:463 include/Witness.php:199
+#: include/TreeMerge.php:662 include/Witness.php:199
 msgid "burial witness"
 msgstr "begrafenisgetuige"
 
-#: include/TreeMerge.php:467
+#: include/TreeMerge.php:666
 msgid "Other names"
 msgstr "Andere namen"
 
-#: include/TreeMerge.php:479
+#: include/TreeMerge.php:678
 msgid "Internet link / URL"
 msgstr "Internet link / URL"
 
@@ -9260,7 +9284,7 @@ msgstr "huwelijksgetuige"
 msgid "marriage witness (religious)"
 msgstr "huwelijksgetuige (religieus)"
 
-#: include/tfpdf/tFPDFextend.php:1121
+#: include/tfpdf/tFPDFextend.php:1193
 #, php-format
 msgid "PDF Created with %s on"
 msgstr "PDF Gemaakt met %s op"
@@ -11085,6 +11109,12 @@ msgstr "Selecteer een thema"
 #: views/user_settings.php:128 views/user_settings.php:131
 msgid "Standard-colours"
 msgstr "Standaard-kleuren"
+
+#~ msgid "source text"
+#~ msgstr "bron tekst"
+
+#~ msgid "extra text"
+#~ msgstr "extra tekst"
 
 #~ msgid "Server error. Please try again."
 #~ msgstr "Serverfout. Probeer het opnieuw."
