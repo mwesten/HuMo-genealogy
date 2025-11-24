@@ -1014,7 +1014,39 @@ class DbFunctions
     public function get_connections(string $connect_sub_kind, string $connect_item_id)
     {
         try {
-            $sql = "SELECT * FROM humo_connections WHERE connect_tree_id=:connect_tree_id AND connect_sub_kind=:connect_sub_kind AND connect_item_id=:connect_item_id";
+            //$sql = "SELECT * FROM humo_connections WHERE connect_tree_id=:connect_tree_id AND connect_sub_kind=:connect_sub_kind AND connect_item_id=:connect_item_id";
+
+            // If order is needed (probably better to add date_year/ date_month/ date_day fields in this table):
+            $sql = "SELECT *, 
+                -- Extract year from various GEDCOM formats
+                CAST(
+                    CASE 
+                        WHEN connect_date REGEXP '[0-9]{4}' THEN REGEXP_SUBSTR(connect_date, '[0-9]{4}')
+                        ELSE '0'
+                    END 
+                AS UNSIGNED) AS sort_year,
+                -- Map month names to numbers
+                CASE 
+                    WHEN connect_date LIKE '%JAN%' THEN 1
+                    WHEN connect_date LIKE '%FEB%' THEN 2
+                    WHEN connect_date LIKE '%MAR%' THEN 3
+                    WHEN connect_date LIKE '%APR%' THEN 4
+                    WHEN connect_date LIKE '%MAY%' THEN 5
+                    WHEN connect_date LIKE '%JUN%' THEN 6
+                    WHEN connect_date LIKE '%JUL%' THEN 7
+                    WHEN connect_date LIKE '%AUG%' THEN 8
+                    WHEN connect_date LIKE '%SEP%' THEN 9
+                    WHEN connect_date LIKE '%OCT%' THEN 10
+                    WHEN connect_date LIKE '%NOV%' THEN 11
+                    WHEN connect_date LIKE '%DEC%' THEN 12
+                    ELSE 0
+                END AS sort_month
+            FROM humo_connections 
+            WHERE connect_tree_id=:connect_tree_id 
+            AND connect_sub_kind=:connect_sub_kind 
+            AND connect_item_id=:connect_item_id 
+            ORDER BY sort_year, sort_month, connect_order";
+
             $stmt = $this->dbh->prepare($sql);
             $stmt->execute([
                 ':connect_tree_id' => $this->tree_id,
