@@ -2,8 +2,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: HuMo-genealogy\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-11-20 14:35+0100\n"
-"PO-Revision-Date: 2025-11-20 14:35+0100\n"
+"POT-Creation-Date: 2025-11-24 17:12+0100\n"
+"PO-Revision-Date: 2025-11-24 17:12+0100\n"
 "Last-Translator: Huub Mons\n"
 "Language-Team: \n"
 "Language: nl_NL\n"
@@ -279,7 +279,7 @@ msgid "Divorce"
 msgstr "Scheiding"
 
 #: admin/Models/AdminSourcesModel.php:147 admin/views/editor.php:1233
-#: admin/views/editor_sources.php:293 admin/views/gedcom_import.php:1287
+#: admin/views/editor_sources.php:293 admin/views/gedcom_import.php:1288
 #: admin/views/notes.php:236 admin/views/partial/editor_addresses.php:122
 #: include/EditorEvent.php:124
 msgid "text"
@@ -3246,8 +3246,8 @@ msgstr "Voeg dit GEDCOM-bestand toe aan de bestaande stamboom"
 
 #: admin/views/gedcom_import.php:333 admin/views/gedcom_import.php:336
 #: admin/views/gedcom_import.php:389 admin/views/gedcom_import.php:582
-#: admin/views/gedcom_import.php:1210 admin/views/gedcom_import.php:1337
-#: admin/views/gedcom_import.php:1360
+#: admin/views/gedcom_import.php:1211 admin/views/gedcom_import.php:1338
+#: admin/views/gedcom_import.php:1361
 msgid "Step"
 msgstr "Stap"
 
@@ -3256,7 +3256,7 @@ msgid "STEP 2) Remove old family tree:"
 msgstr "STAP 2) Verwijder oude stamboom:"
 
 #: admin/views/gedcom_import.php:388 admin/views/gedcom_import.php:704
-#: admin/views/gedcom_import.php:1360
+#: admin/views/gedcom_import.php:1361
 msgid "ONLY use in case of a time-out, to continue click:"
 msgstr "ALLEEN gebruiken bij een timeout, voor vervolg klik op:"
 
@@ -3289,27 +3289,27 @@ msgstr "Herstart"
 msgid "Restarts reading of GEDCOM using a controlled time-out."
 msgstr "Herstart inlezen van GEDCOM met een gecontroleerde time-out."
 
-#: admin/views/gedcom_import.php:783 admin/views/gedcom_import.php:1150
-#: admin/views/gedcom_import.php:1316 admin/views/gedcom_import.php:1550
-#: admin/views/gedcom_import.php:1739 admin/views/gedcom_import.php:1944
-#: admin/views/gedcom_import.php:1987
+#: admin/views/gedcom_import.php:783 admin/views/gedcom_import.php:1151
+#: admin/views/gedcom_import.php:1317 admin/views/gedcom_import.php:1554
+#: admin/views/gedcom_import.php:1743 admin/views/gedcom_import.php:1948
+#: admin/views/gedcom_import.php:1991
 msgid "lines processed"
 msgstr "regels verwerkt"
 
-#: admin/views/gedcom_import.php:1102
+#: admin/views/gedcom_import.php:1103
 msgid "GEDCOM file"
 msgstr "GEDCOM-bestand"
 
-#: admin/views/gedcom_import.php:1104
+#: admin/views/gedcom_import.php:1105
 #, php-format
 msgid "this is an <b>%s</b> file"
 msgstr "dit is een <b>%s</b> bestand"
 
-#: admin/views/gedcom_import.php:1210
+#: admin/views/gedcom_import.php:1211
 msgid "Controlled time-out to continue reading of GEDCOM file, click:"
 msgstr "Gecontroleerde time-out, klik voor verder inlezen van GEDCOM-bestand:"
 
-#: admin/views/gedcom_import.php:1211
+#: admin/views/gedcom_import.php:1212
 #, php-format
 msgid ""
 "Or wait %s seconds for automatic continuation. Some browsers will give a "
@@ -3318,79 +3318,79 @@ msgstr ""
 "Of wacht %s seconden voor automatisch verder inlezen. Sommige browsers geven "
 "dan een verzend melding..."
 
-#: admin/views/gedcom_import.php:1238 admin/views/gedcom_import.php:1250
+#: admin/views/gedcom_import.php:1239 admin/views/gedcom_import.php:1251
 msgid "Persons added by GEDCOM import."
 msgstr "Personen toegevoegd met GEDCOM-import."
 
-#: admin/views/gedcom_import.php:1270
+#: admin/views/gedcom_import.php:1271
 #, php-format
 msgid "Reading in the file took: %d seconds"
 msgstr "Inlezen bestand kostte: %d seconden"
 
-#: admin/views/gedcom_import.php:1279
+#: admin/views/gedcom_import.php:1280
 msgid "Non-processed items"
 msgstr "Niet-verwerkte items"
 
-#: admin/views/gedcom_import.php:1283 admin/views/gedcom_import.php:1284
-#: admin/views/gedcom_import.php:1285 admin/views/gedcom_import.php:1286
+#: admin/views/gedcom_import.php:1284 admin/views/gedcom_import.php:1285
+#: admin/views/gedcom_import.php:1286 admin/views/gedcom_import.php:1287
 msgid "Level"
 msgstr "Level"
 
-#: admin/views/gedcom_import.php:1305
+#: admin/views/gedcom_import.php:1306
 msgid "All items have been processed!"
 msgstr "Alle items zijn verwerkt!"
 
-#: admin/views/gedcom_import.php:1352
+#: admin/views/gedcom_import.php:1353
 msgid "STEP 4) Final database processing:"
 msgstr "STAP 4) Laatste database verwerking:"
 
-#: admin/views/gedcom_import.php:1519
+#: admin/views/gedcom_import.php:1523
 msgid "Processing of referenced texts into standard texts..."
 msgstr "Verwerking van teksten met referentie naar standaardteksten..."
 
-#: admin/views/gedcom_import.php:1739 admin/views/index_admin.php:530
+#: admin/views/gedcom_import.php:1743 admin/views/index_admin.php:530
 #: admin/views/statistics_families.php:41 admin/views/tree_admin.php:89
 #: app/Model/TreeIndexModel.php:309
 msgid "persons"
 msgstr "personen"
 
-#: admin/views/gedcom_import.php:1944 admin/views/index_admin.php:530
+#: admin/views/gedcom_import.php:1948 admin/views/index_admin.php:530
 #: admin/views/statistics_families.php:41 admin/views/tree_admin.php:89
 #: app/Model/TreeIndexModel.php:309
 msgid "families"
 msgstr "gezinnen"
 
-#: admin/views/gedcom_import.php:2004
+#: admin/views/gedcom_import.php:2008
 msgid "Processing texts IN names..."
 msgstr "Verwerken van teksten IN namen..."
 
-#: admin/views/gedcom_import.php:2041
+#: admin/views/gedcom_import.php:2045
 msgid "Order children..."
 msgstr "Sorteer kinderen..."
 
-#: admin/views/gedcom_import.php:2069
+#: admin/views/gedcom_import.php:2073
 msgid "Order families..."
 msgstr "Sorteer gezinnen..."
 
-#: admin/views/gedcom_import.php:2252
+#: admin/views/gedcom_import.php:2256
 msgid "Counting persons and families and enter into database..."
 msgstr "Personen en gezinnen tellen en in database zetten..."
 
-#: admin/views/gedcom_import.php:2273
+#: admin/views/gedcom_import.php:2277
 #, php-format
 msgid "Processing took: %d seconds"
 msgstr "De verwerking kostte: %d seconden"
 
-#: admin/views/gedcom_import.php:2274
+#: admin/views/gedcom_import.php:2278
 msgid "No error messages? In this case the database is ready for use!"
 msgstr "Geen foutmeldingen? Dan is de database klaar voor gebruik!"
 
-#: admin/views/gedcom_import.php:2276
+#: admin/views/gedcom_import.php:2280
 #, php-format
 msgid "Ready! Now click %s to watch the family tree"
 msgstr "Klaar! Klik nu op %s om de stamboom te bekijken"
 
-#: admin/views/gedcom_import.php:2277
+#: admin/views/gedcom_import.php:2281
 msgid ""
 "TIP: Use <a href=\"index.php?page=cal_date\">\"Calculated birth dates\"</a> "
 "for a better privacy filter."
@@ -7283,16 +7283,20 @@ msgstr "Kwartierblad"
 msgid "Ancestor report"
 msgstr "Kwartierstaat"
 
-#: app/Model/AddressModel.php:17 app/Model/AddressesModel.php:27
+#: app/Model/AddressModel.php:18 app/Model/AddressesModel.php:27
 #: app/Model/CmsPagesModel.php:14 include/ShowSourcePDF.php:22
 #: views/anniversary.php:14 views/photoalbum.php:4 views/source.php:9
 #: views/sources.php:5
 msgid "You are not authorised to see this page."
 msgstr "U bent niet geautoriseerd voor deze bladzijde."
 
-#: app/Model/AddressModel.php:58
+#: app/Model/AddressModel.php:51
 msgid "Address by person"
 msgstr "Adres bij persoon"
+
+#: app/Model/AddressModel.php:84
+msgid "Address by relation"
+msgstr "Adres bij relatie"
 
 #: app/Model/AncestorModel.php:118
 msgid "Ancestor chart"

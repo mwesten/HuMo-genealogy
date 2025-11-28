@@ -884,7 +884,7 @@ class DbFunctions
      *                AND event_connect_id=:event_connect_id AND event_kind=:event_kind ORDER BY event_order
      * RETURNS      : all selected events by a person.
      */
-    public function get_events_connect(string $event_connect_kind, string $event_connect_id, string $event_kind)
+    public function get_events_connect(string $event_connect_kind, string|null $event_connect_id, string $event_kind)
     {
         try {
             if ($event_kind === 'all') {
@@ -1068,7 +1068,7 @@ class DbFunctions
      * RETURNS      : multiple connections.
      * EXAMPLE      : $connect_sql = $db_functions->get_connections_connect_id('person','pers_object',$event_connect_id);
      */
-    public function get_connections_connect_id(string $connect_kind, string $connect_sub_kind, string $connect_connect_id)
+    public function get_connections_connect_id(string $connect_kind, string $connect_sub_kind, string|null $connect_connect_id)
     {
         try {
             $sql = "SELECT * FROM humo_connections 

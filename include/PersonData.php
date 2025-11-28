@@ -998,7 +998,8 @@ class PersonData
             // TODO improve extended view.
             if ($person_kind == 'parent2') {
                 $relations = $db_functions->get_relations($personDb->pers_id);
-                if (isset($relations) && count($relations)>0) {
+                // *** Only show if there are multiple relations. If there is 1 relation, it's allready shown ***
+                if (isset($relations) && count($relations) > 1) {
                     // *** Show marriage line ar new line ***
                     $process_text .= "<br>\n";
 
@@ -1254,7 +1255,7 @@ class PersonData
 
         $child_marriage = '';
         $relations = $db_functions->get_relations($personDb->pers_id);
-        if (!$botDetector->isBot() && $person_kind == 'child' && isset($relations) && count($relations)>0) {
+        if (!$botDetector->isBot() && $person_kind == 'child' && isset($relations) && count($relations) > 0) {
             $nr_marriages = count($relations);
             $x = -1;
             foreach ($relations as $relation) {

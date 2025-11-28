@@ -668,7 +668,12 @@ if (isset($_POST['install_tables2'])) {
                 relation_type VARCHAR(20) DEFAULT NULL,
                 relation_order TINYINT UNSIGNED DEFAULT NULL,
                 partner_order TINYINT UNSIGNED DEFAULT 1,
-                PRIMARY KEY (id)
+                PRIMARY KEY (id),
+                INDEX idx_relation_id (relation_id),
+                INDEX idx_relation_gedcomnumber (relation_gedcomnumber),
+                INDEX idx_person_id (person_id),
+                INDEX idx_person_gedcomnumber (person_gedcomnumber),
+                INDEX idx_relation_type (relation_type)
             );
         ");
 
@@ -964,7 +969,6 @@ if (isset($_POST['install_tables2'])) {
             FOREIGN KEY (person_id) REFERENCES humo_persons(pers_id)
             ON DELETE CASCADE ON UPDATE CASCADE
             ");
-
     }
     ?><br>
 
