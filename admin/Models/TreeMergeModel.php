@@ -2,7 +2,7 @@
 
 /**
  * Original merge scripts made by Yossi. Rebuild to MVC by Huub.
- * Oct. 2025 Huub: several updates because of database normalisation and refactoring.
+ * Nov. 2025 Huub: several updates because of database normalisation and refactoring.
  */
 
 namespace Genealogy\Admin\Models;
@@ -404,8 +404,6 @@ class TreeMergeModel extends AdminBaseModel
 
     private function merge_them($left, $right, $mode)
     {
-        $eventManager = new EventManager($this->dbh);
-
         // merge algorithm - merge right into left
         // 1. if right has a relation with different wife - this Fxx is added to left's relations (in humo_person)
         //    and in humo_family the Ixx of right is replaced with the Ixx of left
@@ -417,11 +415,29 @@ class TreeMergeModel extends AdminBaseModel
         // 3. In either case whether right has family or not, if right has famc then in
         //    humo_family in right's parents Fxx, the child's Ixx is changed from right's to left's
 
-        $this->leftPerson = $this->db_functions->get_person_with_id($left);
-        $this->rightPerson = $this->db_functions->get_person_with_id($right);
+        //$this->dbh->beginTransaction();
+        //try {
 
-        $leftRelations = $this->db_functions->get_relations($this->leftPerson->pers_id);
-        $rightRelations = $this->db_functions->get_relations($this->rightPerson->pers_id);
+        //$this->validateInput($left, $right);
+
+        [$this->leftPerson, $this->rightPerson] = $this->loadPersons($left, $right);
+        [$leftRelations, $rightRelations] = $this->loadRelations();
+
+        // TODO rebuild loops (function allready prepared, see below)
+        /*
+        $sameSpousePairs = $this->findSameSpouseFamilies($leftRelations, $rightRelations);
+        if (!empty($sameSpousePairs)) {
+            $this->movePartnerRelationsToLeft();
+            $this->mergeChildrenForSameSpouses($sameSpousePairs);
+            $this->transferFamilyFields($sameSpousePairs);
+            $this->transferFamilySources($sameSpousePairs);
+            $this->deleteDuplicateFamilies($sameSpousePairs);
+            $this->queuePotentialChildDuplicates($sameSpousePairs);
+        } else {
+            $this->moveUniquePartnerRelationsToLeft();
+            $this->queuePotentialSpouseDuplicates($leftRelations, $rightRelations);
+        }
+        */
 
         if (count($rightRelations) > 0) {
             $spouse1 = '';
@@ -463,411 +479,598 @@ class TreeMergeModel extends AdminBaseModel
                 }
 
                 if ($same_spouse == true) {
-                    // Left has one or more fams with same wife (spouse was already merged)
-                    // *** Move all relations of right person to the left person ***
-                    $this->dbh->query(
-                        "UPDATE humo_relations_persons SET
-                        person_id = '" . $this->leftPerson->pers_id . "',
-                        person_gedcomnumber = '" . $this->leftPerson->pers_gedcomnumber . "'
-                        WHERE person_id = '" . $this->rightPerson->pers_id . "' AND relation_type='partner'"
-                    );
+                    $this->movePartnerRelationsToLeft();
+                    $this->mergeChildrenForSameSpouses($leftRelationDb, $rightRelationDb);
+                    $this->transferFamilyFields($leftRelationDb, $rightRelationDb);
+                    $this->transferFamilySources($leftRelationDb, $rightRelationDb);
+                    $this->deleteDuplicateFamilies($leftRelationDb, $rightRelationDb);
 
-                    // If right has children - add them to the left F
-                    // *** Check children ***
-                    for ($i = 0; $i < count($leftRelationDb); $i++) {
-                        // with all identical spouses
-                        $children1 = $this->db_functions->get_children($leftRelationDb[$i]->fam_id);
-                        $children2 = $this->db_functions->get_children($rightRelationDb[$i]->fam_id);
-                        $children1_ids = [];
-                        $children2_ids = [];
-                        if ($children1) {
-                            foreach ($children1 as $child) {
-                                if (isset($child->person_id)) {
-                                    $children1_ids[] = $child->person_id;
-                                }
-                            }
-                        }
-                        if ($children2) {
-                            foreach ($children2 as $child) {
-                                if (isset($child->person_id)) {
-                                    $children2_ids[] = $child->person_id;
-                                }
-                            }
-                        }
-                        // Now you can compare the arrays, using for example:
-                        $common_children = array_intersect($children1_ids, $children2_ids);
-                        $unique_to_children1 = array_diff($children1_ids, $children2_ids);
-                        $unique_to_children2 = array_diff($children2_ids, $children1_ids);
+                    // *** Queue SPOUSE duplicates (different spouses with similar names) ***
+                    $this->queuePotentialSpouseDuplicates1($leftRelations, $rightRelations, $leftRelationDb);
+                }
+            }
+            $this->queuePotentialSpouseDuplicates($leftRelations, $rightRelations, $same_spouse);
+        }
 
-                        // *** Remove common children from right family ***
-                        foreach ($common_children as $child_id) {
-                            $this->dbh->query(
-                                "DELETE FROM humo_relations_persons 
-                                WHERE tree_id = '" . $this->tree_id . "' 
-                                AND relation_id = '" . $rightRelationDb[$i]->fam_id . "' 
-                                AND person_id = '" . $child_id . "'
-                                AND relation_type = 'child'"
-                            );
-                        }
+        $this->reassignParentLinks();
+        $this->mergeVitalEvents($mode);
+        $this->mergeOtherEventsAddressesSources($mode);
+        $this->cleanupRightPersonReferences();
+        $this->updateRelativesQueueSetting();
 
-                        // *** Add unique children from right family to left family ***
-                        foreach ($unique_to_children2 as $child_id) {
-                            $this->dbh->query(
-                                "UPDATE humo_relations_persons 
-                                SET relation_id = '" . $leftRelationDb[$i]->fam_id . "',
-                                relation_gedcomnumber = '" . $leftRelationDb[$i]->fam_gedcomnumber . "'
-                                WHERE tree_id = '" . $this->tree_id . "' 
-                                AND relation_id = '" . $rightRelationDb[$i]->fam_id . "' 
-                                AND person_id = '" . $child_id . "'
-                                AND relation_type = 'child'"
-                            );
+        return $this->buildResult($mode);
 
-                            // *** Also check for possible duplicate children (comparing names), add them to merge array ***
-                            $child2Db = $this->db_functions->get_person_with_id($child_id);
-                            foreach ($unique_to_children1 as $child_id1) {
-                                //compare names of children to name of newly added child
-                                $child1Db = $this->db_functions->get_person_with_id($child_id1);
-                                if (
-                                    isset($child1Db->pers_lastname) && isset($child2Db->pers_lastname)
-                                    && $child1Db->pers_lastname == $child2Db->pers_lastname
-                                    && substr($child1Db->pers_firstname, 0, $this->humo_option["merge_chars"]) === substr($child2Db->pers_firstname, 0, $this->humo_option["merge_chars"])
-                                ) {
-                                    $string1 = $child1Db->pers_gedcomnumber . '@' . $child2Db->pers_gedcomnumber . ';';
-                                    $string2 = $child2Db->pers_gedcomnumber . '@' . $child1Db->pers_gedcomnumber . ';';
-                                    // Make sure this pair doesn't exist already in the string
-                                    if (strstr($this->relatives_merge, $string1) === false && strstr($this->relatives_merge, $string2) === false) {
-                                        $this->relatives_merge .= $string1;
-                                        $this->db_functions->update_settings('rel_merge_' . $this->tree_id, $this->relatives_merge);
-                                    }
-                                }
-                            }
-                        }
+        //} catch (\Throwable $e) {
+        //    $this->dbh->rollBack();
+        //    throw $e;
+        //}
+    }
+
+    /**
+     * Find families where left and right persons share the same spouse.
+     * Returns an array of pairs: [ ['leftFam' => object, 'rightFam' => object, 'spouse_id' => int], ... ]
+     */
+    /*
+    private function findSameSpouseFamilies(array $leftRelations, array $rightRelations): array
+    {
+        $pairs = [];
+        if (empty($leftRelations) || empty($rightRelations)) {
+            return $pairs;
+        }
+
+        // Build map spouse_id => left family
+        $leftBySpouse = [];
+        foreach ($leftRelations as $lr) {
+            $lf = $this->db_functions->get_family_with_id($lr->relation_id);
+            if (!$lf) {
+                continue;
+            }
+            // Determine spouse_id relative to left person partner_order
+            $spouseId = ($lr->partner_order == 1) ? ($lf->partner2_id ?? null) : ($lf->partner1_id ?? null);
+            if ($spouseId) {
+                // A person may have multiple families with the same spouse (rare). Keep all.
+                $leftBySpouse[$spouseId][] = $lf;
+            }
+        }
+
+        foreach ($rightRelations as $rr) {
+            $rf = $this->db_functions->get_family_with_id($rr->relation_id);
+            if (!$rf) {
+                continue;
+            }
+            $rightSpouseId = ($rr->partner_order == 1) ? ($rf->partner2_id ?? null) : ($rf->partner1_id ?? null);
+            if (!$rightSpouseId) {
+                continue;
+            }
+
+            if (!empty($leftBySpouse[$rightSpouseId])) {
+                // For each left family that has the same spouse, create a pair
+                foreach ($leftBySpouse[$rightSpouseId] as $lf) {
+                    // Skip when both families are the same row
+                    if (isset($lf->fam_id, $rf->fam_id) && $lf->fam_id === $rf->fam_id) {
+                        continue;
                     }
+                    $pairs[] = [
+                        'leftFam' => $lf,
+                        'rightFam' => $rf,
+                        'spouse_id' => $rightSpouseId,
+                    ];
+                }
+            }
+        }
 
-                    // Add the right relations to the left relations, without the F's that belonged to the duplicate right spouse(s)
-                    // Move all unique partner relations from right person to left person
-                    // (excluding the duplicate relations we already merged)
-                    $duplicate_relation_ids = array_map(function ($rel) {
-                        return $rel->fam_id;
-                    }, $rightRelationDb);
+        return $pairs;
+    }
+    */
 
-                    $this->dbh->query(
-                        "UPDATE humo_relations_persons SET
-                        person_id = '" . $this->leftPerson->pers_id . "',
-                        person_gedcomnumber = '" . $this->leftPerson->pers_gedcomnumber . "'
-                        WHERE person_id = '" . $this->rightPerson->pers_id . "' 
-                        AND relation_type = 'partner'
-                        AND relation_id NOT IN (" . implode(',', $duplicate_relation_ids) . ")"
-                    );
+    // Left has one or more fams with same wife (spouse was already merged)
+    private function movePartnerRelationsToLeft()
+    {
+        // *** Move all relations of right person to the left person ***
+        $this->dbh->query(
+            "UPDATE humo_relations_persons SET
+                person_id = '" . $this->leftPerson->pers_id . "',
+                person_gedcomnumber = '" . $this->leftPerson->pers_gedcomnumber . "'
+                WHERE person_id = '" . $this->rightPerson->pers_id . "' AND relation_type='partner'"
+        );
+    }
 
-                    // Remove the duplicate partner relations from right person's spouse as well
-                    for ($i = 0; $i < count($leftRelationDb); $i++) {
-                        if (isset($sp1[$i])) {
-                            $this->dbh->query(
-                                "DELETE FROM humo_relations_persons 
-                                WHERE relation_id = '" . $rightRelationDb[$i]->fam_id . "' 
-                                AND person_id = '" . $sp1[$i] . "'
-                                AND relation_type = 'partner'"
-                            );
-                        }
+    // If right has children - add them to the left F
+    private function mergeChildrenForSameSpouses($leftRelationDb, $rightRelationDb)
+    {
+        // *** Check children ***
+        for ($i = 0; $i < count($leftRelationDb); $i++) {
+            // with all identical spouses
+            $children1 = $this->db_functions->get_children($leftRelationDb[$i]->fam_id);
+            $children2 = $this->db_functions->get_children($rightRelationDb[$i]->fam_id);
+            $children1_ids = [];
+            $children2_ids = [];
+            if ($children1) {
+                foreach ($children1 as $child) {
+                    if (isset($child->person_id)) {
+                        $children1_ids[] = $child->person_id;
                     }
-
-                    // before we delete the F's of duplicate wifes from the database, we first check if they have items
-                    // that are not known in the "receiving" F's. If so, we copy it to the corresponding left families
-                    // to make one Db query only, we first put the necessary fields and values in an array
-                    for ($i = 0; $i < count($leftRelationDb); $i++) {
-                        if ($leftRelationDb[$i]->fam_kind == '' and $rightRelationDb[$i]->fam_kind != '') {
-                            $fam_items[$i]["fam_kind"] = $rightRelationDb[$i]->fam_kind;
-                        }
-                        if ($leftRelationDb[$i]->fam_relation_date == '' && $rightRelationDb[$i]->fam_relation_date != '') {
-                            $fam_items[$i]["fam_relation_date"] = $rightRelationDb[$i]->fam_relation_date;
-                        }
-                        if ($leftRelationDb[$i]->fam_relation_place == '' && $rightRelationDb[$i]->fam_relation_place != '') {
-                            $fam_items[$i]["fam_relation_place"] = $rightRelationDb[$i]->fam_relation_place;
-                        }
-                        if ($leftRelationDb[$i]->fam_relation_text == '' && $rightRelationDb[$i]->fam_relation_text != '') {
-                            $fam_items[$i]["fam_relation_text"] = $rightRelationDb[$i]->fam_relation_text;
-                        }
-                        //if($leftRelationDb[$i]->fam_relation_source=='' AND $rightRelationDb[$i]->fam_relation_source!='') { $fam_items[$i]["fam_relation_source"] = $rightRelationDb[$i]->fam_relation_source; }
-                        if ($leftRelationDb[$i]->fam_relation_end_date == '' && $rightRelationDb[$i]->fam_relation_end_date != '') {
-                            $fam_items[$i]["fam_relation_end_date"] = $rightRelationDb[$i]->fam_relation_end_date;
-                        }
-                        if ($leftRelationDb[$i]->fam_marr_notice_date == '' && $rightRelationDb[$i]->fam_marr_notice_date != '') {
-                            $fam_items[$i]["fam_marr_notice_date"] = $rightRelationDb[$i]->fam_marr_notice_date;
-                        }
-                        if ($leftRelationDb[$i]->fam_marr_notice_place == '' && $rightRelationDb[$i]->fam_marr_notice_place != '') {
-                            $fam_items[$i]["fam_marr_notice_place"] = $rightRelationDb[$i]->fam_marr_notice_place;
-                        }
-                        if ($leftRelationDb[$i]->fam_marr_notice_text == '' && $rightRelationDb[$i]->fam_marr_notice_text != '') {
-                            $fam_items[$i]["fam_marr_notice_text"] = $rightRelationDb[$i]->fam_marr_notice_text;
-                        }
-                        //if($leftRelationDb[$i]->fam_marr_notice_source=='' AND $rightRelationDb[$i]->fam_marr_notice_source!='') { $fam_items[$i]["fam_marr_notice_source"] = $rightRelationDb[$i]->fam_marr_notice_source; }
-                        if ($leftRelationDb[$i]->fam_marr_date == '' && $rightRelationDb[$i]->fam_marr_date != '') {
-                            $fam_items[$i]["fam_marr_date"] = $rightRelationDb[$i]->fam_marr_date;
-                        }
-                        if ($leftRelationDb[$i]->fam_marr_place == '' && $rightRelationDb[$i]->fam_marr_place != '') {
-                            $fam_items[$i]["fam_marr_place"] = $rightRelationDb[$i]->fam_marr_place;
-                        }
-                        if ($leftRelationDb[$i]->fam_marr_text == '' && $rightRelationDb[$i]->fam_marr_text != '') {
-                            $fam_items[$i]["fam_marr_text"] = $rightRelationDb[$i]->fam_marr_text;
-                        }
-                        //if($leftRelationDb[$i]->fam_marr_source=='' AND $rightRelationDb[$i]->fam_marr_source!='') { $fam_items[$i]["fam_marr_source"] = $rightRelationDb[$i]->fam_marr_source; }
-                        if ($leftRelationDb[$i]->fam_marr_authority == '' && $rightRelationDb[$i]->fam_marr_authority != '') {
-                            $fam_items[$i]["fam_marr_authority"] = $rightRelationDb[$i]->fam_marr_authority;
-                        }
-                        if ($leftRelationDb[$i]->fam_marr_church_notice_date == '' && $rightRelationDb[$i]->fam_marr_church_notice_date != '') {
-                            $fam_items[$i]["fam_marr_church_notice_date"] = $rightRelationDb[$i]->fam_marr_church_notice_date;
-                        }
-                        if ($leftRelationDb[$i]->fam_marr_church_notice_place == '' && $rightRelationDb[$i]->fam_marr_church_notice_place != '') {
-                            $fam_items[$i]["fam_marr_church_notice_place"] = $rightRelationDb[$i]->fam_marr_church_notice_place;
-                        }
-                        if ($leftRelationDb[$i]->fam_marr_church_notice_text == '' && $rightRelationDb[$i]->fam_marr_church_notice_text != '') {
-                            $fam_items[$i]["fam_marr_church_notice_text"] = $rightRelationDb[$i]->fam_marr_church_notice_text;
-                        }
-                        //if($leftRelationDb[$i]->fam_marr_church_notice_source=='' AND $rightRelationDb[$i]->fam_marr_church_notice_source!='') { $fam_items[$i]["fam_marr_church_notice_source"] = $rightRelationDb[$i]->fam_marr_church_notice_source; }
-                        if ($leftRelationDb[$i]->fam_marr_church_date == '' && $rightRelationDb[$i]->fam_marr_church_date != '') {
-                            $fam_items[$i]["fam_marr_church_date"] = $rightRelationDb[$i]->fam_marr_church_date;
-                        }
-                        if ($leftRelationDb[$i]->fam_marr_church_place == '' && $rightRelationDb[$i]->fam_marr_church_place != '') {
-                            $fam_items[$i]["fam_marr_church_place"] = $rightRelationDb[$i]->fam_marr_church_place;
-                        }
-                        if ($leftRelationDb[$i]->fam_marr_church_text == '' && $rightRelationDb[$i]->fam_marr_church_text != '') {
-                            $fam_items[$i]["fam_marr_church_text"] = $rightRelationDb[$i]->fam_marr_church_text;
-                        }
-                        //if($leftRelationDb[$i]->fam_marr_church_source=='' AND $rightRelationDb[$i]->fam_marr_church_source!='') { $fam_items[$i]["fam_marr_church_source"] = $rightRelationDb[$i]->fam_marr_church_source; }
-                        if ($leftRelationDb[$i]->fam_religion == '' && $rightRelationDb[$i]->fam_religion != '') {
-                            $fam_items[$i]["fam_religion"] = $rightRelationDb[$i]->fam_religion;
-                        }
-                        if ($leftRelationDb[$i]->fam_div_date == '' && $rightRelationDb[$i]->fam_div_date != '') {
-                            $fam_items[$i]["fam_div_date"] = $rightRelationDb[$i]->fam_div_date;
-                        }
-                        if ($leftRelationDb[$i]->fam_div_place == '' && $rightRelationDb[$i]->fam_div_place != '') {
-                            $fam_items[$i]["fam_div_place"] = $rightRelationDb[$i]->fam_div_place;
-                        }
-                        if ($leftRelationDb[$i]->fam_div_text == '' && $rightRelationDb[$i]->fam_div_text != '') {
-                            $fam_items[$i]["fam_div_text"] = $rightRelationDb[$i]->fam_div_text;
-                        }
-                        //if($leftRelationDb[$i]->fam_div_source=='' AND $rightRelationDb[$i]->fam_div_source!='') { $fam_items[$i]["fam_div_source"] = $rightRelationDb[$i]->fam_div_source; }
-                        if ($leftRelationDb[$i]->fam_div_authority == '' && $rightRelationDb[$i]->fam_div_authority != '') {
-                            $fam_items[$i]["fam_div_authority"] = $rightRelationDb[$i]->fam_div_authority;
-                        }
-                        if ($leftRelationDb[$i]->fam_text == '' && $rightRelationDb[$i]->fam_text != '') {
-                            $fam_items[$i]["fam_text"] = $rightRelationDb[$i]->fam_text;
-                        }
-                        //if($leftRelationDb[$i]->fam_text_source=='' AND $rightRelationDb[$i]->fam_text_source!='') { $fam_items[$i]["fam_text_source"] = $rightRelationDb[$i]->fam_text_source; }
+                }
+            }
+            if ($children2) {
+                foreach ($children2 as $child) {
+                    if (isset($child->person_id)) {
+                        $children2_ids[] = $child->person_id;
                     }
-                    for ($i = 0; $i < count($leftRelationDb); $i++) {
-                        if (isset($fam_items[$i])) {
-                            $item_string = '';
-                            foreach ($fam_items[$i] as $key => $value) {
-                                $item_string .= $key . "='" . $value . "',";
-                            }
-                            $item_string = substr($item_string, 0, -1); // take off last comma
+                }
+            }
+            // Now you can compare the arrays, using for example:
+            $common_children = array_intersect($children1_ids, $children2_ids);
+            $unique_to_children1 = array_diff($children1_ids, $children2_ids);
+            $unique_to_children2 = array_diff($children2_ids, $children1_ids);
 
-                            $qry = "UPDATE humo_families SET " . $item_string . " WHERE fam_tree_id='" . $this->tree_id . "' AND fam_gedcomnumber ='" . $leftRelationDb[$i]->fam_gedcomnumber . "'";
-                            $this->dbh->query($qry);
-                        }
-                    }
+            // *** Remove common children from right family ***
+            foreach ($common_children as $child_id) {
+                $this->dbh->query(
+                    "DELETE FROM humo_relations_persons 
+                        WHERE tree_id = '" . $this->tree_id . "' 
+                        AND relation_id = '" . $rightRelationDb[$i]->fam_id . "' 
+                        AND person_id = '" . $child_id . "'
+                        AND relation_type = 'child'"
+                );
+            }
 
-                    // TODO check if these queries can be combined. Use something like: AND connect_sub_kind LIKE '%_source'
-                    // - new piece for fam sources that were removed in the code above 2052 - 2078)
-                    for ($i = 0; $i < count($leftRelationDb); $i++) {
-                        $qry = "SELECT * FROM humo_connections WHERE connect_tree_id ='" . $this->tree_id . "' AND connect_connect_id = '" . $leftRelationDb[$i]->fam_gedcomnumber . "' AND connect_kind = 'family' AND connect_sub_kind = 'fam_relation_source'";
-                        $sourDb = $this->dbh->query($qry);
-                        if ($sourDb->rowCount() == 0) {
-                            // no fam sources of the sub kind for this fam
-                            $qry2 = "SELECT * FROM humo_connections WHERE connect_tree_id ='" . $this->tree_id . "' AND connect_connect_id = '" . $rightRelationDb[$i]->fam_gedcomnumber . "' AND connect_kind = 'family' AND connect_sub_kind = 'fam_relation_source'";
-                            $sourDb2 = $this->dbh->query($qry2);
-                            if ($sourDb2->rowCount() > 0) {
-                                // second fam has source of this sub kind - transfer these sources to left fam
-                                $qry3 = "UPDATE humo_connections SET connect_connect_id = '" . $leftRelationDb[$i]->fam_gedcomnumber . "' WHERE connect_tree_id ='" . $this->tree_id . "'  AND connect_connect_id = '" . $rightRelationDb[$i]->fam_gedcomnumber . "' AND connect_kind = 'family' AND connect_sub_kind = 'fam_relation_source'";
-                                $this->dbh->query($qry3);
-                            }
-                        }
+            // *** Add unique children from right family to left family ***
+            foreach ($unique_to_children2 as $child_id) {
+                $this->dbh->query(
+                    "UPDATE humo_relations_persons 
+                        SET relation_id = '" . $leftRelationDb[$i]->fam_id . "',
+                        relation_gedcomnumber = '" . $leftRelationDb[$i]->fam_gedcomnumber . "'
+                        WHERE tree_id = '" . $this->tree_id . "' 
+                        AND relation_id = '" . $rightRelationDb[$i]->fam_id . "' 
+                        AND person_id = '" . $child_id . "'
+                        AND relation_type = 'child'"
+                );
 
-                        $qry = "SELECT * FROM humo_connections WHERE connect_tree_id ='" . $this->tree_id . "' AND connect_connect_id = '" . $leftRelationDb[$i]->fam_gedcomnumber . "' AND connect_kind = 'family' AND connect_sub_kind = 'fam_marr_notice_source'";
-                        $sourDb = $this->dbh->query($qry);
-                        if ($sourDb->rowCount() == 0) {
-                            // no fam sources of the sub kind for this fam
-                            $qry2 = "SELECT * FROM humo_connections WHERE connect_tree_id ='" . $this->tree_id . "' AND connect_connect_id = '" . $rightRelationDb[$i]->fam_gedcomnumber . "' AND connect_kind = 'family' AND connect_sub_kind = 'fam_marr_notice_source'";
-                            $sourDb2 = $this->dbh->query($qry2);
-                            if ($sourDb2->rowCount() > 0) {
-                                // second fam has source of this sub kind - transfer these sources to left fam
-                                $qry3 = "UPDATE humo_connections SET connect_connect_id = '" . $leftRelationDb[$i]->fam_gedcomnumber . "' WHERE connect_tree_id ='" . $this->tree_id . "'  AND connect_connect_id = '" . $rightRelationDb[$i]->fam_gedcomnumber . "' AND connect_kind = 'family' AND connect_sub_kind = 'fam_marr_notice_source'";
-                                $this->dbh->query($qry3);
-                            }
-                        }
-
-                        $qry = "SELECT * FROM humo_connections WHERE connect_tree_id ='" . $this->tree_id . "' AND connect_connect_id = '" . $leftRelationDb[$i]->fam_gedcomnumber . "' AND connect_kind = 'family' AND connect_sub_kind = 'fam_marr_source'";
-                        $sourDb = $this->dbh->query($qry);
-                        if ($sourDb->rowCount() == 0) {
-                            // no fam sources of the sub kind for this fam
-                            $qry2 = "SELECT * FROM humo_connections WHERE connect_tree_id ='" . $this->tree_id . "' AND connect_connect_id = '" . $rightRelationDb[$i]->fam_gedcomnumber . "' AND connect_kind = 'family' AND connect_sub_kind = 'fam_marr_source'";
-                            $sourDb2 = $this->dbh->query($qry2);
-                            if ($sourDb2->rowCount() > 0) {
-                                // second fam has source of this sub kind - transfer these sources to left fam
-                                $qry3 = "UPDATE humo_connections SET connect_connect_id = '" . $leftRelationDb[$i]->fam_gedcomnumber . "' WHERE connect_tree_id ='" . $this->tree_id . "'  AND connect_connect_id = '" . $rightRelationDb[$i]->fam_gedcomnumber . "' AND connect_kind = 'family' AND connect_sub_kind = 'fam_marr_source'";
-                                $this->dbh->query($qry3);
-                            }
-                        }
-
-                        $qry = "SELECT * FROM humo_connections WHERE connect_tree_id ='" . $this->tree_id . "' AND connect_connect_id = '" . $leftRelationDb[$i]->fam_gedcomnumber . "' AND connect_kind = 'family' AND connect_sub_kind = 'fam_marr_church_notice_source'";
-                        $sourDb = $this->dbh->query($qry);
-                        if ($sourDb->rowCount() == 0) {
-                            // no fam sources of the sub kind for this fam
-                            $qry2 = "SELECT * FROM humo_connections WHERE connect_tree_id ='" . $this->tree_id . "' AND connect_connect_id = '" . $rightRelationDb[$i]->fam_gedcomnumber . "' AND connect_kind = 'family' AND connect_sub_kind = 'fam_marr_church_notice_source'";
-                            $sourDb2 = $this->dbh->query($qry2);
-                            if ($sourDb2->rowCount() > 0) {
-                                // second fam has source of this sub kind - transfer these sources to left fam
-                                $qry3 = "UPDATE humo_connections SET connect_connect_id = '" . $leftRelationDb[$i]->fam_gedcomnumber . "' WHERE connect_tree_id ='" . $this->tree_id . "'  AND connect_connect_id = '" . $rightRelationDb[$i]->fam_gedcomnumber . "' AND connect_kind = 'family' AND connect_sub_kind = 'fam_marr_church_notice_source'";
-                                $this->dbh->query($qry3);
-                            }
-                        }
-
-                        $qry = "SELECT * FROM humo_connections WHERE connect_tree_id ='" . $this->tree_id . "' AND connect_connect_id = '" . $leftRelationDb[$i]->fam_gedcomnumber . "' AND connect_kind = 'family' AND connect_sub_kind = 'fam_marr_church_source'";
-                        $sourDb = $this->dbh->query($qry);
-                        if ($sourDb->rowCount() == 0) {
-                            // no fam sources of the sub kind for this fam
-                            $qry2 = "SELECT * FROM humo_connections WHERE connect_tree_id ='" . $this->tree_id . "' AND connect_connect_id = '" . $rightRelationDb[$i]->fam_gedcomnumber . "' AND connect_kind = 'family' AND connect_sub_kind = 'fam_marr_church_source'";
-                            $sourDb2 = $this->dbh->query($qry2);
-                            if ($sourDb2->rowCount() > 0) {
-                                // second fam has source of this sub kind - transfer these sources to left fam
-                                $qry3 = "UPDATE humo_connections SET connect_connect_id = '" . $leftRelationDb[$i]->fam_gedcomnumber . "' WHERE connect_tree_id ='" . $this->tree_id . "'  AND connect_connect_id = '" . $rightRelationDb[$i]->fam_gedcomnumber . "' AND connect_kind = 'family' AND connect_sub_kind = 'fam_marr_church_source'";
-                                $this->dbh->query($qry3);
-                            }
-                        }
-                        $qry = "SELECT * FROM humo_connections WHERE connect_tree_id ='" . $this->tree_id . "' AND connect_connect_id = '" . $leftRelationDb[$i]->fam_gedcomnumber . "' AND connect_kind = 'family' AND connect_sub_kind = 'fam_text_source'";
-                        $sourDb = $this->dbh->query($qry);
-                        if ($sourDb->rowCount() == 0) {
-                            // no fam sources of the sub kind for this fam
-                            $qry2 = "SELECT * FROM humo_connections WHERE connect_tree_id ='" . $this->tree_id . "' AND connect_connect_id = '" . $rightRelationDb[$i]->fam_gedcomnumber . "' AND connect_kind = 'family' AND connect_sub_kind = 'fam_text_source'";
-                            $sourDb2 = $this->dbh->query($qry2);
-                            if ($sourDb2->rowCount() > 0) {
-                                // second fam has source of this sub kind - transfer these sources to left fam
-                                $qry3 = "UPDATE humo_connections SET connect_connect_id = '" . $leftRelationDb[$i]->fam_gedcomnumber . "' WHERE connect_tree_id ='" . $this->tree_id . "'  AND connect_connect_id = '" . $rightRelationDb[$i]->fam_gedcomnumber . "' AND connect_kind = 'family' AND connect_sub_kind = 'fam_text_source'";
-                                $this->dbh->query($qry3);
-                            }
-                        }
-                    }
-
-                    // delete F's that belonged to identical right spouse(s)
-                    for ($i = 0; $i < count($leftRelationDb); $i++) {
-                        $qry = "DELETE FROM humo_events
-                            WHERE event_tree_id='" . $this->tree_id . "'
-                            AND (event_connect_kind='family' OR event_kind='ASSO')
-                            AND event_connect_id ='" . $rightRelationDb[$i]->fam_gedcomnumber . "'";
-                        $this->dbh->query($qry);
-
-                        // for each of the identical spouses
-                        $qry = "DELETE FROM humo_families
-                            WHERE fam_tree_id='" . $this->tree_id . "' 
-                            AND fam_gedcomnumber ='" . $rightRelationDb[$i]->fam_gedcomnumber . "'";
-                        $this->dbh->query($qry);
-
-                        // Substract 1 family from the number of families counter in the family tree.
-                        $sql = "UPDATE humo_trees SET tree_families=tree_families-1 WHERE tree_id='" . $this->tree_id . "'";
-                        $this->dbh->query($sql);
-
-                        // CLEANUP: also delete this F from other tables where it may appear
-                        $qry = "DELETE FROM humo_addresses
-                            WHERE address_tree_id='" . $this->tree_id . "' 
-                            AND address_connect_sub_kind='family'
-                            AND address_connect_id ='" . $rightRelationDb[$i]->fam_gedcomnumber . "'";
-                        $this->dbh->query($qry);
-
-                        $qry = "DELETE FROM humo_connections
-                            WHERE connect_tree_id='" . $this->tree_id . "'
-                            AND connect_connect_id ='" . $rightRelationDb[$i]->fam_gedcomnumber . "'";
-                        $this->dbh->query($qry);
-                    }
-
-                    // Right had more than the identical spouse(s). maybe they need merging.
-                    if (count($rightRelations) > count($leftRelationDb)) {
-                        foreach ($leftRelations as $leftRel) {
-                            $fam1Db = $this->db_functions->get_family_partners($leftRel->relation_id);
-                            $sp_ged = $fam1Db->partner2_id;
-                            if ($this->leftPerson->pers_sexe == "F") {
-                                $sp_ged = $fam1Db->partner1_id;
-                            }
-
-                            $qry = "SELECT * FROM humo_persons WHERE pers_id ='" . $sp_ged . "'";
-                            $spo1 = $this->dbh->query($qry);
-                            $spo1Db = $spo1->fetch(PDO::FETCH_OBJ);
-                            if ($spo1->rowCount() > 0) {
-                                foreach ($rightRelations as $rightRel) {
-                                    $fam2Db = $this->db_functions->get_family_partners($rightRel->relation_id);
-                                    $sp_ged = $fam2Db->partner2_id;
-                                    if ($this->leftPerson->pers_sexe == "F") {
-                                        $sp_ged = $fam2Db->partner1_id;
-                                    }
-
-                                    $qry = "SELECT * FROM humo_persons WHERE pers_id ='" . $sp_ged . "'";
-                                    $spo2 = $this->dbh->query($qry);
-                                    $spo2Db = $spo2->fetch(PDO::FETCH_OBJ);
-                                    if ($spo2->rowCount() > 0 && ($spo1Db->pers_lastname == $spo2Db->pers_lastname
-                                        && substr($spo1Db->pers_firstname, 0, $this->humo_option["merge_chars"]) === substr($spo2Db->pers_firstname, 0, $this->humo_option["merge_chars"]))) {
-                                        $string1 = $spo1Db->pers_gedcomnumber . '@' . $spo2Db->pers_gedcomnumber . ';';
-                                        $string2 = $spo2Db->pers_gedcomnumber . '@' . $spo1Db->pers_gedcomnumber . ';';
-                                        // make sure this pair doesn't appear already in the string
-                                        if (strstr($this->relatives_merge, $string1) === false && strstr($this->relatives_merge, $string2) === false) {
-                                            $this->relatives_merge .= $string1;
-                                        }
-                                        $this->db_functions->update_settings('rel_merge_' . $this->tree_id, $this->relatives_merge);
-                                    }
-                                }
-                            }
+                // *** Also check for possible duplicate children (comparing names), add them to merge array ***
+                $child2Db = $this->db_functions->get_person_with_id($child_id);
+                foreach ($unique_to_children1 as $child_id1) {
+                    //compare names of children to name of newly added child
+                    $child1Db = $this->db_functions->get_person_with_id($child_id1);
+                    if (
+                        isset($child1Db->pers_lastname) && isset($child2Db->pers_lastname)
+                        && $child1Db->pers_lastname == $child2Db->pers_lastname
+                        && substr($child1Db->pers_firstname, 0, $this->humo_option["merge_chars"]) === substr($child2Db->pers_firstname, 0, $this->humo_option["merge_chars"])
+                    ) {
+                        $string1 = $child1Db->pers_gedcomnumber . '@' . $child2Db->pers_gedcomnumber . ';';
+                        $string2 = $child2Db->pers_gedcomnumber . '@' . $child1Db->pers_gedcomnumber . ';';
+                        // Make sure this pair doesn't exist already in the string
+                        if (strstr($this->relatives_merge, $string1) === false && strstr($this->relatives_merge, $string2) === false) {
+                            $this->relatives_merge .= $string1;
+                            $this->db_functions->update_settings('rel_merge_' . $this->tree_id, $this->relatives_merge);
                         }
                     }
                 }
             }
+        }
+    }
+
+    private function transferFamilyFields($leftRelationDb, $rightRelationDb)
+    {
+        // Move all unique partner relations from right person to left person (excluding the duplicate relations we already merged)
+        $duplicate_relation_ids = array_map(function ($rel) {
+            return $rel->fam_id;
+        }, $rightRelationDb);
+
+        $this->dbh->query(
+            "UPDATE humo_relations_persons SET
+            person_id = '" . $this->leftPerson->pers_id . "',
+            person_gedcomnumber = '" . $this->leftPerson->pers_gedcomnumber . "'
+            WHERE person_id = '" . $this->rightPerson->pers_id . "' 
+            AND relation_type = 'partner'
+            AND relation_id NOT IN (" . implode(',', $duplicate_relation_ids) . ")"
+        );
 
 
-            if (!$leftRelations || $same_spouse == false) {
-                // left has no fams or fams with different spouses than right -> add fams to left
-                // Add right's relations to left's relations
+        // Remove the duplicate partner relations from right person's spouse as well
+        for ($i = 0; $i < count($leftRelationDb); $i++) {
+            if (isset($sp1[$i])) {
                 $this->dbh->query(
-                    "UPDATE humo_relations_persons SET
-                        person_id = '" . $this->leftPerson->pers_id . "',
-                        person_gedcomnumber = '" . $this->leftPerson->pers_gedcomnumber . "'
-                     WHERE person_id = '" . $this->rightPerson->pers_id . "' AND relation_type = 'partner'"
+                    "DELETE FROM humo_relations_persons 
+                    WHERE relation_id = '" . $rightRelationDb[$i]->fam_id . "' 
+                    AND person_id = '" . $sp1[$i] . "'
+                    AND relation_type = 'partner'"
                 );
+            }
+        }
 
-                // check for spouses to be added to relative merge string:
-                if ($leftRelation && $same_spouse == false) {
-                    foreach ($leftRelations as $leftRel) {
-                        $fam1Db = $this->db_functions->get_family_partners($leftRel->relation_id);
-                        $sp_ged = $fam1Db->partner1_id;
-                        // TODO use partner_order?
+        // before we delete the F's of duplicate wifes from the database, we first check if they have items
+        // that are not known in the "receiving" F's. If so, we copy it to the corresponding left families
+        // to make one Db query only, we first put the necessary fields and values in an array
+        for ($i = 0; $i < count($leftRelationDb); $i++) {
+            if ($leftRelationDb[$i]->fam_kind == '' and $rightRelationDb[$i]->fam_kind != '') {
+                $fam_items[$i]["fam_kind"] = $rightRelationDb[$i]->fam_kind;
+            }
+            if ($leftRelationDb[$i]->fam_relation_date == '' && $rightRelationDb[$i]->fam_relation_date != '') {
+                $fam_items[$i]["fam_relation_date"] = $rightRelationDb[$i]->fam_relation_date;
+            }
+            if ($leftRelationDb[$i]->fam_relation_place == '' && $rightRelationDb[$i]->fam_relation_place != '') {
+                $fam_items[$i]["fam_relation_place"] = $rightRelationDb[$i]->fam_relation_place;
+            }
+            if ($leftRelationDb[$i]->fam_relation_text == '' && $rightRelationDb[$i]->fam_relation_text != '') {
+                $fam_items[$i]["fam_relation_text"] = $rightRelationDb[$i]->fam_relation_text;
+            }
+            //if($leftRelationDb[$i]->fam_relation_source=='' AND $rightRelationDb[$i]->fam_relation_source!='') {
+            //  $fam_items[$i]["fam_relation_source"] = $rightRelationDb[$i]->fam_relation_source;
+            //}
+            if ($leftRelationDb[$i]->fam_relation_end_date == '' && $rightRelationDb[$i]->fam_relation_end_date != '') {
+                $fam_items[$i]["fam_relation_end_date"] = $rightRelationDb[$i]->fam_relation_end_date;
+            }
+            if ($leftRelationDb[$i]->fam_marr_notice_date == '' && $rightRelationDb[$i]->fam_marr_notice_date != '') {
+                $fam_items[$i]["fam_marr_notice_date"] = $rightRelationDb[$i]->fam_marr_notice_date;
+            }
+            if ($leftRelationDb[$i]->fam_marr_notice_place == '' && $rightRelationDb[$i]->fam_marr_notice_place != '') {
+                $fam_items[$i]["fam_marr_notice_place"] = $rightRelationDb[$i]->fam_marr_notice_place;
+            }
+            if ($leftRelationDb[$i]->fam_marr_notice_text == '' && $rightRelationDb[$i]->fam_marr_notice_text != '') {
+                $fam_items[$i]["fam_marr_notice_text"] = $rightRelationDb[$i]->fam_marr_notice_text;
+            }
+            //if($leftRelationDb[$i]->fam_marr_notice_source=='' AND $rightRelationDb[$i]->fam_marr_notice_source!='') {
+            //  $fam_items[$i]["fam_marr_notice_source"] = $rightRelationDb[$i]->fam_marr_notice_source;
+            //}
+            if ($leftRelationDb[$i]->fam_marr_date == '' && $rightRelationDb[$i]->fam_marr_date != '') {
+                $fam_items[$i]["fam_marr_date"] = $rightRelationDb[$i]->fam_marr_date;
+            }
+            if ($leftRelationDb[$i]->fam_marr_place == '' && $rightRelationDb[$i]->fam_marr_place != '') {
+                $fam_items[$i]["fam_marr_place"] = $rightRelationDb[$i]->fam_marr_place;
+            }
+            if ($leftRelationDb[$i]->fam_marr_text == '' && $rightRelationDb[$i]->fam_marr_text != '') {
+                $fam_items[$i]["fam_marr_text"] = $rightRelationDb[$i]->fam_marr_text;
+            }
+            //if($leftRelationDb[$i]->fam_marr_source=='' AND $rightRelationDb[$i]->fam_marr_source!='') {
+            //  $fam_items[$i]["fam_marr_source"] = $rightRelationDb[$i]->fam_marr_source;
+            //}
+            if ($leftRelationDb[$i]->fam_marr_authority == '' && $rightRelationDb[$i]->fam_marr_authority != '') {
+                $fam_items[$i]["fam_marr_authority"] = $rightRelationDb[$i]->fam_marr_authority;
+            }
+            if ($leftRelationDb[$i]->fam_marr_church_notice_date == '' && $rightRelationDb[$i]->fam_marr_church_notice_date != '') {
+                $fam_items[$i]["fam_marr_church_notice_date"] = $rightRelationDb[$i]->fam_marr_church_notice_date;
+            }
+            if ($leftRelationDb[$i]->fam_marr_church_notice_place == '' && $rightRelationDb[$i]->fam_marr_church_notice_place != '') {
+                $fam_items[$i]["fam_marr_church_notice_place"] = $rightRelationDb[$i]->fam_marr_church_notice_place;
+            }
+            if ($leftRelationDb[$i]->fam_marr_church_notice_text == '' && $rightRelationDb[$i]->fam_marr_church_notice_text != '') {
+                $fam_items[$i]["fam_marr_church_notice_text"] = $rightRelationDb[$i]->fam_marr_church_notice_text;
+            }
+            //if($leftRelationDb[$i]->fam_marr_church_notice_source=='' AND $rightRelationDb[$i]->fam_marr_church_notice_source!='') {
+            //  $fam_items[$i]["fam_marr_church_notice_source"] = $rightRelationDb[$i]->fam_marr_church_notice_source;
+            //}
+            if ($leftRelationDb[$i]->fam_marr_church_date == '' && $rightRelationDb[$i]->fam_marr_church_date != '') {
+                $fam_items[$i]["fam_marr_church_date"] = $rightRelationDb[$i]->fam_marr_church_date;
+            }
+            if ($leftRelationDb[$i]->fam_marr_church_place == '' && $rightRelationDb[$i]->fam_marr_church_place != '') {
+                $fam_items[$i]["fam_marr_church_place"] = $rightRelationDb[$i]->fam_marr_church_place;
+            }
+            if ($leftRelationDb[$i]->fam_marr_church_text == '' && $rightRelationDb[$i]->fam_marr_church_text != '') {
+                $fam_items[$i]["fam_marr_church_text"] = $rightRelationDb[$i]->fam_marr_church_text;
+            }
+            //if($leftRelationDb[$i]->fam_marr_church_source=='' AND $rightRelationDb[$i]->fam_marr_church_source!='') {
+            //  $fam_items[$i]["fam_marr_church_source"] = $rightRelationDb[$i]->fam_marr_church_source;
+            //}
+            if ($leftRelationDb[$i]->fam_religion == '' && $rightRelationDb[$i]->fam_religion != '') {
+                $fam_items[$i]["fam_religion"] = $rightRelationDb[$i]->fam_religion;
+            }
+            if ($leftRelationDb[$i]->fam_div_date == '' && $rightRelationDb[$i]->fam_div_date != '') {
+                $fam_items[$i]["fam_div_date"] = $rightRelationDb[$i]->fam_div_date;
+            }
+            if ($leftRelationDb[$i]->fam_div_place == '' && $rightRelationDb[$i]->fam_div_place != '') {
+                $fam_items[$i]["fam_div_place"] = $rightRelationDb[$i]->fam_div_place;
+            }
+            if ($leftRelationDb[$i]->fam_div_text == '' && $rightRelationDb[$i]->fam_div_text != '') {
+                $fam_items[$i]["fam_div_text"] = $rightRelationDb[$i]->fam_div_text;
+            }
+            //if($leftRelationDb[$i]->fam_div_source=='' AND $rightRelationDb[$i]->fam_div_source!='') {
+            //  $fam_items[$i]["fam_div_source"] = $rightRelationDb[$i]->fam_div_source;
+            //}
+            if ($leftRelationDb[$i]->fam_div_authority == '' && $rightRelationDb[$i]->fam_div_authority != '') {
+                $fam_items[$i]["fam_div_authority"] = $rightRelationDb[$i]->fam_div_authority;
+            }
+            if ($leftRelationDb[$i]->fam_text == '' && $rightRelationDb[$i]->fam_text != '') {
+                $fam_items[$i]["fam_text"] = $rightRelationDb[$i]->fam_text;
+            }
+            //if($leftRelationDb[$i]->fam_text_source=='' AND $rightRelationDb[$i]->fam_text_source!='') {
+            //  $fam_items[$i]["fam_text_source"] = $rightRelationDb[$i]->fam_text_source;
+            //}
+        }
+        for ($i = 0; $i < count($leftRelationDb); $i++) {
+            if (isset($fam_items[$i])) {
+                $item_string = '';
+                foreach ($fam_items[$i] as $key => $value) {
+                    $item_string .= $key . "='" . $value . "',";
+                }
+                $item_string = substr($item_string, 0, -1); // take off last comma
+
+                $qry = "UPDATE humo_families SET " . $item_string . " WHERE fam_tree_id='" . $this->tree_id . "' AND fam_gedcomnumber ='" . $leftRelationDb[$i]->fam_gedcomnumber . "'";
+                $this->dbh->query($qry);
+            }
+        }
+    }
+
+    // *** Process sources like: fam_relation_source, fam_marr_notice_source, fam_marr_source, fam_marr_church_notice_source, fam_marr_church_source, fam_text_source ***
+    // *** Nov. 2025 rebuild function ***
+    private function transferFamilySources($leftRelationDb, $rightRelationDb)
+    {
+        /*
+        // - new piece for fam sources that were removed in the code above)
+        for ($i = 0; $i < count($leftRelationDb); $i++) {
+            $qry = "SELECT * FROM humo_connections WHERE connect_tree_id ='" . $this->tree_id . "' AND connect_connect_id = '" . $leftRelationDb[$i]->fam_gedcomnumber . "' AND connect_kind = 'family' AND connect_sub_kind = 'fam_relation_source'";
+            $sourDb = $this->dbh->query($qry);
+            if ($sourDb->rowCount() == 0) {
+                // no fam sources of the sub kind for this fam
+                $qry2 = "SELECT * FROM humo_connections WHERE connect_tree_id ='" . $this->tree_id . "' AND connect_connect_id = '" . $rightRelationDb[$i]->fam_gedcomnumber . "' AND connect_kind = 'family' AND connect_sub_kind = 'fam_relation_source'";
+                $sourDb2 = $this->dbh->query($qry2);
+                if ($sourDb2->rowCount() > 0) {
+                    // second fam has source of this sub kind - transfer these sources to left fam
+                    $qry3 = "UPDATE humo_connections SET connect_connect_id = '" . $leftRelationDb[$i]->fam_gedcomnumber . "' WHERE connect_tree_id ='" . $this->tree_id . "'  AND connect_connect_id = '" . $rightRelationDb[$i]->fam_gedcomnumber . "' AND connect_kind = 'family' AND connect_sub_kind = 'fam_relation_source'";
+                    $this->dbh->query($qry3);
+                }
+            }
+
+            $qry = "SELECT * FROM humo_connections WHERE connect_tree_id ='" . $this->tree_id . "' AND connect_connect_id = '" . $leftRelationDb[$i]->fam_gedcomnumber . "' AND connect_kind = 'family' AND connect_sub_kind = 'fam_marr_notice_source'";
+            $sourDb = $this->dbh->query($qry);
+            if ($sourDb->rowCount() == 0) {
+                // no fam sources of the sub kind for this fam
+                $qry2 = "SELECT * FROM humo_connections WHERE connect_tree_id ='" . $this->tree_id . "' AND connect_connect_id = '" . $rightRelationDb[$i]->fam_gedcomnumber . "' AND connect_kind = 'family' AND connect_sub_kind = 'fam_marr_notice_source'";
+                $sourDb2 = $this->dbh->query($qry2);
+                if ($sourDb2->rowCount() > 0) {
+                    // second fam has source of this sub kind - transfer these sources to left fam
+                    $qry3 = "UPDATE humo_connections SET connect_connect_id = '" . $leftRelationDb[$i]->fam_gedcomnumber . "' WHERE connect_tree_id ='" . $this->tree_id . "'  AND connect_connect_id = '" . $rightRelationDb[$i]->fam_gedcomnumber . "' AND connect_kind = 'family' AND connect_sub_kind = 'fam_marr_notice_source'";
+                    $this->dbh->query($qry3);
+                }
+            }
+
+            $qry = "SELECT * FROM humo_connections WHERE connect_tree_id ='" . $this->tree_id . "' AND connect_connect_id = '" . $leftRelationDb[$i]->fam_gedcomnumber . "' AND connect_kind = 'family' AND connect_sub_kind = 'fam_marr_source'";
+            $sourDb = $this->dbh->query($qry);
+            if ($sourDb->rowCount() == 0) {
+                // no fam sources of the sub kind for this fam
+                $qry2 = "SELECT * FROM humo_connections WHERE connect_tree_id ='" . $this->tree_id . "' AND connect_connect_id = '" . $rightRelationDb[$i]->fam_gedcomnumber . "' AND connect_kind = 'family' AND connect_sub_kind = 'fam_marr_source'";
+                $sourDb2 = $this->dbh->query($qry2);
+                if ($sourDb2->rowCount() > 0) {
+                    // second fam has source of this sub kind - transfer these sources to left fam
+                    $qry3 = "UPDATE humo_connections SET connect_connect_id = '" . $leftRelationDb[$i]->fam_gedcomnumber . "' WHERE connect_tree_id ='" . $this->tree_id . "'  AND connect_connect_id = '" . $rightRelationDb[$i]->fam_gedcomnumber . "' AND connect_kind = 'family' AND connect_sub_kind = 'fam_marr_source'";
+                    $this->dbh->query($qry3);
+                }
+            }
+
+            $qry = "SELECT * FROM humo_connections WHERE connect_tree_id ='" . $this->tree_id . "' AND connect_connect_id = '" . $leftRelationDb[$i]->fam_gedcomnumber . "' AND connect_kind = 'family' AND connect_sub_kind = 'fam_marr_church_notice_source'";
+            $sourDb = $this->dbh->query($qry);
+            if ($sourDb->rowCount() == 0) {
+                // no fam sources of the sub kind for this fam
+                $qry2 = "SELECT * FROM humo_connections WHERE connect_tree_id ='" . $this->tree_id . "' AND connect_connect_id = '" . $rightRelationDb[$i]->fam_gedcomnumber . "' AND connect_kind = 'family' AND connect_sub_kind = 'fam_marr_church_notice_source'";
+                $sourDb2 = $this->dbh->query($qry2);
+                if ($sourDb2->rowCount() > 0) {
+                    // second fam has source of this sub kind - transfer these sources to left fam
+                    $qry3 = "UPDATE humo_connections SET connect_connect_id = '" . $leftRelationDb[$i]->fam_gedcomnumber . "' WHERE connect_tree_id ='" . $this->tree_id . "'  AND connect_connect_id = '" . $rightRelationDb[$i]->fam_gedcomnumber . "' AND connect_kind = 'family' AND connect_sub_kind = 'fam_marr_church_notice_source'";
+                    $this->dbh->query($qry3);
+                }
+            }
+
+            $qry = "SELECT * FROM humo_connections WHERE connect_tree_id ='" . $this->tree_id . "' AND connect_connect_id = '" . $leftRelationDb[$i]->fam_gedcomnumber . "' AND connect_kind = 'family' AND connect_sub_kind = 'fam_marr_church_source'";
+            $sourDb = $this->dbh->query($qry);
+            if ($sourDb->rowCount() == 0) {
+                // no fam sources of the sub kind for this fam
+                $qry2 = "SELECT * FROM humo_connections WHERE connect_tree_id ='" . $this->tree_id . "' AND connect_connect_id = '" . $rightRelationDb[$i]->fam_gedcomnumber . "' AND connect_kind = 'family' AND connect_sub_kind = 'fam_marr_church_source'";
+                $sourDb2 = $this->dbh->query($qry2);
+                if ($sourDb2->rowCount() > 0) {
+                    // second fam has source of this sub kind - transfer these sources to left fam
+                    $qry3 = "UPDATE humo_connections SET connect_connect_id = '" . $leftRelationDb[$i]->fam_gedcomnumber . "' WHERE connect_tree_id ='" . $this->tree_id . "'  AND connect_connect_id = '" . $rightRelationDb[$i]->fam_gedcomnumber . "' AND connect_kind = 'family' AND connect_sub_kind = 'fam_marr_church_source'";
+                    $this->dbh->query($qry3);
+                }
+            }
+
+            $qry = "SELECT * FROM humo_connections WHERE connect_tree_id ='" . $this->tree_id . "' AND connect_connect_id = '" . $leftRelationDb[$i]->fam_gedcomnumber . "' AND connect_kind = 'family' AND connect_sub_kind = 'fam_text_source'";
+            $sourDb = $this->dbh->query($qry);
+            if ($sourDb->rowCount() == 0) {
+                // no fam sources of the sub kind for this fam
+                $qry2 = "SELECT * FROM humo_connections WHERE connect_tree_id ='" . $this->tree_id . "' AND connect_connect_id = '" . $rightRelationDb[$i]->fam_gedcomnumber . "' AND connect_kind = 'family' AND connect_sub_kind = 'fam_text_source'";
+                $sourDb2 = $this->dbh->query($qry2);
+                if ($sourDb2->rowCount() > 0) {
+                    // second fam has source of this sub kind - transfer these sources to left fam
+                    $qry3 = "UPDATE humo_connections SET connect_connect_id = '" . $leftRelationDb[$i]->fam_gedcomnumber . "' WHERE connect_tree_id ='" . $this->tree_id . "'  AND connect_connect_id = '" . $rightRelationDb[$i]->fam_gedcomnumber . "' AND connect_kind = 'family' AND connect_sub_kind = 'fam_text_source'";
+                    $this->dbh->query($qry3);
+                }
+            }
+        }
+        */
+
+
+        if (empty($leftRelationDb)) {
+            return;
+        }
+
+        // Build arrays of GEDCOM numbers for batch query
+        $rightGedNums = array_map(fn($f) => $f->fam_gedcomnumber, $rightRelationDb);
+        $leftGedNums = array_map(fn($f) => $f->fam_gedcomnumber, $leftRelationDb);
+
+        // Get ALL sources for both left and right families in one query
+        $placeholders = implode(',', array_fill(0, count($rightGedNums) + count($leftGedNums), '?'));
+        $stmt = $this->dbh->prepare(
+            "SELECT connect_id, connect_connect_id, connect_sub_kind, connect_source_id
+            FROM humo_connections 
+            WHERE connect_tree_id = ? 
+            AND connect_kind = 'family'
+            AND connect_sub_kind LIKE '%_source'
+            AND connect_connect_id IN ($placeholders)"
+        );
+
+        $allGedNums = array_merge($leftGedNums, $rightGedNums);
+        $stmt->execute(array_merge([$this->tree_id], $allGedNums));
+
+        // Organize sources by family GEDCOM number and sub_kind
+        $sourcesByFamily = [];
+        while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+            $key = $row['connect_connect_id'] . '|' . $row['connect_sub_kind'];
+            $sourcesByFamily[$key][] = $row;
+        }
+
+        // Process each pair of duplicate families
+        for ($i = 0; $i < count($leftRelationDb); $i++) {
+            $leftGed = $leftRelationDb[$i]->fam_gedcomnumber;
+            $rightGed = $rightRelationDb[$i]->fam_gedcomnumber;
+
+            // Find all source sub_kinds that exist for the right family
+            $rightSourceTypes = [];
+            foreach ($sourcesByFamily as $key => $sources) {
+                if (strpos($key, $rightGed . '|') === 0) {
+                    $subKind = explode('|', $key)[1];
+                    $rightSourceTypes[$subKind] = $sources;
+                }
+            }
+
+            // Transfer each source type from right to left if left doesn't have it
+            foreach ($rightSourceTypes as $subKind => $rightSources) {
+                $leftKey = $leftGed . '|' . $subKind;
+
+                // Check if left already has this source type
+                if (!isset($sourcesByFamily[$leftKey])) {
+                    // Left doesn't have it - transfer all sources of this type from right to left
+                    $sourceIds = array_map(fn($s) => $s['connect_id'], $rightSources);
+
+                    if (!empty($sourceIds)) {
+                        $placeholders = implode(',', array_fill(0, count($sourceIds), '?'));
+                        $updateStmt = $this->dbh->prepare(
+                            "UPDATE humo_connections SET connect_connect_id = ? WHERE connect_id IN ($placeholders)"
+                        );
+                        $updateStmt->execute(array_merge([$leftGed], $sourceIds));
+                    }
+                }
+            }
+        }
+    }
+
+    private function deleteDuplicateFamilies($leftRelationDb, $rightRelationDb)
+    {
+        // delete F's that belonged to identical right spouse(s)
+        for ($i = 0; $i < count($leftRelationDb); $i++) {
+            $qry = "DELETE FROM humo_events
+                WHERE event_tree_id='" . $this->tree_id . "'
+                AND (event_connect_kind='family' OR event_kind='ASSO')
+                AND event_connect_id ='" . $rightRelationDb[$i]->fam_gedcomnumber . "'";
+            $this->dbh->query($qry);
+
+            // for each of the identical spouses
+            $qry = "DELETE FROM humo_families
+                WHERE fam_tree_id='" . $this->tree_id . "' 
+                AND fam_gedcomnumber ='" . $rightRelationDb[$i]->fam_gedcomnumber . "'";
+            $this->dbh->query($qry);
+
+            // Substract 1 family from the number of families counter in the family tree.
+            $sql = "UPDATE humo_trees SET tree_families=tree_families-1 WHERE tree_id='" . $this->tree_id . "'";
+            $this->dbh->query($sql);
+
+            // CLEANUP: also delete this F from other tables where it may appear
+            $qry = "DELETE FROM humo_addresses
+                WHERE address_tree_id='" . $this->tree_id . "' 
+                AND address_connect_sub_kind='family'
+                AND address_connect_id ='" . $rightRelationDb[$i]->fam_gedcomnumber . "'";
+            $this->dbh->query($qry);
+
+            $qry = "DELETE FROM humo_connections
+                WHERE connect_tree_id='" . $this->tree_id . "'
+                AND connect_connect_id ='" . $rightRelationDb[$i]->fam_gedcomnumber . "'";
+            $this->dbh->query($qry);
+
+            // Nov. 2025: Delete family relations for this family
+            $qry = "DELETE FROM humo_relations_persons 
+                WHERE relation_id = '" . $rightRelationDb[$i]->fam_id . "'";
+            $this->dbh->query($qry);
+        }
+    }
+
+    private function queuePotentialSpouseDuplicates1($leftRelations, $rightRelations, $leftRelationDb)
+    {
+        // Right had more than the identical spouse(s). maybe they need merging.
+        if (count($rightRelations) > count($leftRelationDb)) {
+            foreach ($leftRelations as $leftRel) {
+                $fam1Db = $this->db_functions->get_family_partners($leftRel->relation_id);
+                $sp_ged = $fam1Db->partner2_id;
+                if ($this->leftPerson->pers_sexe == "F") {
+                    $sp_ged = $fam1Db->partner1_id;
+                }
+
+                $qry = "SELECT * FROM humo_persons WHERE pers_id ='" . $sp_ged . "'";
+                $spo1 = $this->dbh->query($qry);
+                $spo1Db = $spo1->fetch(PDO::FETCH_OBJ);
+                if ($spo1->rowCount() > 0) {
+                    foreach ($rightRelations as $rightRel) {
+                        $fam2Db = $this->db_functions->get_family_partners($rightRel->relation_id);
+                        $sp_ged = $fam2Db->partner2_id;
                         if ($this->leftPerson->pers_sexe == "F") {
-                            $sp_ged = $fam1Db->partner2_id;
+                            $sp_ged = $fam2Db->partner1_id;
                         }
 
                         $qry = "SELECT * FROM humo_persons WHERE pers_id ='" . $sp_ged . "'";
-                        $spo1 = $this->dbh->query($qry);
-                        $spo1Db = $spo1->fetch(PDO::FETCH_OBJ);
-                        if ($spo1->rowCount() > 0) {
-                            //for ($f = 0; $f < count($rightfam); $f++) {
-                            foreach ($rightRelations as $rightRel) {
-                                $fam2Db = $this->db_functions->get_family_partners($rightRel->relation_id);
-                                $sp_ged = $fam2Db->partner1_id;
-                                if ($this->leftPerson->pers_sexe == "F") {
-                                    $sp_ged = $fam2Db->partner2_id;
-                                }
+                        $spo2 = $this->dbh->query($qry);
+                        $spo2Db = $spo2->fetch(PDO::FETCH_OBJ);
+                        if ($spo2->rowCount() > 0 && ($spo1Db->pers_lastname == $spo2Db->pers_lastname
+                            && substr($spo1Db->pers_firstname, 0, $this->humo_option["merge_chars"]) === substr($spo2Db->pers_firstname, 0, $this->humo_option["merge_chars"]))) {
+                            $string1 = $spo1Db->pers_gedcomnumber . '@' . $spo2Db->pers_gedcomnumber . ';';
+                            $string2 = $spo2Db->pers_gedcomnumber . '@' . $spo1Db->pers_gedcomnumber . ';';
+                            // make sure this pair doesn't appear already in the string
+                            if (strstr($this->relatives_merge, $string1) === false && strstr($this->relatives_merge, $string2) === false) {
+                                $this->relatives_merge .= $string1;
+                            }
+                            $this->db_functions->update_settings('rel_merge_' . $this->tree_id, $this->relatives_merge);
+                        }
+                    }
+                }
+            }
+        }
+    }
 
-                                $qry = "SELECT * FROM humo_persons WHERE pers_id ='" . $sp_ged . "'";
-                                $spo2 = $this->dbh->query($qry);
-                                $spo2Db = $spo2->fetch(PDO::FETCH_OBJ);
-                                if ($spo2->rowCount() > 0 && ($spo1Db->pers_lastname == $spo2Db->pers_lastname && substr($spo1Db->pers_firstname, 0, $this->humo_option["merge_chars"]) === substr($spo2Db->pers_firstname, 0, $this->humo_option["merge_chars"]))) {
-                                    // Check GEDCOM numbers, otherwise left and right could be the same person
-                                    if ($spo1Db->pers_gedcomnumber != $spo2Db->pers_gedcomnumber) {
-                                        $string1 = $spo1Db->pers_gedcomnumber . '@' . $spo2Db->pers_gedcomnumber . ';';
-                                        $string2 = $spo2Db->pers_gedcomnumber . '@' . $spo1Db->pers_gedcomnumber . ';';
-                                        // make sure this pair doesn't already exist in the string
-                                        if (strstr($this->relatives_merge, $string1) === false && strstr($this->relatives_merge, $string2) === false) {
-                                            $this->relatives_merge .= $string1;
-                                        }
-                                        $this->db_functions->update_settings('rel_merge_' . $this->tree_id, $this->relatives_merge);
+    private function queuePotentialSpouseDuplicates($leftRelations, $rightRelations, $same_spouse)
+    {
+        if (!$leftRelations || $same_spouse == false) {
+            // left has no fams or fams with different spouses than right -> add fams to left
+            // Add right's relations to left's relations
+            $this->dbh->query(
+                "UPDATE humo_relations_persons SET
+                person_id = '" . $this->leftPerson->pers_id . "',
+                person_gedcomnumber = '" . $this->leftPerson->pers_gedcomnumber . "'
+                WHERE person_id = '" . $this->rightPerson->pers_id . "' AND relation_type = 'partner'"
+            );
+
+            // check for spouses to be added to relative merge string:
+            //if ($leftRelation && $same_spouse == false) {
+            if ($leftRelations && $same_spouse == false) {
+                foreach ($leftRelations as $leftRel) {
+                    $fam1Db = $this->db_functions->get_family_partners($leftRel->relation_id);
+                    $sp_ged = $fam1Db->partner1_id;
+                    // TODO use partner_order?
+                    if ($this->leftPerson->pers_sexe == "F") {
+                        $sp_ged = $fam1Db->partner2_id;
+                    }
+
+                    $qry = "SELECT * FROM humo_persons WHERE pers_id ='" . $sp_ged . "'";
+                    $spo1 = $this->dbh->query($qry);
+                    $spo1Db = $spo1->fetch(PDO::FETCH_OBJ);
+                    if ($spo1->rowCount() > 0) {
+                        //for ($f = 0; $f < count($rightfam); $f++) {
+                        foreach ($rightRelations as $rightRel) {
+                            $fam2Db = $this->db_functions->get_family_partners($rightRel->relation_id);
+                            $sp_ged = $fam2Db->partner1_id;
+                            if ($this->leftPerson->pers_sexe == "F") {
+                                $sp_ged = $fam2Db->partner2_id;
+                            }
+
+                            $qry = "SELECT * FROM humo_persons WHERE pers_id ='" . $sp_ged . "'";
+                            $spo2 = $this->dbh->query($qry);
+                            $spo2Db = $spo2->fetch(PDO::FETCH_OBJ);
+                            if ($spo2->rowCount() > 0 && ($spo1Db->pers_lastname == $spo2Db->pers_lastname && substr($spo1Db->pers_firstname, 0, $this->humo_option["merge_chars"]) === substr($spo2Db->pers_firstname, 0, $this->humo_option["merge_chars"]))) {
+                                // Check GEDCOM numbers, otherwise left and right could be the same person
+                                if ($spo1Db->pers_gedcomnumber != $spo2Db->pers_gedcomnumber) {
+                                    $string1 = $spo1Db->pers_gedcomnumber . '@' . $spo2Db->pers_gedcomnumber . ';';
+                                    $string2 = $spo2Db->pers_gedcomnumber . '@' . $spo1Db->pers_gedcomnumber . ';';
+                                    // make sure this pair doesn't already exist in the string
+                                    if (strstr($this->relatives_merge, $string1) === false && strstr($this->relatives_merge, $string2) === false) {
+                                        $this->relatives_merge .= $string1;
                                     }
+                                    $this->db_functions->update_settings('rel_merge_' . $this->tree_id, $this->relatives_merge);
                                 }
                             }
                         }
@@ -875,8 +1078,10 @@ class TreeMergeModel extends AdminBaseModel
                 }
             }
         }
+    }
 
-
+    private function reassignParentLinks()
+    {
         if ($this->rightPerson->parent_relation_id) {
             // if the two merged persons had a different parent set (e.i. parents aren't merged yet)
             // then change right's children id's to left's id's
@@ -985,7 +1190,60 @@ class TreeMergeModel extends AdminBaseModel
                 );
             }
         }
+    }
 
+    private function updateRelativesQueueSetting()
+    {
+        // Remove from the relatives-to-merge pairs in the database any pairs that contain the deleted right person
+        if (isset($this->relatives_merge)) {
+            $temp_rel_arr = explode(";", $this->relatives_merge);
+            $new_rel_string = '';
+            for ($x = 0; $x < count($temp_rel_arr); $x++) {
+                // one array piece is I354@I54. We DONT want to match "I35" or "I5" 
+                // so to make sure we find the complete number we look for I354@ or for I345;
+                if (
+                    strstr($temp_rel_arr[$x], $this->rightPerson->pers_gedcomnumber . "@") === false
+                    && strstr($temp_rel_arr[$x] . ";", $this->rightPerson->pers_gedcomnumber . ";") === false
+                ) {
+                    $new_rel_string .= $temp_rel_arr[$x] . ";";
+                }
+            }
+            $this->relatives_merge = substr($new_rel_string, 0, -1); // take off last ;
+            $this->db_functions->update_settings('rel_merge_' . $this->tree_id, $this->relatives_merge);
+        }
+
+        if (isset($_SESSION['dupl_arr_' . $this->tree_id])) {
+            //remove this pair from the dupl_arr array
+            $found1 = $this->leftPerson->pers_id . ';' . $this->rightPerson->pers_id;
+            $found2 = $this->rightPerson->pers_id . ';' . $this->leftPerson->pers_id;
+            for ($z = 0; $z < count($_SESSION['dupl_arr_' . $this->tree_id]); $z++) {
+                if ($_SESSION['dupl_arr_' . $this->tree_id][$z] == $found1 or $_SESSION['dupl_arr_' . $this->tree_id][$z] == $found2) {
+                    //unset($_SESSION['dupl_arr'][$z]) ;
+                    array_splice($_SESSION['dupl_arr_' . $this->tree_id], $z, 1);
+                }
+            }
+        }
+    }
+
+    private function buildResult($mode)
+    {
+        $results = [];
+        if ($mode != 'automatic' && $mode != 'relatives') {
+            $name1 = $this->leftPerson->pers_firstname . ' ' . $this->leftPerson->pers_lastname; // store for notification later
+            $name2 = $this->rightPerson->pers_firstname . ' ' . $this->rightPerson->pers_lastname; // store for notification later
+
+            $results['name1'] = $name1;
+            $results['name2'] = $name2;
+
+            $rela = explode(';', $this->relatives_merge);
+            $results['rela'] = count($rela) - 1;
+        }
+        return $results;
+    }
+
+    private function mergeVitalEvents($mode)
+    {
+        $eventManager = new EventManager($this->dbh, $this->tree_id);
 
         // PERSONAL DATA
         // default:
@@ -1313,7 +1571,10 @@ class TreeMergeModel extends AdminBaseModel
                 $this->dbh->query("DELETE FROM humo_events WHERE event_id = '" . $this->rightPerson->pers_buried_event_id . "'");
             }
         }
+    }
 
+    private function mergeOtherEventsAddressesSources($mode)
+    {
         // check for posted event, address and source items (separate functions below process input from comparison form)
         if ($mode != 'automatic') {
             // *** Merge events ***
@@ -1493,7 +1754,7 @@ class TreeMergeModel extends AdminBaseModel
                 }
             }
 
-            // Do same for sources and address (from connections table). no need here to differentiate between sources and addresses, all will be handled
+            // Do same for sources and addresses (from connections table). No need here to differentiate between sources and addresses, all will be handled
             $right_result = $this->dbh->query("SELECT * FROM humo_connections WHERE connect_tree_id='" . $this->tree_id . "' AND connect_connect_id ='" . $this->rightPerson->pers_gedcomnumber . "'");
             while ($right_resultDb = $right_result->fetch(PDO::FETCH_OBJ)) {
                 $left_result = $this->dbh->query("SELECT * FROM humo_connections WHERE connect_tree_id='" . $this->tree_id . "' AND connect_connect_id ='" . $this->leftPerson->pers_gedcomnumber . "'");
@@ -1513,10 +1774,17 @@ class TreeMergeModel extends AdminBaseModel
                 }
             }
         }
+    }
 
+    private function cleanupRightPersonReferences()
+    {
         // Substract 1 person from the number of persons counter in the family tree.
         $sql = "UPDATE humo_trees SET tree_persons=tree_persons-1 WHERE tree_id='" . $this->tree_id . "'";
         $this->dbh->query($sql);
+
+        // Nov. 2025: New added.
+        $qry = "DELETE FROM humo_relations_persons WHERE person_id = '" . $this->rightPerson->pers_id . "'";
+        $this->dbh->query($qry);
 
         // CLEANUP: delete this person's I from any other tables that refer to this person
         // *** TODO 2021: address_connect_xxxx is no longer in use. Will be removed later ***
@@ -1540,50 +1808,33 @@ class TreeMergeModel extends AdminBaseModel
         // Delete right person from humo_persons table
         $qry = "DELETE FROM humo_persons WHERE pers_id ='" . $this->rightPerson->pers_id . "'";
         $this->dbh->query($qry);
-
-        // Remove from the relatives-to-merge pairs in the database any pairs that contain the deleted right person
-        if (isset($this->relatives_merge)) {
-            $temp_rel_arr = explode(";", $this->relatives_merge);
-            $new_rel_string = '';
-            for ($x = 0; $x < count($temp_rel_arr); $x++) {
-                // one array piece is I354@I54. We DONT want to match "I35" or "I5" 
-                // so to make sure we find the complete number we look for I354@ or for I345;
-                if (
-                    strstr($temp_rel_arr[$x], $this->rightPerson->pers_gedcomnumber . "@") === false
-                    && strstr($temp_rel_arr[$x] . ";", $this->rightPerson->pers_gedcomnumber . ";") === false
-                ) {
-                    $new_rel_string .= $temp_rel_arr[$x] . ";";
-                }
-            }
-            $this->relatives_merge = substr($new_rel_string, 0, -1); // take off last ;
-            $this->db_functions->update_settings('rel_merge_' . $this->tree_id, $this->relatives_merge);
-        }
-
-        if (isset($_SESSION['dupl_arr_' . $this->tree_id])) {
-            //remove this pair from the dupl_arr array
-            $found1 = $this->leftPerson->pers_id . ';' . $this->rightPerson->pers_id;
-            $found2 = $this->rightPerson->pers_id . ';' . $this->leftPerson->pers_id;
-            for ($z = 0; $z < count($_SESSION['dupl_arr_' . $this->tree_id]); $z++) {
-                if ($_SESSION['dupl_arr_' . $this->tree_id][$z] == $found1 or $_SESSION['dupl_arr_' . $this->tree_id][$z] == $found2) {
-                    //unset($_SESSION['dupl_arr'][$z]) ;
-                    array_splice($_SESSION['dupl_arr_' . $this->tree_id], $z, 1);
-                }
-            }
-        }
-
-        $results = [];
-        if ($mode != 'automatic' && $mode != 'relatives') {
-            $name1 = $this->leftPerson->pers_firstname . ' ' . $this->leftPerson->pers_lastname; // store for notification later
-            $name2 = $this->rightPerson->pers_firstname . ' ' . $this->rightPerson->pers_lastname; // store for notification later
-
-            $results['name1'] = $name1;
-            $results['name2'] = $name2;
-
-            $rela = explode(';', $this->relatives_merge);
-            $results['rela'] = count($rela) - 1;
-        }
-        return $results;
     }
+
+    // *** Nov. 2025 refactor functions ***
+    private function loadPersons(int $leftId, int $rightId): array
+    {
+        $left = $this->db_functions->get_person_with_id($leftId);
+        $right = $this->db_functions->get_person_with_id($rightId);
+
+        if (!$left || !$right) {
+            throw new \RuntimeException('Person not found for merge.');
+        }
+
+        // Preload vital events (birth, baptism, death, burial) to set event_id shortcuts
+        //$this->enrichWithEventIds($left);
+        //$this->enrichWithEventIds($right);
+
+        return [$left, $right];
+    }
+
+    private function loadRelations(): array
+    {
+        $leftRelations = $this->db_functions->get_relations($this->leftPerson->pers_id);
+        $rightRelations = $this->db_functions->get_relations($this->rightPerson->pers_id);
+
+        return [$leftRelations, $rightRelations];
+    }
+
 
     /**
      * function check_regular checks if data from the humo_person table was marked (checked) in the comparison table
