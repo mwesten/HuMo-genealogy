@@ -16,6 +16,8 @@ class Router
         ['path' => 'ancestor_sheet_pdf', 'title' => 'Ancestor sheet', 'page' => 'ancestor_sheet_pdf', 'vars' => 'select_tree_id,id'],
         ['path' => 'ancestor_sheet', 'title' => 'Ancestor sheet', 'page' => 'ancestor_sheet', 'vars' => 'select_tree_id,id'],
         ['path' => 'anniversary', 'title' => 'Birthday calendar', 'page' => 'anniversary'],
+        ['path' => 'chat_genealogy_api', 'title' => 'Chat Genealogy API', 'page' => 'chat_genealogy_api'],
+        ['path' => 'chat_genealogy', 'title' => 'Chat Genealogy', 'page' => 'chat_genealogy'],
         ['path' => 'cms_pages', 'title' => 'Information', 'page' => 'cms_pages', 'vars' => 'id'],
         ['path' => 'cookies', 'title' => 'Cookie information', 'page' => 'cookies'],
         ['path' => 'descendant_report', 'title' => 'Descendants', 'page' => 'family', 'vars' => 'select_tree_id,id'],

@@ -191,7 +191,6 @@ if (isset($_POST['loc_delete2']) && is_numeric($_POST['location_id'])) {
             $index_locations = $_SESSION['add_locations'];
         }
 
-        //foreach ($_SESSION['add_locations'] as $value) {
         foreach ($index_locations as $value) {
             $count_parsed++;
             //if($count_parsed<110 OR $count_parsed > 125) continue;
@@ -217,22 +216,9 @@ if (isset($_POST['loc_delete2']) && is_numeric($_POST['location_id'])) {
                     $stmt->bindValue(':lat', $latitude, PDO::PARAM_STR);
                     $stmt->bindValue(':lng', $longitude, PDO::PARAM_STR);
                     $stmt->execute();
-                    /*
-                    } else {
-                        $stmt = $dbh->prepare("INSERT INTO humo_location (location_location, location_lat, location_lng) VALUES (:location, :lat, :lng)");
-                        $stmt->bindValue(':location', $value, PDO::PARAM_STR);
-                        $stmt->bindValue(':lat', $latitude, PDO::PARAM_STR);
-                        $stmt->bindValue(':lng', $longitude, PDO::PARAM_STR);
-                        $stmt->execute();
-                    }
-                    */
 
                     sleep(1);
                 } else {
-                    //echo $json->status.'!! ';
-                    //$map_notfound_array[] = $json_output['status'] . ' - ' . $value;
-                    //$map_count_notfound++;
-
                     $stmt = $dbh->prepare("UPDATE humo_location SET location_status = 'failed' WHERE location_location = :location");
                     $stmt->bindValue(':location', $value, PDO::PARAM_STR);
                     $stmt->execute();
@@ -521,7 +507,12 @@ if (isset($_POST['loc_delete2']) && is_numeric($_POST['location_id'])) {
 
                         if (!isset($_POST['cancel_change']) && ($pos !== false || isset($_POST['yes_change']))) {
                             // the name in pulldown appears in the name in the search box
-                            $stmt = $dbh->prepare("UPDATE humo_location SET location_location = :location_location, location_lat = :location_lat, location_lng = :location_lng WHERE location_id = :location_id");
+                            $stmt = $dbh->prepare("UPDATE humo_location
+                                SET location_location = :location_location,
+                                location_lat = :location_lat,
+                                location_lng = :location_lng,
+                                location_status = NULL
+                                WHERE location_id = :location_id");
                             $stmt->bindValue(':location_location', $_POST['location_location'], PDO::PARAM_STR);
                             $stmt->bindValue(':location_lat', floatval($_POST['location_lat']));
                             $stmt->bindValue(':location_lng', floatval($_POST['location_lng']));
@@ -567,7 +558,12 @@ if (isset($_POST['loc_delete2']) && is_numeric($_POST['location_id'])) {
                             $stmt->execute();
                             */
                         } elseif (is_numeric($_POST['location_id'])) {
-                            $stmt = $dbh->prepare("UPDATE humo_location SET location_location = :location_location, location_lat = :location_lat, location_lng = :location_lng WHERE location_id = :location_id");
+                            $stmt = $dbh->prepare("UPDATE humo_location
+                                SET location_location = :location_location,
+                                location_lat = :location_lat,
+                                location_lng = :location_lng,
+                                location_status = NULL
+                                WHERE location_id = :location_id");
                             $stmt->bindValue(':location_location', $_POST['add_name'], PDO::PARAM_STR);
                             $stmt->bindValue(':location_lat', floatval($_POST['location_lat']));
                             $stmt->bindValue(':location_lng', floatval($_POST['location_lng']));

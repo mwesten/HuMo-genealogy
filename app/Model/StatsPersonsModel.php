@@ -106,6 +106,7 @@ class StatsPersonsModel extends BaseModel
                     $latest_man_bap_date = $manbapdate;
                     $latest_man_bap_ged = $persstatDb->pers_gedcomnumber;
                 }
+
                 if ($persstatDb->pers_death_date != "" && ($persstatDb->pers_birth_date != "" || $persstatDb->pers_bapt_date != "")) {
                     $man_age = $livingcalc->calculate_age($persstatDb->pers_bapt_date, $persstatDb->pers_birth_date, $persstatDb->pers_death_date, true);
                     if ($man_age && $man_age >= 0 && $man_age < 120) {
@@ -116,7 +117,8 @@ class StatsPersonsModel extends BaseModel
                             $longest_living_man = $man_age;
                             $longest_living_man_ged = $persstatDb->pers_gedcomnumber;
                         }
-                        if ($persstatDb->pers_fams != '') {
+                        $relations = $this->db_functions->get_relations($persstatDb->pers_id);
+                        if (count($relations) > 0) {
                             $total_age_man_marr += $man_age;
                             $man_age_count_marr++;
                             if ($man_age > $statistics['longest_living_man_marr']) {
@@ -170,7 +172,8 @@ class StatsPersonsModel extends BaseModel
                             $longest_living_woman = $woman_age;
                             $longest_living_woman_ged = $persstatDb->pers_gedcomnumber;
                         }
-                        if ($persstatDb->pers_fams != '') {
+                        $relations = $this->db_functions->get_relations($persstatDb->pers_id);
+                        if (count($relations) > 0) {
                             $total_age_woman_marr += $woman_age;
                             $woman_age_count_marr++;
                             if ($woman_age > $statistics['longest_living_woman_marr']) {

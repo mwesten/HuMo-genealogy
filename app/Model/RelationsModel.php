@@ -15,6 +15,8 @@ class RelationsModel extends BaseModel
 
     private $search_name1 = '', $search_name2 = '';
     private $search_gednr1 = '', $search_gednr2 = '';
+    private $relations1 = array(), $relations2 = array();
+    private $searchId1 = 0, $searchId2 = 0;
     private $start_calculation = false, $search_results = false;
 
     private $link1, $link2;
@@ -208,35 +210,43 @@ class RelationsModel extends BaseModel
         // calculate or switch button is pressed
         if ((isset($_POST["calculator"]) || isset($_POST["switch"])) && $this->relation["person1"] && $this->relation["person2"]) {
             $searchDb = $this->db_functions->get_person($this->relation["person1"]);
+
+            $this->relations1 = $this->db_functions->get_relations($searchDb->pers_id);
+
             if (isset($searchDb)) {
+                $this->searchId1 = $searchDb->pers_id;
                 $this->relation['gednr1'] = $searchDb->pers_gedcomnumber;
                 $privacy = $personPrivacy->get_privacy($searchDb);
                 $name = $personName->get_person_name($searchDb, $privacy);
                 $this->relation['name1'] = $name["name"];
                 $this->relation['sexe1'] = $searchDb->pers_sexe;
             }
-            if ($searchDb->pers_fams) {
-                $this->relation['fams1'] = $searchDb->pers_fams;
-                $this->fams1_array = explode(";", $this->relation['fams1']);
-                $this->relation['family_id1'] = $this->fams1_array[0];
+
+            $first_relation = $this->db_functions->get_first_relation($searchDb->pers_id);
+            if (isset($first_relation)) {
+                $this->relation['family_id1'] = $first_relation->person_gedcomnumber;
             } else {
-                $this->relation['family_id1'] = $searchDb->pers_famc;
+                $this->relation['family_id1'] = $searchDb->parent_relation_gedcomnumber;
             }
 
             $searchDb2 = $this->db_functions->get_person($this->relation["person2"]);
+
+            $this->relations2 = $this->db_functions->get_relations($searchDb2->pers_id);
+
             if (isset($searchDb2)) {
+                $this->searchId2 = $searchDb->pers_id;
                 $this->relation['gednr2'] = $searchDb2->pers_gedcomnumber;
                 $privacy = $personPrivacy->get_privacy($searchDb2);
                 $name = $personName->get_person_name($searchDb2, $privacy);
                 $this->relation['name2'] = $name["name"];
                 $this->relation['sexe2'] = $searchDb2->pers_sexe;
             }
-            if ($searchDb2->pers_fams) {
-                $this->relation['fams2'] = $searchDb2->pers_fams;
-                $this->fams2_array = explode(";", $this->relation['fams2']);
-                $this->relation['family_id2'] = $this->fams2_array[0];
+
+            $first_relation = $this->db_functions->get_first_relation($searchDb2->pers_id);
+            if ($first_relation) {
+                $this->relation['family_id2'] = $first_relation->person_gedcomnumber;
             } else {
-                $this->relation['family_id2'] = $searchDb2->pers_famc;
+                $this->relation['family_id2'] = $searchDb2->parent_relation_gedcomnumber;
             }
         }
     }
@@ -357,20 +367,14 @@ class RelationsModel extends BaseModel
         $firstcall2 = array();
         $firstcall2[0] = $this->relation["person2"] . "@fst@fst@fst" . $this->relation["person2"];
 
-        //$total_arr = array();
-
         if (isset($_POST["extended"]) && !isset($_POST["next_path"])) {
             $_SESSION["couple"] = '';
             // session[couple] flags that persons A & B are a couple. consequences: 
             // 1. don't display that (has already been done in regular calculator)
             // 2. in the extended_calculator function don't search thru the fam of the couple, since this gives errors.
-            $pers1Db = $this->db_functions->get_person($this->relation["person1"]);
-            $pers2Db = $this->db_functions->get_person($this->relation["person2"]);
-            if (isset($pers1Db->pers_fams) && isset($pers2Db->pers_fams)) {
-                $fam1 = explode(";", $pers1Db->pers_fams);
-                $fam2 = explode(";", $pers2Db->pers_fams);
-                foreach ($fam1 as $value1) {
-                    foreach ($fam2 as $value2) {
+            if (isset($this->relations1) && isset($this->relations2)) {
+                foreach ($this->relations1 as $value1) {
+                    foreach ($this->relations2 as $value2) {
                         if ($value1 === $value2) {
                             $_SESSION["couple"] = $value1;
                         }
@@ -378,7 +382,6 @@ class RelationsModel extends BaseModel
                 }
             }
         }
-        //$relation['global_array'] = array();
 
         $this->extended_calculator($firstcall1, $firstcall2);
     }
@@ -439,7 +442,8 @@ class RelationsModel extends BaseModel
             $kwcount = count($ancestor_id);
             for ($i = 0; $i < $kwcount; $i++) {
                 if ($ancestor_id[$i] != '0') {
-                    $person_manDb = $this->db_functions->get_person($ancestor_id[$i], 'famc-fams');
+                    // TODO replace with: get_parents_relation function.
+                    $person_manDb = $this->db_functions->get_person($ancestor_id[$i], 'parentrelation');
                     /*
                     $personPrivacy = new PersonPrivacy();
                     $man_privacy=$personPrivacy->get_privacy($person_manDb);
@@ -448,7 +452,7 @@ class RelationsModel extends BaseModel
 
                         // *** Use privacy filter of woman ***
                         $person_womanDb=$this->db_functions->get_person();
-                        $woman_privacy=$personPrivacy->get_privacy($familyDb->fam_woman);
+                        $woman_privacy=$personPrivacy->get_privacy($familyDb->partner2_gedcomnumber);
 
                         $marriage_cls = new MarriageCls($familyDb, $man_privacy, $woman_privacy);
                         $family_privacy=$marriage_cls->get_privacy();
@@ -461,22 +465,22 @@ class RelationsModel extends BaseModel
                     $genarray_count++; // increase by one
 
                     // *** Check for parents ***
-                    if ($person_manDb->pers_famc && !in_array($person_manDb->pers_famc, $trackfamc)) {
-                        $trackfamc[] = $person_manDb->pers_famc;
+                    if (isset($person_manDb->parent_relation_gedcomnumber) && !in_array($person_manDb->parent_relation_gedcomnumber, $trackfamc)) {
+                        $trackfamc[] = $person_manDb->parent_relation_gedcomnumber;
 
-                        $familyDb = $this->db_functions->get_family($person_manDb->pers_famc, 'man-woman');
-                        if ($familyDb->fam_man) {
-                            $ancestor_id2[] = $familyDb->fam_man;
+                        $familyDb = $this->db_functions->get_family_partners($person_manDb->parent_relation_id);
+                        if ($familyDb->partner1_gedcomnumber) {
+                            $ancestor_id2[] = $familyDb->partner1_gedcomnumber;
                             $ancestor_number2[] = (2 * $ancestor_number[$i]);
-                            $marriage_number2[] = $person_manDb->pers_famc;
+                            $marriage_number2[] = $person_manDb->parent_relation_gedcomnumber;
                             $genarray[][2] = $genarray_count - 1;
                             // save array nr of child in parent array so we can build up ancestral line later
                         }
 
-                        if ($familyDb->fam_woman) {
-                            $ancestor_id2[] = $familyDb->fam_woman;
+                        if ($familyDb->partner2_gedcomnumber) {
+                            $ancestor_id2[] = $familyDb->partner2_gedcomnumber;
                             $ancestor_number2[] = (2 * $ancestor_number[$i] + 1);
-                            $marriage_number2[] = $person_manDb->pers_famc;
+                            $marriage_number2[] = $person_manDb->parent_relation_gedcomnumber;
                             $genarray[][2] = $genarray_count - 1;
                             // save array nr of child in parent array so we can build up ancestral line later
                         }
@@ -3434,11 +3438,10 @@ class RelationsModel extends BaseModel
         $personName = new PersonName();
         $privacy = new PersonPrivacy();
 
-        if ($this->relation['fams1'] != '') {
-            $marrcount = count($this->fams1_array);
-            for ($x = 0; $x < $marrcount; $x++) {
-                $familyDb = $this->db_functions->get_family($this->fams1_array[$x], 'man-woman');
-                $thespouse = $this->relation['sexe1'] == 'F' ? $familyDb->fam_man : $familyDb->fam_woman;
+        if (isset($relation)) {
+            foreach ($this->relations1 as $relation) {
+                $familyDb = $this->db_functions->get_family_with_id($relation->relation_id, 'man-woman');
+                $thespouse = $this->relation['sexe1'] == 'F' ? $familyDb->partner1_gedcomnumber : $familyDb->partner2_gedcomnumber;
 
                 $this->rel_arrayspouseX = $this->create_rel_array($thespouse);
 
@@ -3447,7 +3450,7 @@ class RelationsModel extends BaseModel
                 }
 
                 if ($this->relation['foundX_match'] !== '') {
-                    $this->relation['famspouseX'] = $this->fams1_array[$x];
+                    $this->relation['famspouseX'] = $relation->relation_gedcomnumber;
 
                     $this->relation['sexe1'] = $this->relation['sexe1'] == 'M' ? "f" : "m"; // we have to switch sex since the spouse is the relative!
                     $this->calculate_rel();
@@ -3462,12 +3465,11 @@ class RelationsModel extends BaseModel
             }
         }
 
-        if ($this->relation['foundX_match'] === '' && $this->relation['fams2'] != '') {
+        if ($this->relation['foundX_match'] === '' && isset($this->relations2)) {
             // no match found between "spouse of X" && "Y", let's try "X" with "spouse of "Y"
-            $ymarrcount = count($this->fams2_array);
-            for ($x = 0; $x < $ymarrcount; $x++) {
-                $familyDb = $this->db_functions->get_family($this->fams2_array[$x], 'man-woman');
-                $thespouse2 = $this->relation['sexe2'] == 'F' ? $familyDb->fam_man : $familyDb->fam_woman;
+            foreach ($this->relations2 as $relation) {
+                $familyDb = $this->db_functions->get_family_with_id($relation->relation_id, 'man-woman');
+                $thespouse2 = $this->relation['sexe2'] == 'F' ? $familyDb->partner1_gedcomnumber : $familyDb->partner2_gedcomnumber;
 
                 $this->rel_arrayspouseY = $this->create_rel_array($thespouse2);
 
@@ -3475,7 +3477,7 @@ class RelationsModel extends BaseModel
                     $this->compare_rel_array($this->rel_arrayX, $this->rel_arrayspouseY, 2); // "2" flags comparison with "spouse of Y"
                 }
                 if ($this->relation['foundX_match'] !== '') {
-                    $this->relation['famspouseY'] = $this->fams2_array[$x];
+                    $this->relation['famspouseY'] = $relation->relation_gedcomnumber;
                     $this->calculate_rel();
                     $spouseidDb = $this->db_functions->get_person($thespouse2);
                     $privacy = $privacy->get_privacy($spouseidDb);
@@ -3486,18 +3488,16 @@ class RelationsModel extends BaseModel
             }
         }
 
-        if ($this->relation['foundX_match'] === '' && $this->relation['fams1'] != '' && $this->relation['fams2'] != '') {
+        if ($this->relation['foundX_match'] === '' && isset($this->relations1) && isset($this->relations2)) {
             // still no matches, let's try comparison of "spouse of X" with "spouse of Y"
-            $xmarrcount = count($this->fams1_array);
-            $ymarrcount = count($this->fams2_array);
-            for ($x = 0; $x < $xmarrcount; $x++) {
-                for ($y = 0; $y < $ymarrcount; $y++) {
-                    $familyDb = $this->db_functions->get_family($this->fams1_array[$x], 'man-woman');
-                    $thespouse = $this->relation['sexe1'] == 'F' ? $familyDb->fam_man : $familyDb->fam_woman;
+            foreach ($this->relations1 as $relation1) {
+                foreach ($this->relations2 as $relation2) {
+                    $familyDb = $this->db_functions->get_family_with_id($relation1->relation_id, 'man-woman');
+                    $thespouse = $this->relation['sexe1'] == 'F' ? $familyDb->partner1_gedcomnumber : $familyDb->partner2_gedcomnumber;
 
                     $this->rel_arrayspouseX = $this->create_rel_array($thespouse);
-                    $familyDb = $this->db_functions->get_family($this->fams2_array[$y], 'man-woman');
-                    $thespouse2 = $this->relation['sexe2'] == 'F' ? $familyDb->fam_man : $familyDb->fam_woman;
+                    $familyDb = $this->db_functions->get_family_with_id($relation2->relation_id, 'man-woman');
+                    $thespouse2 = $this->relation['sexe2'] == 'F' ? $familyDb->partner1_gedcomnumber : $familyDb->partner2_gedcomnumber;
 
                     $this->rel_arrayspouseY = $this->create_rel_array($thespouse2);
 
@@ -3519,8 +3519,8 @@ class RelationsModel extends BaseModel
                         $name = $personName->get_person_name($spouseidDb, $privacy_spouse2);
                         $this->relation['spousenameY'] = $name["name"];
 
-                        $this->relation['famspouseX'] = $this->fams1_array[$x];
-                        $this->relation['famspouseY'] = $this->fams2_array[$y];
+                        $this->relation['famspouseX'] = $relation1->relation_gedcomnumber;
+                        $this->relation['famspouseY'] = $relation2->relation_gedcomnumber;
 
                         break;
                     }
@@ -3575,57 +3575,58 @@ class RelationsModel extends BaseModel
                 $this->globaltrack .= $persDb->pers_gedcomnumber . "@";
             }
             // find parents
-            if (isset($persDb->pers_famc) && $persDb->pers_famc != "" && $refer !== "par") {
-                $famcDb = $this->db_functions->get_family($persDb->pers_famc);
+            if (isset($persDb->parent_relation_gedcomnumber) && $persDb->parent_relation_gedcomnumber != "" && $refer !== "par") {
+                $famcDb = $this->db_functions->get_family($persDb->parent_relation_gedcomnumber);
                 if ($famcDb == false) {
                     //echo __('No such family');
                     $this->show_extended_message = __('No such family');
                     return;
                 }
 
-                if (isset($famcDb->fam_man) && $famcDb->fam_man != "" && $famcDb->fam_man != "0" && strpos($this->globaltrack, $famcDb->fam_man . "@") === false) {
-                    if (strpos($_SESSION['next_path'], $famcDb->fam_man . "@") === false) {
-                        $work_array[] = $famcDb->fam_man . "@chd@" . $persged . ";" . $persDb->pers_famc . "@" . $pathway . ";" . "chd" . $famcDb->fam_man;
-                        $this->relation['global_array'][] = $famcDb->fam_man . "@chd@" . $persged . ";" . $persDb->pers_famc . "@" . $pathway . ";" . "chd" . $famcDb->fam_man;
+                if (isset($famcDb->partner1_gedcomnumber) && $famcDb->partner1_gedcomnumber != "" && $famcDb->partner1_gedcomnumber != "0" && strpos($this->globaltrack, $famcDb->partner1_gedcomnumber . "@") === false) {
+                    if (strpos($_SESSION['next_path'], $famcDb->partner1_gedcomnumber . "@") === false) {
+                        $work_array[] = $famcDb->partner1_gedcomnumber . "@chd@" . $persged . ";" . $persDb->parent_relation_gedcomnumber . "@" . $pathway . ";" . "chd" . $famcDb->partner1_gedcomnumber;
+                        $this->relation['global_array'][] = $famcDb->partner1_gedcomnumber . "@chd@" . $persged . ";" . $persDb->parent_relation_gedcomnumber . "@" . $pathway . ";" . "chd" . $famcDb->partner1_gedcomnumber;
                     }
                     $this->count++;
-                    $this->globaltrack .= $famcDb->fam_man . "@";
+                    $this->globaltrack .= $famcDb->partner1_gedcomnumber . "@";
                 }
-                if (isset($famcDb->fam_woman) && $famcDb->fam_woman != "" && $famcDb->fam_woman != "0" && strpos($this->globaltrack, $famcDb->fam_woman . "@") === false) {
-                    if (strpos($_SESSION['next_path'], $famcDb->fam_woman . "@") === false) {
-                        $work_array[] = $famcDb->fam_woman . "@chd@" . $persged . ";" . $persDb->pers_famc . "@" . $pathway . ";" . "chd" . $famcDb->fam_woman;
-                        $this->relation['global_array'][] = $famcDb->fam_woman . "@chd@" . $persged . ";" . $persDb->pers_famc . "@" . $pathway . ";" . "chd" . $famcDb->fam_woman;
+                if (isset($famcDb->partner2_gedcomnumber) && $famcDb->partner2_gedcomnumber != "" && $famcDb->partner2_gedcomnumber != "0" && strpos($this->globaltrack, $famcDb->partner2_gedcomnumber . "@") === false) {
+                    if (strpos($_SESSION['next_path'], $famcDb->partner2_gedcomnumber . "@") === false) {
+                        $work_array[] = $famcDb->partner2_gedcomnumber . "@chd@" . $persged . ";" . $persDb->parent_relation_gedcomnumber . "@" . $pathway . ";" . "chd" . $famcDb->partner2_gedcomnumber;
+                        $this->relation['global_array'][] = $famcDb->partner2_gedcomnumber . "@chd@" . $persged . ";" . $persDb->parent_relation_gedcomnumber . "@" . $pathway . ";" . "chd" . $famcDb->partner2_gedcomnumber;
                     }
                     $this->count++;
-                    $this->globaltrack .= $famcDb->fam_woman . "@";
+                    $this->globaltrack .= $famcDb->partner2_gedcomnumber . "@";
                 }
             }
 
-            if (isset($persDb->pers_fams) && $persDb->pers_fams != "") {
-                $famsarray = explode(";", $persDb->pers_fams);
+            $relations = $this->db_functions->get_relations($persDb->pers_id);
+            if (isset($relations)) {
+                foreach ($relations as $relation) {
+                    if ($refer === "spo" && $relation === $callged) {
+                        continue;
+                    }
+                    if ($refer === "fst" && $_SESSION['couple'] == $relation) {
+                        continue;
+                    }
+                    $relationDb = $this->db_functions->get_family_with_id($relation->relation_id);
+                    if ($refer === "chd" && $relationDb->partner2_gedcomnumber == $persDb->pers_gedcomnumber && isset($relationDb->partner1_gedcomnumber) && $relationDb->partner1_gedcomnumber != "" && $relationDb->fam_gedcomnumber == $callarray[1]) {
+                        continue;
+                    }
 
-                foreach ($famsarray as $value) {
-                    if ($refer === "spo" && $value === $callged) {
-                        continue;
-                    }
-                    if ($refer === "fst" && $_SESSION['couple'] == $value) {
-                        continue;
-                    }
-                    $famsDb = $this->db_functions->get_family($value);
-                    if ($refer === "chd" && $famsDb->fam_woman == $persDb->pers_gedcomnumber && isset($famsDb->fam_man) && $famsDb->fam_man != "" && $famsDb->fam_gedcomnumber == $callarray[1]) {
-                        continue;
-                    }
                     // find children
-                    if (isset($famsDb->fam_children) && $famsDb->fam_children != "") {
-                        $childarray = explode(";", $famsDb->fam_children);
-                        foreach ($childarray as $value) {
-                            if ($refer === "chd" && $callarray[0] === $value) {
+                    $children = $this->db_functions->get_children($relationDb->fam_id);
+                    if ($children) {
+                        // TODO refactor
+                        foreach ($children as $child) {
+                            if ($refer === "chd" && $callarray[0] === $child->person_gedcomnumber) {
                                 continue;
                             }
-                            if (strpos($this->globaltrack, $value . "@") === false) {
-                                if (strpos($_SESSION['next_path'], $value . "@") === false) {
-                                    $work_array[] = $value . "@par@" . $persged . "@" . $pathway . ";" . "par" . $value;
-                                    $this->relation['global_array'][] = $value . "@par@" . $persged . "@" . $pathway . ";" . "par" . $value;
+                            if (strpos($this->globaltrack, $child->person_gedcomnumber . "@") === false) {
+                                if (strpos($_SESSION['next_path'], $child->person_gedcomnumber . "@") === false) {
+                                    $work_array[] = $child->person_gedcomnumber . "@par@" . $persged . "@" . $pathway . ";" . "par" . $child->person_gedcomnumber;
+                                    $this->relation['global_array'][] = $child->person_gedcomnumber . "@par@" . $persged . "@" . $pathway . ";" . "par" . $child->person_gedcomnumber;
                                 }
                                 $this->count++;
                                 $this->globaltrack .= $value . "@";
@@ -3633,35 +3634,36 @@ class RelationsModel extends BaseModel
                         }
                     }
                 }
+
                 // find spouses
-                foreach ($famsarray as $value) {
-                    if ($refer === "chd" && $value === $callarray[1]) {
+                foreach ($relations as $relation) {
+                    if ($refer === "chd" && $relation === $callarray[1]) {
                         continue;
                     }
-                    if ($refer === "spo" && $value === $callged) {
+                    if ($refer === "spo" && $relation === $callged) {
                         continue;
                     }
-                    if ($refer === "fst" && $_SESSION['couple'] == $value) {
+                    if ($refer === "fst" && $_SESSION['couple'] == $relation) {
                         continue;
                     }
-                    $famsDb = $this->db_functions->get_family($value);
-                    if ($famsDb->fam_man == $persDb->pers_gedcomnumber) {
-                        if (isset($famsDb->fam_woman) && $famsDb->fam_woman != "" && $famsDb->fam_woman != "0" && strpos($this->globaltrack, $famsDb->fam_woman . "@") === false) {
-                            if (strpos($_SESSION['next_path'], $famsDb->fam_woman . "@") === false) {
-                                $work_array[] = $famsDb->fam_woman . "@spo@" . $value . "@" . $pathway . ";" . "spo" . $famsDb->fam_woman;
-                                $this->relation['global_array'][] = $famsDb->fam_woman . "@spo@" . $value . "@" . $pathway . ";" . "spo" . $famsDb->fam_woman;
+                    $famsDb = $this->db_functions->get_family_with_id($relation->relation_id);
+                    if ($famsDb->partner1_gedcomnumber == $persDb->pers_gedcomnumber) {
+                        if (isset($famsDb->partner2_gedcomnumber) && $famsDb->partner2_gedcomnumber != "" && $famsDb->partner2_gedcomnumber != "0" && strpos($this->globaltrack, $famsDb->partner2_gedcomnumber . "@") === false) {
+                            if (strpos($_SESSION['next_path'], $famsDb->partner2_gedcomnumber . "@") === false) {
+                                $work_array[] = $famsDb->partner2_gedcomnumber . "@spo@" . $value . "@" . $pathway . ";" . "spo" . $famsDb->partner2_gedcomnumber;
+                                $this->relation['global_array'][] = $famsDb->partner2_gedcomnumber . "@spo@" . $value . "@" . $pathway . ";" . "spo" . $famsDb->partner2_gedcomnumber;
                             }
                             $this->count++;
-                            $this->globaltrack .= $famsDb->fam_woman . "@";
+                            $this->globaltrack .= $famsDb->partner2_gedcomnumber . "@";
                         }
                     } else {
-                        if (isset($famsDb->fam_man) && $famsDb->fam_man != "" && $famsDb->fam_man != "0" && strpos($this->globaltrack, $famsDb->fam_man . "@") === false) {
-                            if (strpos($_SESSION['next_path'], $famsDb->fam_man . "@") === false) {
-                                $work_array[] = $famsDb->fam_man . "@spo@" . $value . "@" . $pathway . ";" . "spo" . $famsDb->fam_man;
-                                $this->relation['global_array'][] = $famsDb->fam_man . "@spo@" . $value . "@" . $pathway . ";" . "spo" . $famsDb->fam_man;
+                        if (isset($famsDb->partner1_gedcomnumber) && $famsDb->partner1_gedcomnumber != "" && $famsDb->partner1_gedcomnumber != "0" && strpos($this->globaltrack, $famsDb->partner1_gedcomnumber . "@") === false) {
+                            if (strpos($_SESSION['next_path'], $famsDb->partner1_gedcomnumber . "@") === false) {
+                                $work_array[] = $famsDb->partner1_gedcomnumber . "@spo@" . $value . "@" . $pathway . ";" . "spo" . $famsDb->partner1_gedcomnumber;
+                                $this->relation['global_array'][] = $famsDb->partner1_gedcomnumber . "@spo@" . $value . "@" . $pathway . ";" . "spo" . $famsDb->partner1_gedcomnumber;
                             }
                             $this->count++;
-                            $this->globaltrack .= $famsDb->fam_man . "@";
+                            $this->globaltrack .= $famsDb->partner1_gedcomnumber . "@";
                         }
                     }
                 }
@@ -3697,130 +3699,131 @@ class RelationsModel extends BaseModel
                 $this->globaltrack2 .= $persDb->pers_gedcomnumber . "@";
             }
 
-            if (isset($persDb->pers_famc) && $persDb->pers_famc != "" && $refer !== "par") {
-                $famcDb = $this->db_functions->get_family($persDb->pers_famc);
+            if (isset($persDb->parent_relation_gedcomnumber) && $persDb->parent_relation_gedcomnumber != "" && $refer !== "par") {
+                $famcDb = $this->db_functions->get_family($persDb->parent_relation_gedcomnumber);
                 if ($famcDb == false) {
                     //echo __('No such family');
                     $this->show_extended_message = __('No such family');
                     return;
                 }
-                if (isset($famcDb->fam_man) && $famcDb->fam_man != "" && $famcDb->fam_man != "0") {
-                    $var1 = strpos($_SESSION['next_path'], $famcDb->fam_man . "@");
-                    if (strpos($this->globaltrack, $famcDb->fam_man . "@") !== false && $var1 === false) {
-                        $this->totalpath = $this->ext_calc_join_path($this->relation['global_array'], $pathway, $famcDb->fam_man, "chd");
-                        $_SESSION['next_path'] .= $famcDb->fam_man . "@";
+                if (isset($famcDb->partner1_gedcomnumber) && $famcDb->partner1_gedcomnumber != "" && $famcDb->partner1_gedcomnumber != "0") {
+                    $var1 = strpos($_SESSION['next_path'], $famcDb->partner1_gedcomnumber . "@");
+                    if (strpos($this->globaltrack, $famcDb->partner1_gedcomnumber . "@") !== false && $var1 === false) {
+                        $this->totalpath = $this->ext_calc_join_path($this->relation['global_array'], $pathway, $famcDb->partner1_gedcomnumber, "chd");
+                        $_SESSION['next_path'] .= $famcDb->partner1_gedcomnumber . "@";
                         //ext_calc_display_result($this->totalpath, $this->db_functions, $this->relation);
                         // TODO: return isn't used?
-                        return ($famcDb->fam_man);
+                        return ($famcDb->partner1_gedcomnumber);
                     }
-                    if (strpos($this->globaltrack2, $famcDb->fam_man . "@") === false) {
+                    if (strpos($this->globaltrack2, $famcDb->partner1_gedcomnumber . "@") === false) {
                         if ($var1 === false) {
-                            $work_array2[] = $famcDb->fam_man . "@chd@" . $persged . ";" . $persDb->pers_famc . "@" . $pathway . ";" . "chd" . $famcDb->fam_man;
+                            $work_array2[] = $famcDb->partner1_gedcomnumber . "@chd@" . $persged . ";" . $persDb->parent_relation_gedcomnumber . "@" . $pathway . ";" . "chd" . $famcDb->partner1_gedcomnumber;
                         }
                         $this->count++;
-                        $this->globaltrack2 .= $famcDb->fam_man . "@";
+                        $this->globaltrack2 .= $famcDb->partner1_gedcomnumber . "@";
                     }
                 }
-                if (isset($famcDb->fam_woman) && $famcDb->fam_woman != "" && $famcDb->fam_woman != "0") {
-                    $var2 = strpos($_SESSION['next_path'], $famcDb->fam_woman . "@");
-                    if (strpos($this->globaltrack, $famcDb->fam_woman . "@") !== false && $var2 === false) {
-                        $this->totalpath = $this->ext_calc_join_path($this->relation['global_array'], $pathway, $famcDb->fam_woman, "chd");
-                        $_SESSION['next_path'] .= $famcDb->fam_woman . "@";
+                if (isset($famcDb->partner2_gedcomnumber) && $famcDb->partner2_gedcomnumber != "" && $famcDb->partner2_gedcomnumber != "0") {
+                    $var2 = strpos($_SESSION['next_path'], $famcDb->partner2_gedcomnumber . "@");
+                    if (strpos($this->globaltrack, $famcDb->partner2_gedcomnumber . "@") !== false && $var2 === false) {
+                        $this->totalpath = $this->ext_calc_join_path($this->relation['global_array'], $pathway, $famcDb->partner2_gedcomnumber, "chd");
+                        $_SESSION['next_path'] .= $famcDb->partner2_gedcomnumber . "@";
                         //ext_calc_display_result($this->totalpath, $this->db_functions, $this->relation);
                         // TODO: return isn't used?
-                        return ($famcDb->fam_woman);
+                        return ($famcDb->partner2_gedcomnumber);
                     }
-                    if (strpos($this->globaltrack2, $famcDb->fam_woman . "@") === false) {
+                    if (strpos($this->globaltrack2, $famcDb->partner2_gedcomnumber . "@") === false) {
                         if ($var2 === false) {
-                            $work_array2[] = $famcDb->fam_woman . "@chd@" . $persged . ";" . $persDb->pers_famc . "@" . $pathway . ";" . "chd" . $famcDb->fam_woman;
+                            $work_array2[] = $famcDb->partner2_gedcomnumber . "@chd@" . $persged . ";" . $persDb->parent_relation_gedcomnumber . "@" . $pathway . ";" . "chd" . $famcDb->partner2_gedcomnumber;
                         }
                         $this->count++;
-                        $this->globaltrack2 .= $famcDb->fam_woman . "@";
+                        $this->globaltrack2 .= $famcDb->partner2_gedcomnumber . "@";
                     }
                 }
             }
 
-            if (isset($persDb->pers_fams) && $persDb->pers_fams != "") {
-                $famsarray = explode(";", $persDb->pers_fams);
-                foreach ($famsarray as $value) {
-                    if ($refer === "spo" && $value === $callged) {
+            $relations = $this->db_functions->get_relations($persDb->pers_id);
+            if (isset($relations)) {
+                foreach ($relations as $relation) {
+                    if ($refer === "spo" && $relation->relation_gedcomnumber === $callged) {
                         continue;
                     }
-                    if ($refer === "fst" && $_SESSION['couple'] == $value) {
+                    if ($refer === "fst" && $_SESSION['couple'] == $relation->relation_gedcomnumber) {
                         continue;
                     }
-                    $famsDb = $this->db_functions->get_family($value);
-                    if ($refer === "chd" && $famsDb->fam_woman == $persDb->pers_gedcomnumber && isset($famsDb->fam_man) && $famsDb->fam_man != "" && $famsDb->fam_gedcomnumber == $callarray[1]) {
+                    $famsDb = $this->db_functions->get_family($relation);
+                    if ($refer === "chd" && $famsDb->partner2_gedcomnumber == $persDb->pers_gedcomnumber && isset($famsDb->partner1_gedcomnumber) && $famsDb->partner1_gedcomnumber != "" && $famsDb->fam_gedcomnumber == $callarray[1]) {
                         continue;
                     }
-                    if (isset($famsDb->fam_children) && $famsDb->fam_children != "") {
-                        $childarray = explode(";", $famsDb->fam_children);
-                        foreach ($childarray as $value) {
-                            if ($refer === "chd" && $callarray[0] === $value) {
+                    $children = $this->db_functions->get_children($famsDb->fam_id);
+                    if ($children) {
+                        foreach ($children as $child) {
+                            if ($refer === "chd" && $callarray[0] === $child->person_gedcomnumber) {
                                 continue;
                             }
-                            $var3 = strpos($_SESSION['next_path'], $value . "@");
-                            if (strpos($this->globaltrack, $value . "@") !== false && $var3 === false) {
-                                $this->totalpath = $this->ext_calc_join_path($this->relation['global_array'], $pathway, $value, "par");
-                                $_SESSION['next_path'] .= $value . "@";
+                            $var3 = strpos($_SESSION['next_path'], $child->person_gedcomnumber . "@");
+                            if (strpos($this->globaltrack, $child->person_gedcomnumber . "@") !== false && $var3 === false) {
+                                $this->totalpath = $this->ext_calc_join_path($this->relation['global_array'], $pathway, $child->person_gedcomnumber, "par");
+                                $_SESSION['next_path'] .= $child->person_gedcomnumber . "@";
                                 //ext_calc_display_result($this->totalpath, $this->db_functions, $this->relation);
-                                return ($value);
+                                return ($child->person_gedcomnumber);
                             }
-                            if (strpos($this->globaltrack2, $value . "@") === false) {
+                            if (strpos($this->globaltrack2, $child->person_gedcomnumber . "@") === false) {
                                 if ($var3 === false) {
-                                    $work_array2[] = $value . "@par@" . $persged . "@" . $pathway . ";" . "par" . $value;
+                                    $work_array2[] = $child->person_gedcomnumber . "@par@" . $persged . "@" . $pathway . ";" . "par" . $child->person_gedcomnumber;
                                 }
                                 $this->count++;
-                                $this->globaltrack2 .= $value . "@";
+                                $this->globaltrack2 .= $child->person_gedcomnumber . "@";
                             }
                         }
                     }
                 }
-                foreach ($famsarray as $value) {
-                    if ($refer === "chd" && $value === $callarray[1]) {
+
+                foreach ($relations as $relation) {
+                    if ($refer === "chd" && $relation->relation_gedcomnumber === $callarray[1]) {
                         continue;
                     }
-                    if ($refer === "spo" && $value === $callged) {
+                    if ($refer === "spo" && $relation->relation_gedcomnumber === $callged) {
                         continue;
                     }
-                    if ($refer === "fst" && $_SESSION['couple'] == $value) {
+                    if ($refer === "fst" && $_SESSION['couple'] == $relation->relation_gedcomnumber) {
                         continue;
                     }
-                    $famsDb = $this->db_functions->get_family($value);
-                    if ($famsDb->fam_man == $persDb->pers_gedcomnumber) {
-                        if (isset($famsDb->fam_woman) && $famsDb->fam_woman != "" && $famsDb->fam_woman != "0") {
-                            $var4 = strpos($_SESSION['next_path'], $famsDb->fam_woman . "@");
-                            if (strpos($this->globaltrack, $famsDb->fam_woman . "@") !== false && $var4 === false) {
-                                $this->totalpath = $this->ext_calc_join_path($this->relation['global_array'], $pathway, $famsDb->fam_woman, "spo");
-                                $_SESSION['next_path'] .= $famsDb->fam_woman . "@";
+                    $famsDb = $this->db_functions->get_family($relation->relation_gedcomnumber);
+                    if ($famsDb->partner1_gedcomnumber == $persDb->pers_gedcomnumber) {
+                        if (isset($famsDb->partner2_gedcomnumber) && $famsDb->partner2_gedcomnumber != "" && $famsDb->partner2_gedcomnumber != "0") {
+                            $var4 = strpos($_SESSION['next_path'], $famsDb->partner2_gedcomnumber . "@");
+                            if (strpos($this->globaltrack, $famsDb->partner2_gedcomnumber . "@") !== false && $var4 === false) {
+                                $this->totalpath = $this->ext_calc_join_path($this->relation['global_array'], $pathway, $famsDb->partner2_gedcomnumber, "spo");
+                                $_SESSION['next_path'] .= $famsDb->partner2_gedcomnumber . "@";
                                 //ext_calc_display_result($this->totalpath, $this->db_functions, $this->relation);
                                 // TODO: return isn't used?
-                                return ($famsDb->fam_woman);
+                                return ($famsDb->partner2_gedcomnumber);
                             }
-                            if (strpos($this->globaltrack2, $famsDb->fam_woman . "@") === false) {
+                            if (strpos($this->globaltrack2, $famsDb->partner2_gedcomnumber . "@") === false) {
                                 if ($var4 === false) {
-                                    $work_array2[] = $famsDb->fam_woman . "@spo@" . $value . "@" . $pathway . ";" . "spo" . $famsDb->fam_woman;
+                                    $work_array2[] = $famsDb->partner2_gedcomnumber . "@spo@" . $relation->relation_gedcomnumber . "@" . $pathway . ";" . "spo" . $famsDb->partner2_gedcomnumber;
                                 }
                                 $this->count++;
-                                $this->globaltrack2 .= $famsDb->fam_woman . "@";
+                                $this->globaltrack2 .= $famsDb->partner2_gedcomnumber . "@";
                             }
                         }
-                    } elseif ($famsDb->fam_woman == $persDb->pers_gedcomnumber) {
-                        if (isset($famsDb->fam_man) && $famsDb->fam_man != "" && $famsDb->fam_man != "0") {
-                            $var5 = strpos($_SESSION['next_path'], $famsDb->fam_man . "@");
-                            if (strpos($this->globaltrack, $famsDb->fam_man . "@") !== false && $var5 === false) {
-                                $this->totalpath = $this->ext_calc_join_path($this->relation['global_array'], $pathway, $famsDb->fam_man, "spo");
-                                $_SESSION['next_path'] .= $famsDb->fam_man . "@";
+                    } elseif ($famsDb->partner1_gedcomnumber == $persDb->pers_gedcomnumber) {
+                        if (isset($famsDb->partner2_gedcomnumber) && $famsDb->partner2_gedcomnumber != "" && $famsDb->partner2_gedcomnumber != "0") {
+                            $var5 = strpos($_SESSION['next_path'], $famsDb->partner2_gedcomnumber . "@");
+                            if (strpos($this->globaltrack, $famsDb->partner1_gedcomnumber . "@") !== false && $var5 === false) {
+                                $this->totalpath = $this->ext_calc_join_path($this->relation['global_array'], $pathway, $famsDb->partner1_gedcomnumber, "spo");
+                                $_SESSION['next_path'] .= $famsDb->partner1_gedcomnumber . "@";
                                 //ext_calc_display_result($this->totalpath, $this->db_functions, $this->relation);
                                 // TODO: return isn't used?
-                                return ($famsDb->fam_man);
+                                return ($famsDb->partner2_gedcomnumber);
                             }
-                            if (strpos($this->globaltrack2, $famsDb->fam_man . "@") === false) {
+                            if (strpos($this->globaltrack2, $famsDb->partner2_gedcomnumber . "@") === false) {
                                 if ($var5 === false) {
-                                    $work_array2[] = $famsDb->fam_man . "@spo@" . $value . "@" . $pathway . ";" . "spo" . $famsDb->fam_man;
+                                    $work_array2[] = $famsDb->partner2_gedcomnumber . "@spo@" . $relation->relation_gedcomnumber . "@" . $pathway . ";" . "spo" . $famsDb->partner2_gedcomnumber;
                                 }
                                 $this->count++;
-                                $this->globaltrack2 .= $famsDb->fam_man . "@";
+                                $this->globaltrack2 .= $famsDb->partner2_gedcomnumber . "@";
                             }
                         }
                     }

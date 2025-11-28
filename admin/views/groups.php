@@ -25,6 +25,12 @@ if (!isset($field['group_menu_cms'])) {
     $sql = "ALTER TABLE humo_groups ADD group_menu_cms VARCHAR(1) CHARACTER SET utf8 NOT NULL DEFAULT 'y' AFTER group_menu_login;";
     $dbh->query($sql);
 }
+
+if (!isset($field['group_menu_chat'])) {
+    $sql = "ALTER TABLE humo_groups ADD group_menu_chat VARCHAR(1) CHARACTER SET utf8 NOT NULL DEFAULT 'n' AFTER group_menu_cms;";
+    $dbh->query($sql);
+}
+
 if (!isset($field['group_show_age_living_person'])) {
     $sql = "ALTER TABLE humo_groups ADD group_show_age_living_person VARCHAR(1) CHARACTER SET utf8 NOT NULL DEFAULT 'y' AFTER group_maps_presentation;";
     $dbh->query($sql);
@@ -115,7 +121,7 @@ $groupDb = $groupresult->fetch(PDO::FETCH_OBJ);
 
         <tr>
             <td><?= __('Save statistics data'); ?></td>
-            <td><input type="checkbox" name="group_statistics" class="form-check-input" <?php if ($groupDb->group_statistics != 'n') echo ' checked' ?>></td>
+            <td><input type="checkbox" name="group_statistics" class="form-check-input" <?= $groupDb->group_statistics != 'n' ? 'checked' : ''; ?>></td>
         </tr>
 
         <tr class="table-primary">
@@ -125,57 +131,62 @@ $groupDb = $groupresult->fetch(PDO::FETCH_OBJ);
 
         <tr>
             <td><?= __('Birthday RSS in main menu'); ?></td>
-            <td><input type="checkbox" name="group_birthday_rss" class="form-check-input" <?php if ($groupDb->group_birthday_rss != 'n') echo ' checked'; ?>></td>
+            <td><input type="checkbox" name="group_birthday_rss" class="form-check-input" <?= $groupDb->group_birthday_rss != 'n' ? 'checked' : ''; ?>></td>
         </tr>
 
         <tr>
             <td><?= __('INFORMATION menu: show "CMS" pages'); ?></td>
-            <td><input type="checkbox" name="group_menu_cms" class="form-check-input" <?php if ($groupDb->group_menu_cms != 'n') echo ' checked'; ?>></td>
+            <td><input type="checkbox" name="group_menu_cms" class="form-check-input" <?= $groupDb->group_menu_cms != 'n' ? 'checked' : ''; ?>></td>
+        </tr>
+
+        <tr>
+            <td><?= __('Chat menu: show "Chat Genealogy" page'); ?></td>
+            <td><input type="checkbox" name="group_menu_chat" class="form-check-input" <?= $groupDb->group_menu_chat != 'n' ? 'checked' : ''; ?>></td>
         </tr>
 
         <tr>
             <td><?= __('FAMILY TREE menu: show "Persons" submenu'); ?></td>
-            <td><input type="checkbox" name="group_menu_persons" class="form-check-input" <?php if ($groupDb->group_menu_persons != 'n') echo ' checked'; ?>></td>
+            <td><input type="checkbox" name="group_menu_persons" class="form-check-input" <?= $groupDb->group_menu_persons != 'n' ? 'checked' : ''; ?>></td>
         </tr>
 
         <tr>
             <td><?= __('FAMILY TREE menu: show "Names" submenu'); ?></td>
-            <td><input type="checkbox" name="group_menu_names" class="form-check-input" <?php if ($groupDb->group_menu_names != 'n') echo ' checked'; ?>></td>
+            <td><input type="checkbox" name="group_menu_names" class="form-check-input" <?= $groupDb->group_menu_names != 'n' ? 'checked' : ''; ?>></td>
         </tr>
 
         <tr>
             <td><?= __('FAMILY TREE menu: show "Places" submenu'); ?></td>
-            <td><input type="checkbox" name="group_menu_places" class="form-check-input" <?php if ($groupDb->group_menu_places != 'n') echo ' checked'; ?>></td>
+            <td><input type="checkbox" name="group_menu_places" class="form-check-input" <?= $groupDb->group_menu_places != 'n' ? 'checked' : ''; ?>></td>
         </tr>
 
         <tr>
             <td><?= __('FAMILY TREE menu: show "Addresses" submenu (only shown if there really are addresses)'); ?></td>
-            <td><input type="checkbox" name="group_addresses" class="form-check-input" <?php if ($groupDb->group_addresses != 'n') echo ' checked'; ?>></td>
+            <td><input type="checkbox" name="group_addresses" class="form-check-input" <?= $groupDb->group_addresses != 'n' ? 'checked' : ''; ?>></td>
         </tr>
 
         <tr>
             <td><?= __('FAMILY TREE menu: show "Photobook" submenu'); ?></td>
-            <td><input type="checkbox" name="group_photobook" class="form-check-input" <?php if ($groupDb->group_photobook != 'n') echo ' checked'; ?>></td>
+            <td><input type="checkbox" name="group_photobook" class="form-check-input" <?= $groupDb->group_photobook != 'n' ? 'checked' : ''; ?>></td>
         </tr>
 
         <tr>
             <td><?= __('TOOLS menu: show "Anniversary" (birthday list) submenu'); ?></td>
-            <td><input type="checkbox" name="group_birthday_list" class="form-check-input" <?php if ($groupDb->group_birthday_list != 'n') echo ' checked'; ?>></td>
+            <td><input type="checkbox" name="group_birthday_list" class="form-check-input" <?= $groupDb->group_birthday_list != 'n' ? 'checked' : ''; ?>></td>
         </tr>
 
         <tr>
             <td><?= __('TOOLS menu: show "Statistics" submenu'); ?></td>
-            <td><input type="checkbox" name="group_showstatistics" class="form-check-input" <?php if ($groupDb->group_showstatistics != 'n') echo ' checked'; ?>></td>
+            <td><input type="checkbox" name="group_showstatistics" class="form-check-input" <?= $groupDb->group_showstatistics != 'n' ? 'checked' : ''; ?>></td>
         </tr>
 
         <tr>
             <td><?= __('TOOLS menu: show "Relationship Calculator" submenu'); ?></td>
-            <td><input type="checkbox" name="group_relcalc" class="form-check-input" <?php if ($groupDb->group_relcalc != 'n') echo ' checked'; ?>></td>
+            <td><input type="checkbox" name="group_relcalc" class="form-check-input" <?= $groupDb->group_relcalc != 'n' ? 'checked' : ''; ?>></td>
         </tr>
 
         <tr>
             <td><?= __('TOOLS menu: show "Google maps" submenu (only shown if geolocation database was created)'); ?></td>
-            <td><input type="checkbox" name="group_googlemaps" class="form-check-input" <?php if ($groupDb->group_googlemaps != 'n') echo ' checked'; ?>></td>
+            <td><input type="checkbox" name="group_googlemaps" class="form-check-input" <?= $groupDb->group_googlemaps != 'n' ? 'checked' : ''; ?>></td>
         </tr>
 
         <tr>

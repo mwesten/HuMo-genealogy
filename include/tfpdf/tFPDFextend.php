@@ -933,7 +933,7 @@ class tFPDFextend extends tFPDF
      */
     private function PDFShowSources($value): void
     {
-        global $data, $font_size, $user, $pdf_footnotes;
+        global $data, $font_size, $user, $pdf_footnotes, $pdf_source_array;
 
         // *** May 2021: moved these lines into this function ***
         $data["source_presentation"] = 'title';
@@ -948,9 +948,6 @@ class tFPDFextend extends tFPDF
         if ($data["source_presentation"] == 'footnote') {
             // "1)" as link to list at end of doc
             $footnote_nr_array = explode('~', $value);
-            //TEST
-            //$this->Write(6,$value);
-            //$this->Write(6,'SOURCE_1_TEST');
             foreach ($footnote_nr_array as $footnote_nr) {
                 $ofs = 0;
                 if (is_numeric($footnote_nr)) {
@@ -959,7 +956,82 @@ class tFPDFextend extends tFPDF
                 if ($ofs >= 0 && isset($pdf_footnotes[$ofs])) {
                     // is footnote to source from general source list
                     $this->SetTextColor(28, 28, 255);
-                    $this->subWrite(6, ' ' . $footnote_nr . ')', $pdf_footnotes[$ofs], 9, 4);
+                    //$this->subWrite(6, ' ' . $footnote_nr . ')', $pdf_footnotes[$ofs], 9, 4);
+                    $this->Write(6, ' [' . $footnote_nr . ']', $pdf_footnotes[$ofs]);
+                    $this->SetTextColor(0);
+
+                    // *** Show source citation ***
+                    if ($pdf_source_array['connect_role'][$ofs] || $pdf_source_array['connect_page'][$ofs] || (isset($pdf_source_array['source_repo_page'][$ofs]) && $pdf_source_array['source_repo_page'][$ofs]) || $pdf_source_array['connect_text'][$ofs] || $pdf_source_array['connect_date_place'][$ofs]) {
+                        $startCitation = true;
+                        $this->SetFont($this->pdf_font, '', 10);
+                        $this->Write(6, ' ' . __('Source citation') . ': ');
+                        $startCitation = false;
+                    }
+
+                    // Show date and place
+                    if ($pdf_source_array['connect_date_place'][$ofs]) {
+                        if (!$startCitation) {
+                            $startCitation = true;
+                        } else {
+                            $this->Write(6, ', ');
+                        }
+                        $this->SetFont($this->pdf_font, '', 10);
+                        $this->Write(6, $pdf_source_array['connect_date_place'][$ofs]);
+                    }
+
+                    // Show extra source text
+                    if ($pdf_source_array['connect_text'][$ofs]) {
+                        if (!$startCitation) {
+                            $startCitation = true;
+                        } else {
+                            $this->Write(6, ', ');
+                        }
+                        //$this->SetFont($this->pdf_font, 'B', 10);
+                        //$this->Write(6, __('extra text'));
+                        //$this->SetFont($this->pdf_font, '', 10);
+                        //$this->Write(6, ': ' . nl2br($pdf_source_array['connect_text'][$ofs]));
+                        $this->SetFont($this->pdf_font, 'I', 10);
+                        $this->Write(6, nl2br($pdf_source_array['connect_text'][$ofs]));
+                    }
+
+                    // Source role
+                    if ($pdf_source_array['connect_role'][$ofs]) {
+                        if (!$startCitation) {
+                            $startCitation = true;
+                        } else {
+                            $this->Write(6, ', ');
+                        }
+                        $this->SetFont($this->pdf_font, 'B', 10);
+                        $this->Write(6, __('role'));
+                        $this->SetFont($this->pdf_font, '', 10);
+                        $this->Write(6, ': ' . $pdf_source_array['connect_role'][$ofs]);
+                    }
+
+                    // Source page (connection table)
+                    if ($pdf_source_array['connect_page'][$ofs]) {
+                        if (!$startCitation) {
+                            $startCitation = true;
+                        } else {
+                            $this->Write(6, ', ');
+                        }
+                        $this->SetFont($this->pdf_font, 'B', 10);
+                        $this->Write(6, __('page'));
+                        $this->SetFont($this->pdf_font, '', 10);
+                        $this->Write(6, ': ' . $pdf_source_array['connect_page'][$ofs]);
+                    }
+
+                    // Page by source
+                    if (isset($pdf_source_array['source_repo_page'][$ofs]) && $pdf_source_array['source_repo_page'][$ofs]) {
+                        if (!$startCitation) {
+                            $startCitation = true;
+                        } else {
+                            $this->Write(6, ', ');
+                        }
+                        $this->SetFont($this->pdf_font, 'B', 10);
+                        $this->Write(6, __('page'));
+                        $this->SetFont($this->pdf_font, '', 10);
+                        $this->Write(6, ': ' . $pdf_source_array['source_repo_page'][$ofs]);
+                    }
                 } else {
                     // "manual" source list as regular non-clickable text
                     $this->SetTextColor(0);

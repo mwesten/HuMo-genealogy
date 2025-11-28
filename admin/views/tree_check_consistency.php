@@ -328,40 +328,34 @@ if (isset($_POST['mark_all'])) {
                 $bu_date = $personDb->pers_buried_date;
             }
 
-            // marriage(s) dates and spouses birth date
-            if (isset($personDb->pers_fams)) {
-                $marr_dates = array(); // marriage dates array
-                $marr_notice_dates = array(); // marriage notice dates array
-                $marr_church_dates = array(); // marriage church dates array
-                $marr_church_notice_dates = array(); // marriage church notice dates array
+            // Marriage(s) dates and spouses birth date
+            $relations = $db_functions->get_relations($personDb->pers_id);
+            if (isset($relations)) {
+                $marr_dates = array();
+                $marr_notice_dates = array();
+                $marr_church_dates = array();
+                $marr_church_notice_dates = array();
                 $spouse_dates = array(); // array of spouse birth dates
-                $marr_array = array(); // array of marriage gedcomnumbers
-                $spouse = "fam_woman";
-                if ($personDb->pers_sexe == "F") {
-                    $spouse = "fam_man";
-                }
-                $marr_array = explode(';', $personDb->pers_fams);
-                $counter = count($marr_array);
 
-                for ($x = 0; $x < $counter; $x++) {
-                    $marriagesDb = $db_functions->get_family($marr_array[$x]);
+                foreach ($relations as $relation) {
+                    $marriagesDb = $db_functions->get_family_with_id($relation->relation_id);
 
                     if ($marriagesDb !== false) {
-                        $marr_dates[$x] = $marriagesDb->fam_marr_date;
-                        $marr_notice_dates[$x] = $marriagesDb->fam_marr_notice_date;
-                        $marr_church_dates[$x] = $marriagesDb->fam_marr_church_date;
-                        $marr_church_notice_dates[$x] = $marriagesDb->fam_marr_church_notice_date;
+                        $marr_dates[] = $marriagesDb->fam_marr_date;
+                        $marr_notice_dates[] = $marriagesDb->fam_marr_notice_date;
+                        $marr_church_dates[] = $marriagesDb->fam_marr_church_date;
+                        $marr_church_notice_dates[] = $marriagesDb->fam_marr_church_notice_date;
                         if ($personDb->pers_sexe == "F") {
                             $spouses = $dbh->query("SELECT event_date AS pers_birth_date FROM humo_events 
                                 WHERE event_tree_id='" . $tree_id . "' 
                                 AND event_kind='birth' 
-                                AND event_connect_id='" . $marriagesDb->fam_man . "' 
+                                AND event_connect_id='" . $marriagesDb->partner1_gedcomnumber . "' 
                                 LIMIT 1");
                         } else {
                             $spouses = $dbh->query("SELECT event_date AS pers_birth_date FROM humo_events 
                                 WHERE event_tree_id='" . $tree_id . "' 
                                 AND event_kind='birth' 
-                                AND event_connect_id='" . $marriagesDb->fam_woman . "' 
+                                AND event_connect_id='" . $marriagesDb->partner2_gedcomnumber . "' 
                                 LIMIT 1");
                         }
                         $spousesDb = $spouses->fetch(PDO::FETCH_OBJ);
@@ -380,11 +374,8 @@ if (isset($_POST['mark_all'])) {
             $m_fams = ''; // marriage(s) of mother (to find previous sibling)
             $m_fams_arr = array(); // marriage(s) array of mother (to find previous sibling)
 
-            if (isset($personDb->pers_famc)) {
-                //$parents = $dbh->query("SELECT fam_gedcomnumber, fam_man, fam_woman, fam_children, fam_marr_date, fam_marr_church_date, fam_marr_notice_date, fam_relation_date
-                //    FROM humo_families WHERE fam_tree_id='" . $tree_id . "' AND fam_gedcomnumber ='" . $personDb->pers_famc . "'");
-                //$parentsDb = $parents->fetch(PDO::FETCH_OBJ);
-                $parentsDb = $db_functions->get_family($personDb->pers_famc);
+            if (isset($personDb->parent_relation_id)) {
+                $parentsDb = $db_functions->get_family_with_id($personDb->parent_relation_id);
                 //NEW - find parents wedding date
                 if (isset($parentsDb->fam_marr_date)) {
                     $par_marr_date = $parentsDb->fam_marr_date;
@@ -399,31 +390,31 @@ if (isset($_POST['mark_all'])) {
                     $par_marr_date = $parentsDb->fam_relation_date;
                 }
 
-                if (isset($parentsDb->fam_woman)) {
-                    //$mother = $dbh->query("SELECT pers_birth_date, pers_fams FROM humo_persons
-                    //    WHERE pers_tree_id='" . $tree_id . "' AND pers_gedcomnumber = '" . $parentsDb->fam_woman . "'");
-                    //$motherDb = $mother->fetch(PDO::FETCH_OBJ);
-                    $motherDb = $db_functions->get_person($parentsDb->fam_woman);
+                if (isset($parentsDb->partner2_gedcomnumber)) {
+                    $motherDb = $db_functions->get_person($parentsDb->partner2_gedcomnumber);
                     if (isset($motherDb->pers_birth_date)) {
                         $m_b_date = $motherDb->pers_birth_date;
                     }
-                    if (isset($motherDb->pers_fams)) {
-                        $m_fams = $motherDb->pers_fams; // needed for sibling search
-                        $m_fams_arr = explode(";", $m_fams);
+                    $motherRelations = $db_functions->get_relations($motherDb->pers_id);
+                    if (isset($motherRelations) && count($motherRelations) > 0) {
+                        foreach ($motherRelations as $motherRelation) {
+                            $m_fams_arr[] = $motherRelation->relation_gedcomnumber;
+                        }
                     }
                 }
-                if (isset($parentsDb->fam_man)) {
-                    //$father = $dbh->query("SELECT pers_birth_date FROM humo_persons 
-                    //    WHERE pers_tree_id='" . $tree_id . "' AND pers_gedcomnumber = '" . $parentsDb->fam_man . "'");
-                    //$fatherDb = $father->fetch(PDO::FETCH_OBJ);
-                    $fatherDb = $db_functions->get_person($parentsDb->fam_man);
+                if (isset($parentsDb->partner1_gedcomnumber)) {
+                    $fatherDb = $db_functions->get_person($parentsDb->partner1_gedcomnumber);
                     if (isset($fatherDb->pers_birth_date)) {
                         $f_b_date = $fatherDb->pers_birth_date;
                     }
                 }
                 //NEW - find previous born sibling
-                if (isset($parentsDb->fam_children)) {
-                    $ch_array = explode(";", $parentsDb->fam_children);
+                $children = $db_functions->get_children($parentsDb->fam_id);
+                // TODO refactor
+                foreach ($children as $child) {
+                    $ch_array[] = $child->person_gedcomnumber;
+                }
+                if (isset($ch_array)) {
                     $num_ch = count($ch_array); // number of children
                     $first_ch = 0;
                     if ($num_ch > 1) {
@@ -435,9 +426,6 @@ if (isset($_POST['mark_all'])) {
                         if ($count > 0) {
                             // person is not first child
                             $prev_sib_gednr = $ch_array[$count - 1]; // gedcomnumber of previous sibling
-                            //$sib = $dbh->query("SELECT pers_birth_date FROM humo_persons
-                            //    WHERE pers_tree_id='" . $tree_id . "' AND pers_gedcomnumber ='" . $prev_sib_gednr . "' AND pers_birth_date NOT LIKE ''");
-                            //$sibDb = $sib->fetch(PDO::FETCH_OBJ);
 
                             $sibDb = $db_functions->get_person($prev_sib_gednr);
 
@@ -445,8 +433,8 @@ if (isset($_POST['mark_all'])) {
                                 $sib_b_date = $sibDb->pers_birth_date;
                             }
                         } elseif ($count === 0) {
-                            $first_ch = 1;
-                        }    // this is first child in own fam
+                            $first_ch = 1; // this is first child in own fam
+                        }
                     }
                     // if this only or first child in this marriage - look for previous marriage of mother
                     if (($num_ch == 1 or $first_ch == 1) && (isset($m_fams_arr) && count($m_fams_arr) > 1 && $m_fams_arr[0] != $parentsDb->fam_gedcomnumber)) {
@@ -456,11 +444,14 @@ if (isset($_POST['mark_all'])) {
                             $count++;
                         }
                         $prev_marr_ged = $m_fams_arr[$count - 1];
-                        $prev_marr = $dbh->query("SELECT * FROM humo_families
-                                WHERE fam_tree_id='" . $tree_id . "' AND fam_gedcomnumber='" . $prev_marr_ged . "' AND fam_children NOT LIKE ''");
-                        $prev_marrDb = $prev_marr->fetch(PDO::FETCH_OBJ);
-                        if (isset($prev_marrDb->fam_children)) {
-                            $prev_ch_arr = explode(";", $prev_marrDb->fam_children);
+                        $prev_marrDb = $db_functions->get_family($prev_marr_ged);
+                        $children = $db_functions->get_children($prev_marrDb->fam_id);
+                        if ($children !== false) {
+                            foreach ($children as $child) {
+                                $prev_ch_arr[] = $child->person_gedcomnumber;
+                            }
+                        }
+                        if (isset($prev_ch_arr)) {
                             $prev_ch_num = count($prev_ch_arr);
                             $prev_ch_ged = $prev_ch_arr[$prev_ch_num - 1]; // last child
 
@@ -474,13 +465,12 @@ if (isset($_POST['mark_all'])) {
             }
 
             if (
-                $b_date == '' && $bp_date == '' && $d_date == '' && $bu_date == '' && $m_b_date == '' && $f_b_date == '' && !isset($personDb->pers_fams)
+                $b_date == '' && $bp_date == '' && $d_date == '' && $bu_date == '' && $m_b_date == '' && $f_b_date == '' && (!isset($relations) || count($relations) == 0)
             ) {
                 continue; // if no relevant dates at all - don't bother - move to next person
             }
 
             if ($b_date != '') {
-
                 // ID 1 -  Birth date - after bapt/marr/death/burial date
                 if (isset($_POST["birth_date1"]) && $_POST["birth_date1"] == "1") {
                     if ($bp_date != '' && compare_seq($b_date, $bp_date) == "2") {
@@ -616,7 +606,7 @@ if (isset($_POST['mark_all'])) {
                 }
             }  // end if bp_date!=''
 
-            if (isset($personDb->pers_fams)) {
+            if (isset($relations) && count($relations) > 0) {
                 // ID 13 - Marriage date after death/burial date
                 if (isset($_POST["marriage_date1"]) and $_POST["marriage_date1"] == "1") {
                     for ($i = 0; $i < count($marr_dates); $i++) {
@@ -712,7 +702,7 @@ if (isset($_POST['mark_all'])) {
                         }
                     }
                 }
-            } // end if pers_fams
+            }
 
             if ($d_date != '') {
                 // ID 16 - Death date after burial date

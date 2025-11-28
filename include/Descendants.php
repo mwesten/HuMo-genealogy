@@ -36,6 +36,7 @@ class Descendants
         return $this->descendant_id;
     }
 
+    // TODO: at this moment $family_id = family gedcomnumber.
     public function get_descendants($family_id, $main_person, $nr_generations)
     {
         global $db_functions;
@@ -48,58 +49,58 @@ class Descendants
             return;
         }
 
-        // TODO check this function. Could be improved.
-
         // *** Count marriages of main person (man) ***
-        $familyDb = $db_functions->get_family($family_id, 'man-woman');
-        $parent1 = '';
+        $family = $db_functions->get_family($family_id);
+        $fam_id = '';
+        //if ($family && isset($family->fam_gedcomnumber)) {
+        if ($family && isset($family->fam_id)) {
+            $fam_id = $family->fam_id;
+        }
+
+        //$familyDb = $db_functions->get_family_partners($family_id);
+        $familyDb = $db_functions->get_family_partners($fam_id);
+        $parent1_id = '';
         // *** Standard main_person is the father ***
-        if ($familyDb->fam_man) {
-            $parent1 = $familyDb->fam_man;
+        if ($familyDb->partner1_id) {
+            $parent1_id = $familyDb->partner1_id;
         }
         // *** If mother is selected, mother will be main_person ***
-        if ($familyDb->fam_woman == $main_person) {
-            $parent1 = $familyDb->fam_woman;
+        if ($familyDb->partner2_id == $main_person) {
+            $parent1_id = $familyDb->partner2_id;
         }
 
         // *** Check family with parent1: N.N. ***
-        $nr_families = 0;
-        if ($parent1) {
-            // *** Save family of person in array ***
-            $personDb = $db_functions->get_person($parent1, 'famc-fams');
-            $marriage_array = explode(";", $personDb->pers_fams);
-            $nr_families = substr_count($personDb->pers_fams, ";");
+        if ($parent1_id) {
+            $relations = $db_functions->get_relations($parent1_id);
         }
 
         // *** Loop multiple marriages of main_person ***
-        for ($parent1_marr = 0; $parent1_marr <= $nr_families; $parent1_marr++) {
-            $familyDb = $db_functions->get_family($marriage_array[$parent1_marr]);
+        foreach ($relations as $relation) {
+            $familyDb = $db_functions->get_family($relation->relation_id);
             // *** Progen: onecht kind, vrouw zonder man ***
             //if ($familyDb->fam_kind!='PRO-GEN'){
             //  $family_nr++;
             //}
 
+            if (!$familyDb || !isset($familyDb->fam_id)) {
+                continue;
+            }
+
             /**
              * Children
              */
-            if ($familyDb->fam_children) {
-                $child_array = explode(";", $familyDb->fam_children);
-                foreach ($child_array as $i => $value) {
-                    $childDb = $db_functions->get_person($child_array[$i], 'famc-fams');
-                    if ($childDb->pers_fams) {
-                        // *** 1st family of child ***
-                        $child_family = explode(";", $childDb->pers_fams);
-                        $child1stfam = $child_family[0];
+            $children = $db_functions->get_children($familyDb->fam_id);
+            if ($children) {
+                foreach ($children as $child) {
+                    // *** Get 1st family of child ***
+                    $relations = $db_functions->get_first_relation($child->person_id);
+                    if (isset($relations->relation_id) && $relations->relation_id) {
                         // *** Recursive, process ancestors of child ***
-                        $this->get_descendants($child1stfam, $child_array[$i], $nr_generations);
+                        $this->get_descendants($relations->relation_gedcomnumber, $child->person_gedcomnumber, $nr_generations);
                     } else {
                         // *** Child without own family ***
                         $this->descendant_id++;
-                        //$this->descendant_array[$this->descendant_id] = $childDb->pers_gedcomnumber;
-                        $this->descendant_array[$this->descendant_id] = $child_array[$i];
-                        //if($nr_generations>=$this->generation_number) {
-                        //	$childgn=$this->generation_number+1;
-                        //}
+                        $this->descendant_array[$this->descendant_id] = $child->person_gedcomnumber;
                     }
                 }
             }

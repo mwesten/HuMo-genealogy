@@ -66,7 +66,7 @@ if (isset($_POST['duplicate_compare'])) {
                 <form method="post" action="index.php?page=tree&amp;menu_admin=tree_merge" style="display: inline;">
                     <div class="input-group">
                         <input type="hidden" name="tree_id" value="<?= $trees['tree_id']; ?>">
-                        <select style="max-width:60px" name="choice_nr" class="form-select form-select-sm">
+                        <select style="max-width:80px" name="choice_nr" class="form-select form-select-sm">
                             <?php for ($x = 0; $x < count($_SESSION['dupl_arr_' . $trees['tree_id']]); $x++) { ?>
                                 <option value="<?= $x; ?>" <?= $x == $_SESSION['present_compare_' . $trees['tree_id']] ? 'selected' : ''; ?>><?= ($x + 1); ?></option>
                             <?php } ?>

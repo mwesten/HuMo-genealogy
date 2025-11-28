@@ -148,14 +148,13 @@ if ($search_quicksearch_man != '') {
 }
 
 $editor_cls = new \Genealogy\Include\Editor_cls;
-//$DbFunctions = new \Genealogy\Include\DbFunctions;
 
 if ($_GET['person_item'] != 'add_partner' && substr($_GET['person_item'], 0, 10) !== 'add_child_') {
     while ($person2 = $person_result->fetch(PDO::FETCH_OBJ)) {
         $person = $db_functions->get_person_with_id($person2->pers_id);
         echo '<a href="" onClick=\'return select_item("' . $person->pers_gedcomnumber . '")\'>' . $editor_cls->show_selected_person($person) . '</a>';
-        if ($person->pers_famc) {
-            echo ' (' . __('Parents') . ' ' . $person->pers_famc . ')';
+        if ($person->parent_relation_gedcomnumber) {
+            echo ' (' . __('Parents') . ' ' . $person->parent_relation_gedcomnumber . ')';
         }
         echo '<br>';
     }

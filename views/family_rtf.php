@@ -194,38 +194,31 @@ else {
             $parent2 = '';
             $swap_parent1_parent2 = false;
             // *** Standard main person is the father ***
-            if ($familyDb->fam_man) {
-                $parent1 = $familyDb->fam_man;
+            if ($familyDb->partner1_gedcomnumber) {
+                $parent1 = $familyDb->partner1_gedcomnumber;
             }
             // *** After clicking the mother, the mother is main person ***
-            if ($familyDb->fam_woman == $data["main_person"]) {
-                $parent1 = $familyDb->fam_woman;
+            if ($familyDb->partner2_gedcomnumber == $data["main_person"]) {
+                $parent1 = $familyDb->partner2_gedcomnumber;
                 $swap_parent1_parent2 = true;
             }
 
             // *** Check for parent1: N.N. ***
-            if ($parent1) {
-                // *** Save parent1 families in array ***
-                $personDb = $db_functions->get_person($parent1);
-                $marriage_array = explode(";", $personDb->pers_fams);
-                $count_marr = substr_count($personDb->pers_fams, ";");
-            } else {
-                $marriage_array[0] = $family_id_loop;
-                $count_marr = "0";
-            }
+            $personDb = $db_functions->get_person($parent1);
+            $relations = $db_functions->get_relations($personDb->pers_id);
 
             // *** Loop multiple marriages of main_person ***
-            for ($parent1_marr = 0; $parent1_marr <= $count_marr; $parent1_marr++) {
-                $id = $marriage_array[$parent1_marr];
+            foreach ($relations as $relation) {
+                $id = $relation->relation_gedcomnumber;
                 $familyDb = $db_functions->get_family($id);
 
                 // Oct. 2021 New method:
                 if ($swap_parent1_parent2 == true) {
-                    $parent1 = $familyDb->fam_woman;
-                    $parent2 = $familyDb->fam_man;
+                    $parent1 = $familyDb->partner2_gedcomnumber;
+                    $parent2 = $familyDb->partner1_gedcomnumber;
                 } else {
-                    $parent1 = $familyDb->fam_man;
-                    $parent2 = $familyDb->fam_woman;
+                    $parent1 = $familyDb->partner1_gedcomnumber;
+                    $parent2 = $familyDb->partner2_gedcomnumber;
                 }
                 $parent1Db = $db_functions->get_person($parent1);
                 $parent1_privacy = $personPrivacy->get_privacy($parent1Db);
@@ -387,16 +380,13 @@ else {
                     $sect->writeText($rtf_text, $arial12, null);
                 }
 
-
                 /**
                  * Show children
                  */
-                if ($familyDb->fam_children) {
-                    $childnr = 1;
-                    $child_array = explode(";", $familyDb->fam_children);
-
-                    // *** Show "Child(ren):" ***
-                    if (count($child_array) == '1') {
+                $children = $db_functions->get_children($familyDb->fam_id);
+                if ($children) {
+                    // *** Show "Child:" or "Children:" ***
+                    if (count($children) == '1') {
                         $rtf_text = '<b>' . __('Child') . ':</b>';
                         $sect->writeText($rtf_text, $arial12, new PHPRtfLite_ParFormat());
                     } else {
@@ -405,8 +395,8 @@ else {
                     }
 
                     $show_privacy_text = false;
-                    foreach ($child_array as $i => $value) {
-                        $childDb = $db_functions->get_person($child_array[$i]);
+                    foreach ($children as $child) {
+                        $childDb = $db_functions->get_person_with_id($child->person_id);
                         $child_privacy = $personPrivacy->get_privacy($childDb);
 
                         // *** Person must be totally hidden ***
@@ -415,16 +405,20 @@ else {
                             continue;
                         }
 
-                        $rtf_text = $childnr . '. ';
+                        $rtf_text = $child->relation_order . '. ';
                         $sect->writeText($rtf_text, $arial12, new PHPRtfLite_ParFormat());
 
                         $rtf_text = strip_tags($personName_extended->name_extended($childDb, $child_privacy, "child"), '<b><i>');
                         $sect->writeText($rtf_text, $arial12);
 
                         // *** Build descendant_report ***
-                        if ($data["descendant_report"] == true && $childDb->pers_fams && $descendant_loop < $max_generation) {
+                        $childRelations = $db_functions->get_relations($childDb->pers_id);
+                        if ($data["descendant_report"] == true && isset($childRelations) && count($childRelations) > 0 && $descendant_loop < $max_generation) {
                             // *** 1st family of child ***
-                            $child_family = explode(";", $childDb->pers_fams);
+                            $child_family = array();
+                            foreach ($childRelations as $childRelation){
+                                $child_family[] = $childRelation->relation_gedcomnumber;
+                            }
 
                             // *** Check for double families in descendant report (if a person relates or marries another person in the same family) ***
                             if (isset($check_double) && in_array($child_family[0], $check_double)) {
@@ -433,8 +427,8 @@ else {
                                 $descendant_family_id2[] = $child_family[0];
 
                             // *** Save all marriages of person in check array ***
-                            for ($k = 0; $k < count($child_family); $k++) {
-                                $check_double[] = $child_family[$k];
+                            foreach ($childRelations as $childRelation) {
+                                $check_double[] = $childRelation->relation_gedcomnumber;
                                 // *** Save "Follows: " text in array, also needed for doubles... ***
                                 $follows_array[] = $data["number_roman"][$descendant_loop + 2] . '-' . $data["number_generation"][count($descendant_family_id2)];
                             }
@@ -452,8 +446,6 @@ else {
                                 show_rtf_media('person', $childDb->pers_gedcomnumber);
                             }
                         }
-
-                        $childnr++;
                     }
                 }
             } // Show multiple marriages

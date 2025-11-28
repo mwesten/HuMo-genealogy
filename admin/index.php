@@ -149,7 +149,7 @@ if (isset($database_check) && $database_check) {
     }
 
     // *** Check HuMo-genealogy database status, will be changed if database update is needed ***
-    if (isset($humo_option["update_status"]) && $humo_option["update_status"] < 20) {
+    if (isset($humo_option["update_status"]) && $humo_option["update_status"] < 21) {
         $page = 'update';
         $main_admin['show_menu'] = false;
     }

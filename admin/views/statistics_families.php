@@ -48,8 +48,20 @@ $showTreeDate = new \Genealogy\Include\ShowTreeDate();
 <br><b><?= __('Most visited families:'); ?></b><br>
 <?php
 //MAXIMUM 50 LINES
-$family_qry = $dbh->query("SELECT fam_gedcomnumber, fam_tree_id, fam_counter, fam_man, fam_woman FROM humo_families
-    WHERE fam_tree_id='" . $tree_id . "' AND fam_counter ORDER BY fam_counter desc LIMIT 0,50");
+$family_qry = $dbh->query("SELECT f.fam_gedcomnumber, f.fam_tree_id, f.fam_counter,
+    man_rel.person_id AS partner1_id,
+    woman_rel.person_id AS partner2_id
+    FROM humo_families f
+    LEFT JOIN humo_relations_persons AS man_rel
+        ON man_rel.tree_id = f.fam_tree_id
+        AND man_rel.relation_gedcomnumber = f.fam_gedcomnumber
+        AND man_rel.partner_order = 1
+    LEFT JOIN humo_relations_persons AS woman_rel
+        ON woman_rel.tree_id = f.fam_tree_id
+        AND woman_rel.relation_gedcomnumber = f.fam_gedcomnumber
+        AND woman_rel.partner_order = 2
+    WHERE f.fam_tree_id='" . $tree_id . "' AND f.fam_counter
+    ORDER BY f.fam_counter DESC LIMIT 0,50");
 while ($familyDb = $family_qry->fetch(PDO::FETCH_OBJ)) {
     $vars['pers_family'] = $familyDb->fam_gedcomnumber;
     $link = $processLinks->get_link('../', 'family', $familyDb->fam_tree_id, false, $vars);
@@ -59,8 +71,8 @@ while ($familyDb = $family_qry->fetch(PDO::FETCH_OBJ)) {
 
 <?php
     // *** Man ***
-    $personDb = $db_functions->get_person($familyDb->fam_man);
-    if (!$familyDb->fam_man) {
+    $personDb = $db_functions->get_person_with_id($familyDb->partner1_id);
+    if (!$familyDb->partner1_id) {
         echo __('N.N.');
     } else {
         $privacy = $personPrivacy->get_privacy($personDb);
@@ -71,8 +83,8 @@ while ($familyDb = $family_qry->fetch(PDO::FETCH_OBJ)) {
     echo ' &amp; ';
 
     // *** Woman ***
-    $personDb = $db_functions->get_person($familyDb->fam_woman);
-    if (!$familyDb->fam_woman) {
+    $personDb = $db_functions->get_person_with_id($familyDb->partner2_id);
+    if (!$familyDb->partner2_id) {
         echo __('N.N.');
     } else {
         $privacy = $personPrivacy->get_privacy($personDb);

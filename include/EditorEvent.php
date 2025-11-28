@@ -737,8 +737,8 @@ class EditorEvent
                                                     $parent_text = '[' . $data_listDb->event_event . '] ';
 
                                                     //*** Father ***
-                                                    if (isset($adoptionDb->fam_man) and $adoptionDb->fam_man) {
-                                                        $parent_text .= show_person($adoptionDb->fam_man, false, false);
+                                                    if (isset($adoptionDb->partner1_gedcomnumber) and $adoptionDb->partner1_gedcomnumber) {
+                                                        $parent_text .= show_person($adoptionDb->partner1_gedcomnumber, false, false);
                                                     } else {
                                                         $parent_text = __('N.N.');
                                                     }
@@ -746,8 +746,8 @@ class EditorEvent
                                                     $parent_text .= ' ' . __('and') . ' ';
 
                                                     //*** Mother ***
-                                                    if (isset($adoptionDb->fam_woman) and $adoptionDb->fam_woman) {
-                                                        $parent_text .= show_person($adoptionDb->fam_woman, false, false);
+                                                    if (isset($adoptionDb->partner2_gedcomnumber) and $adoptionDb->partner2_gedcomnumber) {
+                                                        $parent_text .= show_person($adoptionDb->partner2_gedcomnumber, false, false);
                                                     } else {
                                                         $parent_text .= __('N.N.');
                                                     }

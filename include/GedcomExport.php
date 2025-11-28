@@ -43,24 +43,22 @@ class GedcomExport
         if (isset($this->tree_id) && isset($_POST['submit_button'])) {
             if ($export["part_tree"] == 'part' && isset($_POST['kind_tree']) && $_POST['kind_tree'] == "descendant") {
                 // map descendants
-                $desc_fams = '';
+                $desc_fams = 0;
                 $desc_pers = $_POST['person'];
                 $max_gens = $_POST['nr_generations'];
 
-                $fam_search = $this->dbh->query("SELECT pers_fams, pers_famc
-                    FROM humo_persons WHERE pers_tree_id='" . $this->tree_id . "' AND pers_gedcomnumber ='" . $desc_pers . "'");
-                $fam_searchDb = $fam_search->fetch(PDO::FETCH_OBJ);
-                if ($fam_searchDb->pers_fams != '') {
-                    $desc_fams = $fam_searchDb->pers_fams;
-                } else {
-                    $desc_fams = $fam_searchDb->pers_famc;
+                $fam_search = $this->db_functions->get_person($desc_pers);
+                $first_relation = $this->db_functions->get_first_relation($fam_search->pers_id);
+                if (isset($first_relation->relation_gedcomnumber)) {
+                    $desc_fams = $first_relation->relation_id;
+                } elseif ($fam_search->parent_relation_gedcomnumber) {
+                    $desc_fams = $fam_search->parent_relation_id;
                 }
 
                 $generation_number = 0;
 
                 // *** Only use first marriage of selected person to avoid error. Other marriages will be processed in the function! ***
-                $pers_fams = explode(";", $desc_fams);
-                $this->descendants($pers_fams[0], $desc_pers, $generation_number, $max_gens);
+                $this->descendants($desc_fams, $desc_pers, $generation_number, $max_gens);
             }
             if ($export["part_tree"] == 'part' && isset($_POST['kind_tree']) && $_POST['kind_tree'] == "ancestor") {
                 // map ancestors
@@ -814,22 +812,20 @@ class GedcomExport
                 //}
 
                 // *** FAMS ***
-                if ($person->pers_fams) {
-                    $pers_fams = explode(";", $person->pers_fams);
-                    foreach ($pers_fams as $i => $value) {
-                        if ($export["part_tree"] == 'part' && !in_array($pers_fams[$i], $this->famsids)) {
-                            continue;
-                        }
-                        $this->buffer .= '1 FAMS @' . $pers_fams[$i] . "@\r\n";
+                $relations = $this->db_functions->get_relations($person->pers_id);
+                foreach ($relations as $relation) {
+                    if ($export["part_tree"] == 'part' && !in_array($relation->relation_gedcomnumber, $this->famsids)) {
+                        continue;
                     }
+                    $this->buffer .= '1 FAMS @' . $relation->relation_gedcomnumber . "@\r\n";
                 }
 
                 // *** FAMC ***
-                if ($person->pers_famc) {
-                    if ($export["part_tree"] == 'part' && !in_array($person->pers_famc, $this->famsids)) {
+                if ($person->parent_relation_gedcomnumber) {
+                    if ($export["part_tree"] == 'part' && !in_array($person->parent_relation_gedcomnumber, $this->famsids)) {
                         // don't export FAMC
                     } else {
-                        $this->buffer .= '1 FAMC @' . $person->pers_famc . "@\r\n";
+                        $this->buffer .= '1 FAMC @' . $person->parent_relation_gedcomnumber . "@\r\n";
                     }
                 }
 
@@ -942,19 +938,19 @@ class GedcomExport
                 */
 
 
-                if ($family->fam_man) {
-                    if ($export["part_tree"] == 'part' && !in_array($family->fam_man, $this->persids)) {
+                if ($family->partner1_gedcomnumber) {
+                    if ($export["part_tree"] == 'part' && !in_array($family->partner1_gedcomnumber, $this->persids)) {
                         // skip if not included (e.g. if spouse of base person in ancestor export or spouses of descendants in desc export are not checked for export)
                     } else {
-                        $this->buffer .= '1 HUSB @' . $family->fam_man . "@\r\n";
+                        $this->buffer .= '1 HUSB @' . $family->partner1_gedcomnumber . "@\r\n";
                     }
                 }
 
-                if ($family->fam_woman) {
-                    if ($export["part_tree"] == 'part' && !in_array($family->fam_woman, $this->persids)) {
+                if ($family->partner2_gedcomnumber) {
+                    if ($export["part_tree"] == 'part' && !in_array($family->partner2_gedcomnumber, $this->persids)) {
                         // skip if not included
                     } else {
-                        $this->buffer .= '1 WIFE @' . $family->fam_woman . "@\r\n";
+                        $this->buffer .= '1 WIFE @' . $family->partner2_gedcomnumber . "@\r\n";
                     }
                 }
 
@@ -1064,11 +1060,11 @@ class GedcomExport
                         if ($this->gedcom_sources == 'yes') {
                             $this->sources_export('family', 'fam_marr_source', $family->fam_gedcomnumber, 2);
                         }
-                        if ($family->fam_man_age) {
-                            $this->buffer .= "2 HUSB\r\n3 AGE " . $family->fam_man_age . "\r\n";
+                        if ($family->partner1_age) {
+                            $this->buffer .= "2 HUSB\r\n3 AGE " . $family->partner1_age . "\r\n";
                         }
-                        if ($family->fam_woman_age) {
-                            $this->buffer .= "2 WIFE\r\n3 AGE " . $family->fam_woman_age . "\r\n";
+                        if ($family->partner2_age) {
+                            $this->buffer .= "2 WIFE\r\n3 AGE " . $family->partner2_age . "\r\n";
                         }
                         if ($gedcom_texts == 'yes' && $family->fam_marr_text) {
                             $this->buffer .= '2 NOTE ' . $this->process_text(3, $family->fam_marr_text);
@@ -1132,16 +1128,15 @@ class GedcomExport
                     }
                 }
 
-                if ($family->fam_children) {
-                    $child = explode(";", $family->fam_children);
-                    foreach ($child as $i => $value) {
-                        if ($export["part_tree"] == 'part' && !in_array($child[$i], $this->persids)) {
+                $children = $this->db_functions->get_children($family->fam_id);
+                if ($children) {
+                    foreach ($children as $child) {
+                        if ($export["part_tree"] == 'part' && !in_array($child->person_gedcomnumber, $this->persids)) {
                             continue;
                         }
-                        $this->buffer .= '1 CHIL @' . $child[$i] . "@\r\n";
+                        $this->buffer .= '1 CHIL @' . $child->person_gedcomnumber . "@\r\n";
                     }
                 }
-
 
                 // PMB if 'minimal' option selected don't export this
                 if ($_POST['export_type'] == 'normal') {
@@ -1982,7 +1977,7 @@ class GedcomExport
         }
     }
 
-    private function descendants($family_id, $main_person, $generation_number, $max_generations): void
+    private function descendants($relation_id, $main_person, $generation_number, $max_generations): void
     {
         $family_nr = 1; //*** Process multiple families ***
         if ($max_generations < $generation_number) {
@@ -1991,16 +1986,15 @@ class GedcomExport
         $generation_number++;
         // *** Count marriages of man ***
         // *** If needed show woman as main_person ***
-        if ($family_id == '') {
+        if ($relation_id == 0) {
             // single person
             $this->persids[] = $main_person;
             return;
         }
 
-        $family = $this->dbh->query("SELECT fam_man, fam_woman FROM humo_families WHERE fam_tree_id='" . $this->tree_id . "' AND fam_gedcomnumber='" . $family_id . "'");
-        try {
-            $familyDb = $family->fetch(PDO::FETCH_OBJ);
-        } catch (PDOException $e) {
+        // TODO only need partner numbers?
+        $familyDb = $this->db_functions->get_family_with_id($relation_id);
+        if (!isset($familyDb)) {
             echo __('No valid family number.');
         }
 
@@ -2008,32 +2002,25 @@ class GedcomExport
         $swap_parent1_parent2 = false;
 
         // *** Standard main_person is the man ***
-        if ($familyDb->fam_man) {
-            $parent1 = $familyDb->fam_man;
+        if ($familyDb->partner1_gedcomnumber) {
+            $parent1 = $familyDb->partner1_gedcomnumber;
         }
         // *** If woman is selected, woman will be main_person ***
-        if ($familyDb->fam_woman == $main_person) {
-            $parent1 = $familyDb->fam_woman;
+        if ($familyDb->partner2_gedcomnumber == $main_person) {
+            $parent1 = $familyDb->partner2_gedcomnumber;
             $swap_parent1_parent2 = true;
         }
 
         // *** Check family with parent1: N.N. ***
         if ($parent1) {
             // *** Save man's families in array ***
-            //check query
             $personDb = $this->db_functions->get_person($parent1);
-
-            $marriage_array = explode(";", $personDb->pers_fams);
-            $nr_families = substr_count($personDb->pers_fams, ";");
-        } else {
-            $marriage_array[0] = $family_id;
-            $nr_families = "0";
+            $parent_relations = $this->db_functions->get_relations($personDb->pers_id);
         }
 
         // *** Loop multiple marriages of main_person ***
-        for ($parent1_marr = 0; $parent1_marr <= $nr_families; $parent1_marr++) {
-            $id = $marriage_array[$parent1_marr];
-            $familyDb = $this->db_functions->get_family($id);
+        foreach ($parent_relations as $parent_relation) {
+            $familyDb = $this->db_functions->get_family_with_id($parent_relation->relation_id);
 
             /**
              * Parent1 (normally the father)
@@ -2045,17 +2032,17 @@ class GedcomExport
 
                     if ($swap_parent1_parent2 == true) {
                         // store I and Fs
-                        $this->persids[] = $familyDb->fam_woman;
-                        $families = explode(';', $personDb->pers_fams);
-                        foreach ($families as $value) {
-                            $this->famsids[] = $value;
+                        $this->persids[] = $familyDb->partner2_gedcomnumber;
+                        $relations = $this->db_functions->get_relations($personDb->pers_id);
+                        foreach ($relations as $relation) {
+                            $this->famsids[] = $relation->relation_gedcomnumber;
                         }
                     } else {
                         // store I and Fs
-                        $this->persids[] = $familyDb->fam_man;
-                        $families = explode(';', $personDb->pers_fams);
-                        foreach ($families as $value) {
-                            $this->famsids[] = $value;
+                        $this->persids[] = $familyDb->partner1_gedcomnumber;
+                        $relations = $this->db_functions->get_relations($personDb->pers_id);
+                        foreach ($relations as $relation) {
+                            $this->famsids[] = $relation->relation_gedcomnumber;
                         }
                     }
                 }
@@ -2067,51 +2054,44 @@ class GedcomExport
              */
             if (isset($_POST['desc_spouses'])) {
                 if ($swap_parent1_parent2 == true) {
-                    $this->persids[] = $familyDb->fam_man;
-                    $desc_sp = $familyDb->fam_man;
+                    $this->persids[] = $familyDb->partner1_gedcomnumber;
+                    $desc_sp = $familyDb->partner1_gedcomnumber;
                 } else {
-                    $this->persids[] = $familyDb->fam_woman;
-                    $desc_sp = $familyDb->fam_woman;
+                    $this->persids[] = $familyDb->partner2_gedcomnumber;
+                    $desc_sp = $familyDb->partner2_gedcomnumber;
                 }
             }
             if (isset($_POST['desc_sp_parents'])) {
                 // if set, add parents of spouse
-                $spqry = $this->dbh->query("SELECT pers_famc FROM humo_persons WHERE pers_tree_id='" . $this->tree_id . "' AND pers_gedcomnumber = '" . $desc_sp . "'");
-                $spqryDb = $spqry->fetch(PDO::FETCH_OBJ);
-                if (isset($spqryDb->pers_famc) && $spqryDb->pers_famc) {
-                    $famqryDb = $this->db_functions->get_family($spqryDb->pers_famc);
-                    if ($famqryDb->fam_man) {
-                        $this->persids[] = $famqryDb->fam_man;
+                $spqryDb = $this->db_functions->get_person($desc_sp);
+                if (isset($spqryDb->parent_relation_gedcomnumber) && $spqryDb->parent_relation_gedcomnumber) {
+                    $famqryDb = $this->db_functions->get_family($spqryDb->parent_relation_gedcomnumber);
+                    if ($famqryDb->partner1_gedcomnumber) {
+                        $this->persids[] = $famqryDb->partner1_gedcomnumber;
                     }
-                    if ($famqryDb->fam_woman) {
-                        $this->persids[] = $famqryDb->fam_woman;
+                    if ($famqryDb->partner2_gedcomnumber) {
+                        $this->persids[] = $famqryDb->partner2_gedcomnumber;
                     }
-                    $this->famsids[] = $spqryDb->pers_famc;
+                    $this->famsids[] = $spqryDb->parent_relation_gedcomnumber;
                 }
             }
 
             /**
              * Children
              */
-            if ($familyDb->fam_children) {
-                $child_array = explode(";", $familyDb->fam_children);
-                foreach ($child_array as $i => $value) {
-                    $child = $this->dbh->query("SELECT * FROM humo_persons WHERE pers_tree_id='" . $this->tree_id . "' AND pers_gedcomnumber='" . $child_array[$i] . "'");
-                    $childDb = $child->fetch(PDO::FETCH_OBJ);
-                    //$childDb = $this->db_functions->get_person($child_array[$i]);
-                    if ($child->rowCount() > 0) {
-                        // *** Build descendant_report ***
-                        if ($childDb->pers_fams) {
-                            // *** 1st family of child ***
-                            $child_family = explode(";", $childDb->pers_fams);
-                            $child1stfam = $child_family[0];
-                            $this->descendants($child1stfam, $childDb->pers_gedcomnumber, $generation_number, $max_generations);  // recursive
-                        } else {
-                            // Child without own family
-                            if ($max_generations >= $generation_number) {
-                                $childgn = $generation_number + 1;
-                                $this->persids[] = $childDb->pers_gedcomnumber;
-                            }
+            $children = $this->db_functions->get_children($parent_relation->relation_id);
+            if ($children) {
+                foreach ($children as $child) {
+                    $childFirstRelation = $this->db_functions->get_first_relation($child->person_id);
+                    // *** Build descendant_report ***
+                    if (isset($childFirstRelation->relation_id)) {
+                        // *** 1st family of child ***
+                        $this->descendants($childFirstRelation->relation_id, $child->person_gedcomnumber, $generation_number, $max_generations);  // recursive
+                    } else {
+                        // Child without own family
+                        if ($max_generations >= $generation_number) {
+                            //$childgn = $generation_number + 1;
+                            $this->persids[] = $child->person_gedcomnumber;
                         }
                     }
                 }
@@ -2162,45 +2142,52 @@ class GedcomExport
                     $person_manDb = $this->db_functions->get_person($ancestor_array[$i]);
                     if (strtolower($person_manDb->pers_sexe) == 'm' && $ancestor_number[$i] > 1) {
                         $familyDb = $this->db_functions->get_family($marriage_gedcomnumber[$i]);
-                        $person_womanDb = $this->db_functions->get_person($familyDb->fam_woman);
+                        $person_womanDb = $this->db_functions->get_person($familyDb->fpartner2_gedcomnumber);
                     }
                     if ($listednr == '') {
                         //take I and F
                         if ($person_manDb->pers_gedcomnumber == $person_id) {
                             // for the base person we add spouse manually
                             $this->persids[] = $person_manDb->pers_gedcomnumber;
-                            if ($person_manDb->pers_fams) {
-                                $families = explode(';', $person_manDb->pers_fams);
-                                if ($person_manDb->pers_sexe == 'M') {
-                                    $spouse = "fam_woman";
-                                } else {
-                                    $spouse = "fam_man";
-                                }
-                                foreach ($families as $value) {
-                                    $sp_main = $this->dbh->query("SELECT " . $spouse . " FROM humo_families
-                                    WHERE fam_tree_id='" . $this->tree_id . "' AND fam_gedcomnumber = '" . $value . "'");
-                                    $sp_mainDb = $sp_main->fetch(PDO::FETCH_OBJ);
-                                    if (isset($_POST['ances_spouses'])) {
-                                        // we also include spouses of base person
-                                        $this->persids[] = $sp_mainDb->$spouse;
+
+                            $relationsMan = $this->db_functions->get_relations($person_manDb->pers_id);
+                            foreach ($relationsMan as $relationMan) {
+                                $this->famsids[] = $relationMan->relation_gedcomnumber;
+
+                                if (isset($_POST['ances_spouses'])) {
+                                    // New nov. 2025: just for sure check man/ woman in all relations.
+                                    if ($relationMan->partner_order == 1) {
+                                        $partner_order = 2;
+                                    } else {
+                                        $partner_order = 1;
                                     }
-                                    $this->famsids[] = $value;
+                                    $sql = "SELECT * FROM humo_relations_persons
+                                        WHERE relation_id = :relation_id AND relation_type='partner' AND partner_order = :partner_order";
+                                    $stmt = $this->dbh->prepare($sql);
+                                    $stmt->execute([
+                                        ':relation_id' => $relationMan->relation_id,
+                                        ':partner_order' => $partner_order
+                                    ]);
+                                    $relationsSpouse = $stmt->fetch(PDO::FETCH_OBJ);
+                                    // we also include spouses of base person
+                                    $this->persids[] = $relationsSpouse->person_gedcomnumber;
                                 }
                             }
                         } else {
                             // any other person
                             $this->persids[] = $person_manDb->pers_gedcomnumber;
                         }
-                        if ($person_manDb->pers_famc && $generation + 1 < $max_generations) {
-                            // if this is the last generation (max gen) we don't want the famc!
-                            $this->famsids[] = $person_manDb->pers_famc;
+
+                        // if this is the last generation (max gen) we don't want the famc!
+                        if ($person_manDb->parent_relation_gedcomnumber && $generation + 1 < $max_generations) {
+                            $this->famsids[] = $person_manDb->parent_relation_gedcomnumber;
                             if (isset($_POST['ances_sibbl'])) {
                                 // also get I numbers of sibblings
-                                $sibbqryDb = $this->db_functions->get_family($person_manDb->pers_famc);
-                                $sibs = explode(';', $sibbqryDb->fam_children);
-                                foreach ($sibs as $value) {
-                                    if ($value != $person_manDb->pers_gedcomnumber) {
-                                        $this->persids[] = $value;
+                                $sibbqryDb = $this->db_functions->get_family($person_manDb->parent_relation_gedcomnumber);
+                                $children = $this->db_functions->get_children($sibbqryDb->pers_id);
+                                foreach ($children as $child) {
+                                    if ($child->person_gedcomnumber != $person_manDb->pers_gedcomnumber) {
+                                        $this->persids[] = $child->person_gedcomnumber;
                                     }
                                 }
                             }
@@ -2211,22 +2198,22 @@ class GedcomExport
                     }
 
                     // == Check for parents
-                    if ($person_manDb->pers_famc  && $listednr == '') {
-                        $family_parentsDb = $this->db_functions->get_family($person_manDb->pers_famc);
-                        if ($family_parentsDb->fam_man) {
-                            $ancestor_array2[] = $family_parentsDb->fam_man;
+                    if ($person_manDb->parent_relation_gedcomnumber  && $listednr == '') {
+                        $family_parentsDb = $this->db_functions->get_family($person_manDb->parent_relation_gedcomnumber);
+                        if ($family_parentsDb->partner1_gedcomnumber) {
+                            $ancestor_array2[] = $family_parentsDb->partner1_gedcomnumber;
                             $ancestor_number2[] = (2 * $ancestor_number[$i]);
-                            $marriage_gedcomnumber2[] = $person_manDb->pers_famc;
+                            $marriage_gedcomnumber2[] = $person_manDb->parent_relation_gedcomnumber;
                         }
-                        if ($family_parentsDb->fam_woman) {
-                            $ancestor_array2[] = $family_parentsDb->fam_woman;
+                        if ($family_parentsDb->partner2_gedcomnumber) {
+                            $ancestor_array2[] = $family_parentsDb->partner2_gedcomnumber;
                             $ancestor_number2[] = (2 * $ancestor_number[$i] + 1);
-                            $marriage_gedcomnumber2[] = $person_manDb->pers_famc;
+                            $marriage_gedcomnumber2[] = $person_manDb->parent_relation_gedcomnumber;
                         } else {
                             // *** N.N. name ***
                             $ancestor_array2[] = '0';
                             $ancestor_number2[] = (2 * $ancestor_number[$i] + 1);
-                            $marriage_gedcomnumber2[] = $person_manDb->pers_famc;
+                            $marriage_gedcomnumber2[] = $person_manDb->parent_relation_gedcomnumber;
                         }
                     }
                 } else {
@@ -2234,9 +2221,9 @@ class GedcomExport
                     $person_manDb = $this->db_functions->get_person($ancestor_array[$i]);
                     // take I (and F?)
                 }
-            }    // loop per generation
+            }
             $generation++;
-        }    // loop ancestors function
+        }
     }
 
     private function export_witnesses($event_connect_kind, $event_connect_id, $event_kind): string

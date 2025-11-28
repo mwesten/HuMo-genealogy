@@ -219,15 +219,15 @@ class Witness
                     $fam_db = $db_functions->get_family($witnessDb->event_connect_id, 'man_woman');
 
                     $name_man = __('N.N.');
-                    if (isset($fam_db->fam_man)) {
-                        $witness_nameDb = $db_functions->get_person($fam_db->fam_man);
+                    if (isset($fam_db->partner1_gedcomnumber)) {
+                        $witness_nameDb = $db_functions->get_person($fam_db->partner1_gedcomnumber);
                         $privacy = $personPrivacy->get_privacy($witness_nameDb);
                         $name_man = $personName->get_person_name($witness_nameDb, $privacy);
                     }
 
                     $name_woman = __('N.N.');
-                    if (isset($fam_db->fam_woman)) {
-                        $witness_nameDb = $db_functions->get_person($fam_db->fam_woman);
+                    if (isset($fam_db->partner2_gedcomnumber)) {
+                        $witness_nameDb = $db_functions->get_person($fam_db->partner2_gedcomnumber);
                         $privacy = $personPrivacy->get_privacy($witness_nameDb);
                         $name_woman = $personName->get_person_name($witness_nameDb, $privacy);
                     }

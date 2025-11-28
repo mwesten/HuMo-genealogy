@@ -196,8 +196,7 @@ $person_found = true;
                         $selected = ' selected';
 
                         // *** Reset marriage number ***
-                        $fams1 = explode(";", $person->pers_fams);
-                        $marriage = $fams1[0];
+                        $marriage = $db_functions->get_first_relation($person->pers_id);
                         $_SESSION['admin_fam_gedcomnumber'] = $marriage;
                     }
                     // *** Found multiple persons ***
@@ -295,15 +294,13 @@ if (isset($_POST['person_remove'])) {
 <?php
 }
 
-// *** Disconnect child ***
-if (isset($_GET['child_disconnect'])) {
+if (isset($_GET['child_disconnect_id'])) {
 ?>
     <div class="alert alert-danger">
         <?= __('Are you sure you want to disconnect this child?'); ?>
         <form method="post" action="index.php?page=editor&amp;menu_tab=marriage" style="display : inline;">
             <input type="hidden" name="family_id" value="<?= $_GET['family_id']; ?>">
-            <input type="hidden" name="child_disconnect2" value="<?= $_GET['child_disconnect']; ?>">
-            <input type="hidden" name="child_disconnect_gedcom" value="<?= $_GET['child_disconnect_gedcom']; ?>">
+            <input type="hidden" name="child_disconnect_id2" value="<?= $_GET['child_disconnect_id']; ?>">
             <input type="submit" name="child_disconnecting" value="<?= __('Yes'); ?>" class="btn btn-sm btn-danger">
             <input type="submit" name="submit" value="<?= __('No'); ?>" class="btn btn-sm btn-success ms-3">
         </form>
@@ -330,12 +327,17 @@ if (isset($pers_gedcomnumber)) {
         $check_person = true;
 
         // *** Also set $marriage, this could be another family (needed to calculate ancestors used by colour event) ***
-        if (isset($person->pers_fams) && $person->pers_fams) {
-            $marriage_array = explode(";", $person->pers_fams);
-            // *** Don't change if a second marriage is selected in the editor ***
-            //if (!in_array($marriage, $marriage_array)){
-            if (!isset($marriage) || !in_array($marriage, $marriage_array)) {
-                $marriage = $marriage_array[0];
+        $first_relation = $db_functions->get_first_relation($person->pers_id);
+        $relations = $db_functions->get_relations($person->pers_id);
+        if (isset($relations)) {
+            $marriage_found = false;
+            foreach ($relations as $relation) {
+                if ($relation->relation_gedcomnumber == $marriage) {
+                    $marriage_found = true;
+                }
+            }
+            if (!$marriage_found && $first_relation) {
+                $marriage = $first_relation->relation_gedcomnumber;
                 $_SESSION['admin_fam_gedcomnumber'] = $marriage;
             }
         }
@@ -537,12 +539,11 @@ if ($check_person) {
                                         echo '<span style="font-weight:bold; font-size:1.1em">' . show_person($person->pers_gedcomnumber, false, false) . '</span><br>';
 
                                         // *** Show marriages and children ***
-                                        if ($person->pers_fams) {
+                                        $relations = $db_functions->get_relations($person->pers_id);
+                                        if (isset($relations)) {
                                             // *** Search for own family ***
-                                            $fams1 = explode(";", $person->pers_fams);
-                                            $fam_count = count($fams1);
-                                            for ($i = 0; $i < $fam_count; $i++) {
-                                                $familyDb = $db_functions->get_family($fams1[$i]);
+                                            foreach ($relations as $relation) {
+                                                $familyDb = $db_functions->get_family_with_id($relation->relation_id);
 
                                                 $show_marr_status = ucfirst(__('marriage/ relation'));
                                                 if ($familyDb->fam_marr_notice_date || $familyDb->fam_marr_notice_place || $familyDb->fam_marr_date || $familyDb->fam_marr_place || $familyDb->fam_marr_church_notice_date || $familyDb->fam_marr_church_notice_place || $familyDb->fam_marr_church_date || $familyDb->fam_marr_church_place) {
@@ -555,17 +556,17 @@ if ($check_person) {
                                                     <?php
                                                     echo __(' to: ');
 
-                                                    if ($person->pers_gedcomnumber == $familyDb->fam_man) {
-                                                        echo show_person($familyDb->fam_woman) . '<br>';
+                                                    if ($person->pers_gedcomnumber == $familyDb->partner1_gedcomnumber) {
+                                                        echo show_person($familyDb->partner2_gedcomnumber) . '<br>';
                                                     } else {
-                                                        echo show_person($familyDb->fam_man) . '<br>';
+                                                        echo show_person($familyDb->partner1_gedcomnumber) . '<br>';
                                                     }
 
-                                                    if ($familyDb->fam_children) {
+                                                    $children = $db_functions->get_children($familyDb->fam_id);
+                                                    if (count($children) > 0) {
                                                         echo '<b>' . __('Children') . '</b><br>';
-                                                        $child_array = explode(";", $familyDb->fam_children);
-                                                        foreach ($child_array as $j => $value) {
-                                                            echo ($j + 1) . '. ' . show_person($child_array[$j]) . '<br>';
+                                                        foreach ($children as $child) {
+                                                            echo $child->relation_order . '. ' . show_person_with_id($child->person_id) . '<br>';
                                                         }
                                                     }
                                                     ?>
@@ -580,13 +581,13 @@ if ($check_person) {
                                         <!-- Show parents and siblings (brothers and sisters) -->
                                         <b><?= __('Parents'); ?></b><br>
                                         <?php
-                                        if ($person->pers_famc) {
+                                        if ($person->parent_relation_id) {
                                             // *** Search for parents ***
-                                            $family_parentsDb = $db_functions->get_family($person->pers_famc, 'man-woman');
+                                            $family_parentsDb = $db_functions->get_family_partners($person->parent_relation_id);
 
                                             //*** Father ***
-                                            if ($family_parentsDb->fam_man) {
-                                                echo show_person($family_parentsDb->fam_man);
+                                            if ($family_parentsDb->partner1_gedcomnumber) {
+                                                echo show_person($family_parentsDb->partner1_gedcomnumber);
                                             } else {
                                                 echo __('N.N.');
                                             }
@@ -594,8 +595,8 @@ if ($check_person) {
                                             echo ' ' . __('and') . '<br>';
 
                                             //*** Mother ***
-                                            if ($family_parentsDb->fam_woman) {
-                                                echo show_person($family_parentsDb->fam_woman);
+                                            if ($family_parentsDb->partner2_gedcomnumber) {
+                                                echo show_person($family_parentsDb->partner2_gedcomnumber);
                                             } else {
                                                 echo __('N.N.');
                                             }
@@ -603,19 +604,16 @@ if ($check_person) {
                                             echo '<br><br>';
 
                                             // *** Siblings (brothers and sisters) ***
-                                            if ($family_parentsDb->fam_children) {
-                                                $fam_children_array = explode(";", $family_parentsDb->fam_children);
-                                                $child_count = count($fam_children_array);
-                                                if ($child_count > 1) {
-                                                    echo '<b>' . __('Siblings') . '</b><br>';
-                                                    foreach ($fam_children_array as $j => $value) {
-                                                        echo ($j + 1) . '. ';
-                                                        if ($fam_children_array[$j] == $person->pers_gedcomnumber) {
-                                                            // *** Don't show link ***
-                                                            echo show_person($fam_children_array[$j], false, false) . '<br>';
-                                                        } else {
-                                                            echo show_person($fam_children_array[$j]) . '<br>';
-                                                        }
+                                            $children = $db_functions->get_children($family_parentsDb->fam_id);
+                                            if (count($children) > 0) {
+                                                echo '<b>' . __('Siblings') . '</b><br>';
+                                                foreach ($children as $child) {
+                                                    echo $child->relation_order . '. ';
+                                                    if ($child->person_id == $person->pers_id) {
+                                                        // *** Don't show link ***
+                                                        echo show_person_with_id($child->person_id, false, false) . '<br>';
+                                                    } else {
+                                                        echo show_person_with_id($child->person_id) . '<br>';
                                                     }
                                                 }
                                             }
@@ -638,12 +636,14 @@ if ($check_person) {
             // *** Example of family screen in pop-up ***
             if ($person) {
                 $pers_family = '';
-                if ($person->pers_famc) {
-                    $pers_family = $person->pers_famc;
-                }
-                if ($person->pers_fams) {
-                    $person_fams = explode(';', $person->pers_fams);
-                    $pers_family = $person_fams[0];
+
+                // *** Get first relation/family of person to show in pop-up preview ***
+                $first_relation = $db_functions->get_first_relation($person->pers_id);
+                ($first_relation) ? $pers_family = $first_relation->relation_gedcomnumber : '';
+
+                // *** If there are no relations, use parent relation ***
+                if ($pers_family == '' && $person->parent_relation_gedcomnumber) {
+                    $pers_family = $person->parent_relation_gedcomnumber;
                 }
 
                 $vars['pers_family'] = $pers_family;
@@ -1116,6 +1116,7 @@ function edit_profession($name, $value): void
 <?php
 }
 
+// TODO will be replaced with: show_person_with_id
 function show_person($gedcomnumber, $gedcom_date = false, $show_link = true)
 {
     global $db_functions, $page;
@@ -1124,6 +1125,51 @@ function show_person($gedcomnumber, $gedcom_date = false, $show_link = true)
 
     if ($gedcomnumber) {
         $personDb = $db_functions->get_person($gedcomnumber);
+
+        $name = '';
+        $name .= $personDb->pers_firstname . ' ';
+        if ($personDb->pers_patronym) {
+            $name .= $personDb->pers_patronym . ' ';
+        }
+        $name .= strtolower(str_replace("_", " ", $personDb->pers_prefix)) . $personDb->pers_lastname;
+        if (trim($name) === '') {
+            $name = '[' . __('NO NAME') . ']';
+        }
+
+        if ($show_link == true) {
+            $text = '<a href="index.php?page=' . $page . '&amp;menu_tab=person&amp;tree_id=' . $personDb->pers_tree_id .
+                '&amp;person=' . $personDb->pers_gedcomnumber . '">' . $name . '</a>' . "\n";
+        } else {
+            $text = $name . "\n";
+        }
+    } else {
+        $text = __('N.N.');
+    }
+
+    if ($gedcom_date == true) {
+        if ($personDb->pers_birth_date) {
+            $text .= ' * ' . $datePlace->date_place($personDb->pers_birth_date, '');
+        } elseif ($personDb->pers_bapt_date) {
+            $text .= ' ~ ' . $datePlace->date_place($personDb->pers_bapt_date, '');
+        } elseif ($personDb->pers_death_date) {
+            $text .= ' &#134; ' . $datePlace->date_place($personDb->pers_death_date, '');
+            //$text.=' &dagger; '.$datePlace->date_place($personDb->pers_death_date,'');
+        } elseif ($personDb->pers_buried_date) {
+            $text .= ' [] ' . $datePlace->date_place($personDb->pers_buried_date, '');
+        }
+    }
+    return $text;
+}
+
+// TODO: new function
+function show_person_with_id($person_id, $gedcom_date = false, $show_link = true)
+{
+    global $db_functions, $page;
+
+    $datePlace = new \Genealogy\Include\DatePlace();
+
+    if ($person_id) {
+        $personDb = $db_functions->get_person_with_id($person_id);
 
         $name = '';
         $name .= $personDb->pers_firstname . ' ';

@@ -16,10 +16,26 @@ function calculate_year($date)
     return $date;
 }
 
+// TODO: Replace this function by function calculate_person_with_id.
 function calculate_person($db_functions, $gedcomnumber)
 {
     $pers_cal_date = '';
     $person = $db_functions->get_person($gedcomnumber);
+    if ($person) {
+        if ($person->pers_cal_date) {
+            $pers_cal_date = calculate_year($person->pers_cal_date);
+        } elseif ($person->pers_birth_date) {
+            $pers_cal_date = calculate_year($person->pers_birth_date);
+        } elseif ($person->pers_bapt_date) {
+            $pers_cal_date = calculate_year($person->pers_bapt_date);
+        }
+    }
+    return $pers_cal_date;
+}
+function calculate_person_with_id($db_functions, $person_id)
+{
+    $pers_cal_date = '';
+    $person = $db_functions->get_person_with_id($person_id);
     if ($person) {
         if ($person->pers_cal_date) {
             $pers_cal_date = calculate_year($person->pers_cal_date);
@@ -105,9 +121,9 @@ Calculation will be done using birth, baptise, death, burial and marriage dates 
                     }
 
                     // *** Check first marriage of person ***
-                    if ($pers_cal_date == '' && $person_db->pers_fams) {
-                        $marriage_array = explode(";", $person_db->pers_fams);
-                        $fam_db = $db_functions->get_family($marriage_array[0]);
+                    $relation = $db_functions->get_first_relation($person_db->pers_id);
+                    if (isset($relation->relation_id)) {
+                        $fam_db = $db_functions->get_family_with_id($relation->relation_id);
                         if ($fam_db->fam_marr_date) {
                             $pers_cal_date = $fam_db->fam_marr_date;
                             $pers_cal_date = calculate_year($pers_cal_date);
@@ -122,36 +138,34 @@ Calculation will be done using birth, baptise, death, burial and marriage dates 
 
                         // *** Check date of man/ wife ***
                         if ($pers_cal_date == '') {
-                            $gedcomnumber = $fam_db->fam_man;
-                            if ($person_db->pers_gedcomnumber == $fam_db->fam_man) {
-                                $gedcomnumber = $fam_db->fam_woman;
+                            $gedcomnumber = $fam_db->partner1_gedcomnumber;
+                            if ($person_db->pers_gedcomnumber == $fam_db->partner1_gedcomnumber) {
+                                $gedcomnumber = $fam_db->partner2_gedcomnumber;
                             }
                             $pers_cal_date = calculate_person($db_functions, $gedcomnumber);
                             $used_item = 'birth/ baptise date of man';
-                            if ($person_db->pers_gedcomnumber == $fam_db->fam_man) {
+                            if ($person_db->pers_gedcomnumber == $fam_db->partner1_gedcomnumber) {
                                 $used_item = 'birth/ baptise date of wife';
                             }
                         }
 
                         // *** Check date of children ***
-                        if ($pers_cal_date == '' && $fam_db->fam_children) {
-                            $children_array = explode(";", $fam_db->fam_children);
-                            $pers_cal_date = calculate_person($db_functions, $children_array[0]);
-                            if ($pers_cal_date) {
-                                $used_item = 'birth/ baptise date of child: ' . $pers_cal_date;
-                                $pers_cal_date = calculate_correction($pers_cal_date, -25);
+                        $children = $db_functions->get_children($fam_db->fam_id);
+                        if ($pers_cal_date == '' && count($children) > 0) {
+                            foreach ($children as $child) {
+                                $pers_cal_date = calculate_person_with_id($db_functions, $child->person_id);
+                                if ($pers_cal_date) {
+                                    $used_item = 'birth/ baptise date of child: ' . $pers_cal_date;
+                                    $pers_cal_date = calculate_correction($pers_cal_date, -25);
+                                    break;
+                                }
                             }
                         }
                     }
 
                     // *** Check marriage of parents ***
-                    if ($pers_cal_date == '' && $person_db->pers_famc) {
-                        //$fam_qry = "SELECT fam_man, fam_woman, fam_relation_date, fam_marr_notice_date, fam_marr_date, fam_marr_church_notice_date, fam_marr_church_date, fam_div_date
-                        //    FROM humo_families WHERE fam_tree_id='" . $tree_id . "' AND fam_gedcomnumber='" . $person_db->pers_famc . "'";
-                        //$fam_result = $dbh->query($fam_qry);
-                        //$fam_db = $fam_result->fetch(PDO::FETCH_OBJ);
-
-                        $fam_db =  $db_functions->get_family($person_db->pers_famc);
+                    if ($pers_cal_date == '' && $person_db->parent_relation_id) {
+                        $fam_db =  $db_functions->get_family_with_id($person_db->parent_relation_id);
 
                         if ($fam_db->fam_marr_date) {
                             $pers_cal_date = $fam_db->fam_marr_date;
@@ -167,16 +181,16 @@ Calculation will be done using birth, baptise, death, burial and marriage dates 
                         }
 
                         // *** Check date of father ***
-                        if ($pers_cal_date == '' && $fam_db->fam_man) {
-                            $pers_cal_date = calculate_person($db_functions, $fam_db->fam_man);
+                        if ($pers_cal_date == '' && $fam_db->partner1_gedcomnumber) {
+                            $pers_cal_date = calculate_person($db_functions, $fam_db->partner1_gedcomnumber);
                             if ($pers_cal_date) {
                                 $used_item = 'birt or baptise date of father ' . $pers_cal_date;
                                 $pers_cal_date = calculate_correction($pers_cal_date, +25);
                             }
                         }
                         // *** Check date of mother ***
-                        if ($pers_cal_date == '' && $fam_db->fam_woman) {
-                            $pers_cal_date = calculate_person($db_functions, $fam_db->fam_woman);
+                        if ($pers_cal_date == '' && $fam_db->partner2_gedcomnumber) {
+                            $pers_cal_date = calculate_person($db_functions, $fam_db->partner2_gedcomnumber);
                             if ($pers_cal_date) {
                                 $used_item = 'birt or baptise date of mother ' . $pers_cal_date;
                                 $pers_cal_date = calculate_correction($pers_cal_date, +25);

@@ -762,23 +762,21 @@ $selected_place = '';
         // *** Search name of spouse ***
         if ($selection['spouse_firstname'] || $selection['spouse_lastname']) {
             $spouse_found = false;
-            $person_fams = explode(";", $personDb->pers_fams);
+            $relations = $db_functions->get_relations($personDb->pers_id);
             // *** Search all persons with a spouse IN the same tree as the 1st person ***
-            $counter = count($person_fams);
-            for ($marriage_loop = 0; $marriage_loop < $counter; $marriage_loop++) {
-                $famDb = $db_functions->get_family($person_fams[$marriage_loop], 'man-woman');
+            foreach ($relations as $relation) {
+                $famDb = $db_functions->get_family_with_id($relation->relation_id, 'man-woman');
 
                 // *** Search all persons with a spouse IN the same tree as the 1st person ***
-                $spouse_qry = "SELECT * FROM humo_persons WHERE pers_tree_id='" . $personDb->pers_tree_id . "' AND";
+                $spouse_qry = "SELECT * FROM humo_persons WHERE";
                 if ($user['group_kindindex'] == "j") {
                     $spouse_qry = "SELECT *, CONCAT(pers_prefix,pers_lastname,pers_firstname) as concat_name
-                        FROM humo_persons WHERE pers_tree_id='" . $personDb->pers_tree_id . "' AND";
+                        FROM humo_persons WHERE";
                 }
-
-                if ($personDb->pers_gedcomnumber == $famDb->fam_man) {
-                    $spouse_qry .= ' pers_gedcomnumber="' . $famDb->fam_woman . '"';
+                if ($personDb->pers_id == $famDb->partner1_id) {
+                    $spouse_qry .= ' pers_id="' . $famDb->partner2_id . '"';
                 } else {
-                    $spouse_qry .= ' pers_gedcomnumber="' . $famDb->fam_man . '"';
+                    $spouse_qry .= ' pers_id="' . $famDb->partner1_id . '"';
                 }
                 if ($selection['spouse_lastname']) {
                     if ($selection['spouse_lastname'] == __('...')) {
@@ -806,18 +804,14 @@ $selected_place = '';
         $parent_status_found = '1';
         if ($list["adv_search"] == true && $selection['parent_status'] != "allpersons" && $selection['parent_status'] != "noparents") {
             $parent_status_found = '0';
-            $par_famc = '';
-            if (isset($personDb->pers_famc)) {
-                $par_famc = $personDb->pers_famc;
-            }
-            if ($par_famc != "") {
-                $parDb = $db_functions->get_family($par_famc, 'man-woman');
+            if (isset($personDb->parent_relation_id)) {
+                $parDb = $db_functions->get_family_partners($personDb->parent_relation_id);
                 if (
-                    $selection['parent_status'] == "fatheronly" && substr($parDb->fam_man, 0, 1) === "I" && substr($parDb->fam_woman, 0, 1) !== "I"
+                    $selection['parent_status'] == "fatheronly" && substr($parDb->partner1_gedcomnumber, 0, 1) === "I" && substr($parDb->partner2_gedcomnumber, 0, 1) !== "I"
                 ) {
                     $parent_status_found = '1';
                 } elseif (
-                    $selection['parent_status'] == "motheronly" && substr($parDb->fam_man, 0, 1) !== "I" && substr($parDb->fam_woman, 0, 1) === "I"
+                    $selection['parent_status'] == "motheronly" && substr($parDb->partner1_gedcomnumber, 0, 1) !== "I" && substr($parDb->partner2_gedcomnumber, 0, 1) === "I"
                 ) {
                     $parent_status_found = '1';
                 }
@@ -994,23 +988,25 @@ $selected_place = '';
                             //echo ' <a href="'.$start_url.'">'.trim($index_name).'</a>';
                             // *** If child doesn't have own family, directly jump to child in familyscreen using #child_I1234 ***
                             $direct_link = '';
-                            if ($personDb->pers_fams == '') {
+                            $relations = $db_functions->get_relations($personDb->pers_id);
+                            if (isset($relations)) {
                                 $direct_link = '#person_' . $personDb->pers_gedcomnumber;
                             }
                             echo ' <a href="' . $start_url . $direct_link . '">' . trim($index_name) . '</a>';
 
                             //*** Show spouse/ partner ***
-                            if ($list_expanded == true && $personDb->pers_fams) {
-                                $marriage_array = explode(";", $personDb->pers_fams);
-                                $nr_marriages = count($marriage_array);
-                                for ($x = 0; $x <= $nr_marriages - 1; $x++) {
-                                    $fam_partnerDb = $db_functions->get_family($marriage_array[$x]);
+                            if ($list_expanded == true && isset($relations)) {
+                                $nr_marriages = count($relations);
+                                $x = 0;
+                                foreach ($relations as $relation) {
+                                    $x++;
+                                    $fam_partnerDb = $db_functions->get_family_with_id($relation->relation_id);
 
                                     // *** This check is better then a check like: $personDb->pers_sexe=='F', because of unknown sexe or homosexual relations. ***
-                                    if ($personDb->pers_gedcomnumber == $fam_partnerDb->fam_man) {
-                                        $partner_id = $fam_partnerDb->fam_woman;
+                                    if ($personDb->pers_gedcomnumber == $fam_partnerDb->partner1_gedcomnumber) {
+                                        $partner_id = $fam_partnerDb->partner2_id;
                                     } else {
-                                        $partner_id = $fam_partnerDb->fam_man;
+                                        $partner_id = $fam_partnerDb->partner1_id;
                                     }
 
                                     $relation_short = __('&amp;');
@@ -1022,7 +1018,7 @@ $selected_place = '';
                                     }
 
                                     if ($partner_id != '0' && $partner_id != '') {
-                                        $partnerDb = $db_functions->get_person($partner_id);
+                                        $partnerDb = $db_functions->get_person_with_id($partner_id);
                                         $privacy_partner = $personPrivacy->get_privacy($partnerDb);
                                         $name = $personName->get_person_name($partnerDb, $privacy_partner);
                                     } else {

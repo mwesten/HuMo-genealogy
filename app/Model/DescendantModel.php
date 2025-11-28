@@ -192,7 +192,7 @@ class DescendantModel extends FamilyModel
         // need these 4 in report_descendant
         $base_person["name"] =  $dnaname["standard_name"];
         $base_person["sexe"] = $dnaDb->pers_sexe;
-        $base_person["famc"] = $dnaDb->pers_famc;
+        $base_person["famc"] = $dnaDb->parent_relation_gedcomnumber;
         $base_person["gednr"] = $dnaDb->pers_gedcomnumber;
         return $base_person;
     }
@@ -231,36 +231,28 @@ class DescendantModel extends FamilyModel
         $max_generation = 100;
 
         $dnaDb = $this->db_functions->get_person($data["main_person"]);
-        /*
-        $privacy = $personPrivacy->get_privacy($dnaDb);
-        $dnaname = $personName->get_person_name($dnaDb, $privacy);
-        $base_person_name =  $dnaname["standard_name"];    // need these 4 in report_descendant
-        $base_person_sexe = $dnaDb->pers_sexe;
-        $base_person_famc = $dnaDb->pers_famc;
-        $base_person_gednr = $dnaDb->pers_gedcomnumber;
-        */
 
         if ($dna == "ydna" || $dna == "ydnamark") {
-            while (isset($dnaDb->pers_famc) && $dnaDb->pers_famc != "") {
-                $dnaparDb = $this->db_functions->get_family($dnaDb->pers_famc);
-                if ($dnaparDb->fam_man == "") {
+            while (isset($dnaDb->parent_relation_gedcomnumber) && $dnaDb->parent_relation_gedcomnumber != "") {
+                $dnaparDb = $this->db_functions->get_family($dnaDb->parent_relation_gedcomnumber);
+                if ($dnaparDb->partner1_gedcomnumber == "") {
                     break;
                 } else {
-                    $data["main_person"] = $dnaparDb->fam_man;
-                    $data["family_id"]  = $dnaDb->pers_famc;
-                    $dnaDb = $this->db_functions->get_person($dnaparDb->fam_man);
+                    $data["main_person"] = $dnaparDb->partner1_gedcomnumber;
+                    $data["family_id"]  = $dnaDb->parent_relation_gedcomnumber;
+                    $dnaDb = $this->db_functions->get_person($dnaparDb->partner1_gedcomnumber);
                 }
             }
         }
         if ($dna == "mtdna" || $dna == "mtdnamark") {
-            while (isset($dnaDb->pers_famc) && $dnaDb->pers_famc != "") {
-                $dnaparDb = $this->db_functions->get_family($dnaDb->pers_famc);
-                if ($dnaparDb->fam_woman == "") {
+            while (isset($dnaDb->parent_relation_gedcomnumber) && $dnaDb->parent_relation_gedcomnumber != "") {
+                $dnaparDb = $this->db_functions->get_family($dnaDb->parent_relation_gedcomnumber);
+                if ($dnaparDb->partner2_gedcomnumber == "") {
                     break;
                 } else {
-                    $data["main_person"] = $dnaparDb->fam_woman;
-                    $data["family_id"]  = $dnaDb->pers_famc;
-                    $dnaDb = $this->db_functions->get_person($dnaparDb->fam_woman);
+                    $data["main_person"] = $dnaparDb->partner2_gedcomnumber;
+                    $data["family_id"]  = $dnaDb->parent_relation_gedcomnumber;
+                    $dnaDb = $this->db_functions->get_person($dnaparDb->partner2_gedcomnumber);
                 }
             }
         }
@@ -338,38 +330,39 @@ class DescendantModel extends FamilyModel
                     $parent2 = '';
                     $swap_parent1_parent2 = false;
                     // *** Standard main person is the father ***
-                    if ($familyDb->fam_man) {
-                        $parent1 = $familyDb->fam_man;
+                    if ($familyDb->partner1_gedcomnumber) {
+                        $parent1 = $familyDb->partner1_gedcomnumber;
                     }
                     // *** After clicking the mother, the mother is main person ***
-                    if ($familyDb->fam_woman == $data["main_person"]) {
-                        $parent1 = $familyDb->fam_woman;
+                    if ($familyDb->partner2_gedcomnumber == $data["main_person"]) {
+                        $parent1 = $familyDb->partner2_gedcomnumber;
                         $swap_parent1_parent2 = true;
                     }
 
                     // *** Check for parent1: N.N. ***
                     if ($parent1) {
-                        // *** Save parent1 families in array ***
                         $personDb = $this->db_functions->get_person($parent1);
-                        $marriage_array = explode(";", $personDb->pers_fams);
-                        $count_marr = substr_count($personDb->pers_fams, ";");
+                        $relations = $this->db_functions->get_relations($personDb->pers_id);
+                        $count_marr = count($relations) - 1;
                     } else {
-                        $marriage_array[0] = $family_id_loop;
-                        $count_marr = "0";
+                        $relations = [];
+                        // TODO these lines probably not needed anymore:
+                        $relations[] = (object) ['relation_gedcomnumber' => $family_id_loop];
+                        $count_marr = 0;
                     }
 
                     // *** Loop multiple marriages of main_person ***
-                    for ($parent1_marr = 0; $parent1_marr <= $count_marr; $parent1_marr++) {
-                        $id = $marriage_array[$parent1_marr];
+                    foreach ($relations as $relation) {
+                        $id = $relation->relation_gedcomnumber;
                         $familyDb = $this->db_functions->get_family($id);
 
                         // Oct. 2021 New method:
                         if ($swap_parent1_parent2 == true) {
-                            $parent1 = $familyDb->fam_woman;
-                            $parent2 = $familyDb->fam_man;
+                            $parent1 = $familyDb->partner2_gedcomnumber;
+                            $parent2 = $familyDb->partner1_gedcomnumber;
                         } else {
-                            $parent1 = $familyDb->fam_man;
-                            $parent2 = $familyDb->fam_woman;
+                            $parent1 = $familyDb->partner1_gedcomnumber;
+                            $parent2 = $familyDb->partner2_gedcomnumber;
                         }
                         $parent1Db = $this->db_functions->get_person($parent1);
                         $parent1_privacy = $personPrivacy->get_privacy($parent1Db);
@@ -464,7 +457,6 @@ class DescendantModel extends FamilyModel
                         }
                         $genarray[$arraynr]["spfams"] = $id;
 
-
                         /**
                          * Marriagetext
                          */
@@ -481,29 +473,27 @@ class DescendantModel extends FamilyModel
                         /**
                          * Children
                          */
-                        if (!$familyDb->fam_children) {
-                            $genarray[$arraynr]["nrc"] = 0;
-                        }
-
-                        if ($familyDb->fam_children) {
+                        $children = $this->db_functions->get_children($familyDb->fam_id);
+                        if ($children) {
                             $childnr = 1;
-                            $child_array = explode(";", $familyDb->fam_children);
-
-                            $genarray[$arraynr]["nrc"] = count($child_array);
+                            $genarray[$arraynr]["nrc"] = count($children);
                             // dna -> count only man or women
                             if ($dna == "ydna" || $dna == "mtdna") {
                                 $countdna = 0;
-                                foreach ($child_array as $i => $value) {
-                                    $childDb = $this->db_functions->get_person($child_array[$i]);
-                                    if ($dna == "ydna" and $childDb->pers_sexe == "M" and $genarray[$arraynr]["sex"] == "m" and $genarray[$arraynr]["dna"] == 1) $countdna++;
-                                    elseif ($dna == "mtdna" and $genarray[$arraynr]["sex"] == "v" and $genarray[$arraynr]["dna"] == 1) $countdna++;
+                                foreach ($children as $child) {
+                                    $childDb = $this->db_functions->get_person_with_id($child->person_id);
+                                    if ($dna == "ydna" and $childDb->pers_sexe == "M" and $genarray[$arraynr]["sex"] == "m" and $genarray[$arraynr]["dna"] == 1) {
+                                        $countdna++;
+                                    } elseif ($dna == "mtdna" and $genarray[$arraynr]["sex"] == "v" and $genarray[$arraynr]["dna"] == 1) {
+                                        $countdna++;
+                                    }
                                 }
                                 $genarray[$arraynr]["nrc"] = $countdna;
                             }
 
-                            $show_privacy_text = false;
-                            foreach ($child_array as $i => $value) {
-                                $childDb = $this->db_functions->get_person($child_array[$i]);
+                            //$show_privacy_text = false;
+                            foreach ($children as $child) {
+                                $childDb = $this->db_functions->get_person_with_id($child->person_id);
 
                                 $chdn_in_gen = $nrchldingen + $childnr;
                                 $place = $lst_in_array + $chdn_in_gen;
@@ -535,29 +525,34 @@ class DescendantModel extends FamilyModel
                                 $genarray[$place]["init"] = $name["initials"];
                                 $genarray[$place]["short"] = $name["short_firstname"];
                                 $genarray[$place]["gednr"] = $childDb->pers_gedcomnumber;
-                                if ($childDb->pers_fams) {
-                                    $childfam = explode(";", $childDb->pers_fams);
-                                    $genarray[$place]["fams"] = $childfam[0];
+
+                                $childRelationFirst = $this->db_functions->get_first_relation($childDb->pers_id);
+                                if (isset($childRelationFirst) && $childRelationFirst != '') {
+                                    $genarray[$place]["fams"] = $childRelationFirst->relation_gedcomnumber;
                                 } else {
-                                    $genarray[$place]["fams"] = $childDb->pers_famc;
+                                    $genarray[$place]["fams"] = $childDb->parent_relation_gedcomnumber;
                                 }
+
                                 $genarray[$place]["sex"] = $childDb->pers_sexe == "F" ? "v" : "m";
 
                                 // *** Build descendant_report ***
-                                if ($descendant_report && $childDb->pers_fams && $descendant_loop < $max_generation) {
-                                    // *** 1st family of child ***
-                                    $child_family = explode(";", $childDb->pers_fams);
-
+                                // TODO change into get_relations. Didn't work yet.
+                                $childRelations = $this->db_functions->get_relations($childDb->pers_id);
+                                if ($descendant_report && isset($childRelations) && count($childRelations) > 0 && $descendant_loop < $max_generation) {
                                     // *** Check for double families in descendant report (if a person relates or marries another person in the same family) ***
-                                    if (isset($check_double) && in_array($child_family[0], $check_double)) {
+                                    if (isset($check_double) && in_array($childRelationFirst->relation_gedcomnumber, $check_double)) {
                                         // *** Don't show this family, double... ***
                                     } else {
-                                        $descendant_family_id2[] = $child_family[0];
+                                        $descendant_family_id2[] = $childRelationFirst->relation_gedcomnumber;
                                     }
 
-                                    if (count($child_family) > 1) {
-                                        $counter = count($child_family);
-                                        for ($k = 1; $k < $counter; $k++) {
+                                    if (count($childRelations)>0){
+                                        $k=0;
+                                        foreach ($childRelations as $childRelation){
+                                            if ($k==0){
+                                                $k++;
+                                                continue; // first family is already processed
+                                            }
                                             $childnr++;
                                             $thisplace = $place + $k;
                                             $genarray[$thisplace] = $genarray[$place];
@@ -576,18 +571,18 @@ class DescendantModel extends FamilyModel
                                 $childnr++;
                             }
                             $nrchldingen += ($childnr - 1);
+                        } else {
+                            $genarray[$arraynr]["nrc"] = 0;
                         }
 
                         $arraynr++;
                     } // Show multiple marriages
-
                 } // Multiple families in 1 generation
-
             } // nr. of generations
-        } // End of single person
+        }
 
         // *** If source footnotes are selected, show them here ***
-        if ((!isset($dna) OR $dna =='') AND isset($_SESSION['save_source_presentation']) && $_SESSION['save_source_presentation'] == 'footnote') {
+        if ((!isset($dna) or $dna == '') and isset($_SESSION['save_source_presentation']) && $_SESSION['save_source_presentation'] == 'footnote') {
             echo $showSourcesFootnotes->show_sources_footnotes();
         }
 

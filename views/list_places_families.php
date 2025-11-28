@@ -217,11 +217,11 @@ $selected_place = '';
     <?php
     while ($familyDb = $person_result->fetch(PDO::FETCH_OBJ)) {
         // *** Man privacy filter ***
-        $personDb = $db_functions->get_person($familyDb->fam_man);
+        $personDb = $db_functions->get_person_with_id($familyDb->partner1_id);
         $man_privacy = $personPrivacy->get_privacy($personDb);
 
         // *** Woman privacy filter ***
-        $personDb = $db_functions->get_person($familyDb->fam_woman);
+        $personDb = $db_functions->get_person_with_id($familyDb->partner2_id);
         $woman_privacy = $personPrivacy->get_privacy($personDb);
 
         $marriage_cls = new \Genealogy\Include\MarriageCls($familyDb, $man_privacy, $woman_privacy);
@@ -256,8 +256,8 @@ function show_person($familyDb)
     $personPopup = new \Genealogy\Include\PersonPopup();
     $datePlace = new \Genealogy\Include\DatePlace();
 
-    $selected_person1 = $familyDb->fam_man ? $familyDb->fam_man : $familyDb->fam_woman;
-    $personDb = $db_functions->get_person($selected_person1);
+    $selected_person1 = $familyDb->partner1_id ? $familyDb->partner1_id : $familyDb->partner2_id;
+    $personDb = $db_functions->get_person_with_id($selected_person1);
     $privacy = $personPrivacy->get_privacy($personDb);
     $name = $personName->get_person_name($personDb, $privacy);
 
@@ -343,19 +343,18 @@ function show_person($familyDb)
             echo ' <a href="' . $start_url . '">' . rtrim($index_name) . '</a>';
 
             //*** Show spouse/ partner ***
-            if ($list_expanded == true && $personDb->pers_fams) {
-                $marriage_array = explode(";", $personDb->pers_fams);
-                // *** Code to show only last marriage ***
-                $nr_marriages = count($marriage_array);
-
-                for ($x = 0; $x <= $nr_marriages - 1; $x++) {
-                    $fam_partnerDb = $db_functions->get_family($marriage_array[$x]);
+            $relations = $db_functions->get_relations($personDb->pers_id);
+            if ($list_expanded == true && isset($relations)) {
+                $x = -1;
+                foreach ($relations as $relation) {
+                    $x++;
+                    $fam_partnerDb = $db_functions->get_family_with_id($relation->relation_id);
 
                     // *** This check is better then a check like: $personDb->pers_sexe=='F', because of unknown sexe or homosexual relations. ***
-                    if ($personDb->pers_gedcomnumber == $fam_partnerDb->fam_man) {
-                        $partner_id = $fam_partnerDb->fam_woman;
+                    if ($personDb->pers_id == $fam_partnerDb->partner1_id) {
+                        $partner_id = $fam_partnerDb->partner2_id;
                     } else {
-                        $partner_id = $fam_partnerDb->fam_man;
+                        $partner_id = $fam_partnerDb->partner1_id;
                     }
 
                     $relation_short = __('&amp;');
@@ -367,23 +366,23 @@ function show_person($familyDb)
                     }
 
                     if ($partner_id != '0' && $partner_id != '') {
-                        $partnerDb = $db_functions->get_person($partner_id);
+                        $partnerDb = $db_functions->get_person_with_id($partner_id);
                         $privacy = $personPrivacy->get_privacy($partnerDb);
                         $name = $personName->get_person_name($partnerDb, $privacy);
                     } else {
                         $name["standard_name"] = __('N.N.');
                     }
 
-                    if ($nr_marriages > 1) {
+                    if (count($relations) > 1) {
                         echo ',';
                     }
-                    if ($partnerDb->pers_gedcomnumber != $familyDb->fam_woman) {
+                    if (isset($partnerDb->pers_id) && $partnerDb->pers_id != $familyDb->partner2_id) {
                         // *** Show actual relation/ marriage in special font ***
                         echo ' <span class="index_partner" style="font-size:10px;">';
                     } else {
                         echo ' ';
                     }
-                    if ($nr_marriages > 1) {
+                    if (count($relations) > 1) {
                         if ($x == 0) {
                             echo __('1st');
                         } elseif ($x == 1) {
@@ -395,7 +394,7 @@ function show_person($familyDb)
                         }
                     }
                     echo ' ' . $relation_short . ' ' . rtrim($name["standard_name"]);
-                    if ($partnerDb->pers_gedcomnumber != $familyDb->fam_woman) {
+                    if (isset($partnerDb->pers_id) && $partnerDb->pers_id != $familyDb->partner2_id) {
                         echo '</span>';
                     }
                 }

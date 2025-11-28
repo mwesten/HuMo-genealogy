@@ -134,22 +134,20 @@ class MapsModel extends BaseModel
 
         $_SESSION['desc_array'] = '';
 
-        // *** Example: persged=I529&persfams=F191;F192 ***
+        // *** Example: persged=I529&persfams=F191;F192. In nov. 2025 changed into: persfams=1 (only needed for selection) ***
         if (isset($_GET['persged']) && isset($_GET['persfams'])) {
             $chosenperson = $_GET['persged'];
-            $persfams = $_GET['persfams'];
-            $persfams_arr = explode(';', $persfams);
+            $person = $this->db_functions->get_person($chosenperson);
+            $firstRelation = $this->db_functions->get_first_relation($person->pers_id);
 
-            //also check privacy
-            $myresult = $this->dbh->query("SELECT pers_lastname, pers_firstname, pers_prefix FROM humo_persons WHERE pers_tree_id='" . $this->tree_id . "' AND pers_gedcomnumber='" . $chosenperson . "'");
-            $myresultDb = $myresult->fetch(PDO::FETCH_OBJ);
-            $chosenname = $myresultDb->pers_firstname . ' ' . strtolower(str_replace('_', '', $myresultDb->pers_prefix)) . ' ' . $myresultDb->pers_lastname;
+            // Also check privacy
+            $chosenname = $person->pers_firstname . ' ' . strtolower(str_replace('_', '', $person->pers_prefix)) . ' ' . $person->pers_lastname;
 
             // *** Start function here - recursive if started ***
             $desc_array = [];
 
             // EXAMPLE: $descendants->get_descendants($family_id,$main_person,$nr_generations);
-            $descendant_array = $descendants->get_descendants($persfams_arr[0], $chosenperson, 20);
+            $descendant_array = $descendants->get_descendants($firstRelation->relation_gedcomnumber, $chosenperson, 20);
             $desc_array = $descendant_array;
 
             if ($desc_array != '') {
@@ -169,17 +167,13 @@ class MapsModel extends BaseModel
     public function get_maps_ancestors(): array
     {
         // *** Find ancestors ***
-        // TODO $_GET['anc_persfams'] isn't used.
         global $anc_array;
 
         $ancestors = new Ancestors;
 
         $_SESSION['anc_array'] = '';
-        if (isset($_GET['anc_persged']) && isset($_GET['anc_persfams'])) {
+        if (isset($_GET['anc_persged'])) {
             $chosenperson = $_GET['anc_persged'];
-            //$persfams = $_GET['anc_persfams'];
-            //$persfams_arr = explode(';', $persfams);
-
             //also check privacy
             $myresult = $this->dbh->query("SELECT pers_lastname, pers_firstname, pers_prefix FROM humo_persons WHERE pers_tree_id='" . $this->tree_id . "' AND pers_gedcomnumber='" . $chosenperson . "'");
             $myresultDb = $myresult->fetch(PDO::FETCH_OBJ);
@@ -549,7 +543,6 @@ class MapsModel extends BaseModel
                     WHERE p.pers_tree_id='" . $this->tree_id . "'
                         AND (l_birth.location_location !='' OR (l_birth.location_location ='' AND l_bapt.location_location !='')) " . $namesearch_string
                 );
-
             } elseif ($_SESSION['type_death'] == 1) {
                 /*
                 $person_results = $this->dbh->query("SELECT pers_death_place, pers_death_date, pers_buried_place, pers_buried_date

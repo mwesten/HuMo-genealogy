@@ -40,12 +40,11 @@ foreach ($familytrees as $familytree) {
                 // *** Don't show person ***
             } else {
                 $person_url = '';
-                if ($personDb->pers_famc) {
-                    $person_url = $personDb->pers_famc;
-                }
-                if ($personDb->pers_fams) {
-                    $pers_fams = explode(';', $personDb->pers_fams);
-                    $person_url = $pers_fams[0];
+                $relations = $db_functions->get_relations($personDb->pers_id);
+                if (count($relations) > 0) {
+                    $person_url = $relations[0]->relation_gedcomnumber;
+                } elseif ($personDb->parent_relation_gedcomnumber) {
+                    $person_url = $personDb->parent_relation_gedcomnumber;
                 }
                 if ($person_url == '') {
                     // *** Person without parents or own family ***	

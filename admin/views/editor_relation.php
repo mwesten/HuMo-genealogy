@@ -16,15 +16,16 @@ $datePlace = new \Genealogy\Include\DatePlace();
 $languageDate = new \Genealogy\Include\LanguageDate;
 $validateGedcomnumber = new \Genealogy\Include\ValidateGedcomnumber();
 $eventManager = new \Genealogy\Include\EventManager($dbh);
-
+$orderChildren = new \Genealogy\Include\OrderChildren();
 
 // TODO: move code to model script.
-if ($person->pers_fams) {
-    $familyDb = $db_functions->get_family($marriage);
+$relations = $db_functions->get_relations($person->pers_id);
+$familyDb = $db_functions->get_family($marriage);
 
+if ($familyDb) {
     $fam_kind = $familyDb->fam_kind;
-    $man_gedcomnumber = $familyDb->fam_man;
-    $woman_gedcomnumber = $familyDb->fam_woman;
+    $man_gedcomnumber = $familyDb->partner1_gedcomnumber;
+    $woman_gedcomnumber = $familyDb->partner2_gedcomnumber;
     $fam_gedcomnumber = $familyDb->fam_gedcomnumber;
     $fam_relation_date = $familyDb->fam_relation_date;
     $fam_relation_end_date = $familyDb->fam_relation_end_date;
@@ -47,8 +48,8 @@ if ($person->pers_fams) {
     }
     $fam_marr_text = $editor_cls->text_show($familyDb->fam_marr_text);
     $fam_marr_authority = $editor_cls->text_show($familyDb->fam_marr_authority);
-    $fam_man_age = $familyDb->fam_man_age;
-    $fam_woman_age = $familyDb->fam_woman_age;
+    $partner1_age = $familyDb->partner1_age;
+    $partner2_age = $familyDb->partner2_age;
     $fam_marr_church_notice_date = $familyDb->fam_marr_church_notice_date;
     $fam_marr_church_notice_place = '';
     if (isset($familyDb->fam_marr_church_notice_place)) {
@@ -116,83 +117,90 @@ if ($person->pers_sexe == 'M') {
 
 <div class="p-1 m-2 genealogy_search">
     <?php
-    if ($person->pers_fams) {
+    if ($relations) {
         // *** Search for own family ***
-        $fams1 = explode(";", $person->pers_fams);
-        $fam_count = count($fams1);
+        $id = [];
+        $relation_gedcomnumber = [];
+        $relation_id = [];
+        foreach ($relations as $rel) {
+            $id[] = $rel->id;
+            $relation_gedcomnumber[] = $rel->relation_gedcomnumber;
+            $relation_id[] = $rel->relation_id;
+        }
+        $fam_count = count($relation_gedcomnumber);
         if ($fam_count > 0) {
-            for ($i = 0; $i < $fam_count; $i++) {
-                $qry = "SELECT f.*, e.event_date AS fam_marr_date
-                    FROM humo_families f
-                    LEFT JOIN humo_events e
-                        ON f.fam_id = e.relation_id
-                        AND e.event_kind = 'marriage'
-                    WHERE f.fam_tree_id='" . $tree_id . "' AND f.fam_gedcomnumber='" . $fams1[$i] . "'";
-
-                $family = $dbh->query($qry);
-                $familyDb = $family->fetch(PDO::FETCH_OBJ);
-
-                // *** Highlight selected relation if there are multiple relations ***
-                $line_selected = '';
-                $button_selected = 'btn-secondary';
-                if ($fam_count > 1 and $familyDb->fam_gedcomnumber == $marriage) {
-                    //$line_selected = 'bg-primary-subtle';
-                    $button_selected = 'btn-primary';
-                }
     ?>
+            <ul id="sortable<?= $i; ?>" class="sortable-relations sortable-pages list-group ui-sortable" data-family-id="<?= isset($familyDb->fam_id) ? $familyDb->fam_id : ''; ?>">
 
-                <div class="row mb-2 <?= $line_selected; ?>">
-                    <div class="col-2">
-                        <?php if ($fam_count > 1) { ?>
-                            <form method="POST" action="index.php?page=editor&amp;menu_tab=marriage">
-                                <input type="hidden" name="marriage_nr" value="<?= $familyDb->fam_gedcomnumber; ?>">
-                                <input type="submit" name="dummy3" value="<?= __('Family') . ' ' . ($i + 1); ?>" class="btn btn-sm <?= $button_selected; ?>">
-                            </form>
-                        <?php } else { ?>
-                            <?= __('Family'); ?>
-                        <?php } ?>
-                    </div>
+                <?php
+                for ($i = 0; $i < $fam_count; $i++) {
+                    $qry = "SELECT f.*,
+                        e.event_date AS fam_marr_date,
+                        man_rel.person_id AS partner1_id,
+                        man_rel.person_gedcomnumber AS partner1_gedcomnumber,
+                        woman_rel.person_id AS partner2_id,
+                        woman_rel.person_gedcomnumber AS partner2_gedcomnumber
+                        FROM humo_families f
+                        LEFT JOIN humo_events e ON f.fam_id = e.relation_id AND e.event_kind = 'marriage'
+                        LEFT JOIN humo_relations_persons man_rel ON man_rel.relation_id = f.fam_id AND man_rel.relation_type = 'partner' AND man_rel.partner_order = 1
+                        LEFT JOIN humo_relations_persons woman_rel ON woman_rel.relation_id = f.fam_id AND woman_rel.relation_type = 'partner' AND woman_rel.partner_order = 2
+                        WHERE f.fam_id='" . $relation_id[$i] . "'";
+                    $relation = $dbh->query($qry);
+                    $relationDb = $relation->fetch(PDO::FETCH_OBJ);
 
-                    <div class="col-1">
-                        <?php if ($i < ($fam_count - 1)) { ?>
-                            <a href="index.php?page=<?= $page; ?>&amp;person_id=<?= $person->pers_id; ?>&amp;fam_down=<?= $i; ?>&amp;fam_array=<?= $person->pers_fams; ?>">
-                                <img src="images/arrow_down.gif" border="0" alt="fam_down">
-                            </a>
-                        <?php } else { ?>
-                            &nbsp;&nbsp;&nbsp;
-                        <?php
-                        }
-                        if ($i > 0) {
-                        ?>
-                            <a href="index.php?page=<?= $page; ?>&amp;person_id=<?= $person->pers_id; ?>&amp;fam_up=<?= $i; ?>&amp;fam_array=<?= $person->pers_fams; ?>">
-                                <img src="images/arrow_up.gif" border="0" alt="fam_up">
-                            </a>
-                        <?php
-                        } else {
-                            //echo '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;';
-                        }
-                        ?>
-                    </div>
+                    // *** Highlight selected relation if there are multiple relations ***
+                    $line_selected = '';
+                    $button_selected = 'btn-secondary';
+                    if ($fam_count > 1 and $relationDb->fam_gedcomnumber == $marriage) {
+                        $line_selected = 'list-group-item-secondary';
+                        $button_selected = 'btn-primary';
+                    }
+                ?>
 
-                    <div class="col-9">
-                        <b><?= show_person($familyDb->fam_man) . ' ' . __('and') . ' ' . show_person($familyDb->fam_woman); ?></b>
-                        <?php
-                        if ($familyDb->fam_marr_date) {
-                            echo ' X ' . $datePlace->date_place($familyDb->fam_marr_date, '');
-                        }
-                        ?>
-                    </div>
+                    <li class="list-group-item <?= $line_selected; ?>">
+                        <div class="row mb-2">
+                            <div class="col-1">
+                                <span style="cursor:move;" id="<?= $id[$i]; ?>" class="relation-handle" data-child-index="<?= $i; ?>">
+                                    <img src="images/drag-icon.gif" border="0" title="<?= __('Drag to change order (saves automatically)'); ?>" alt="<?= __('Drag to change order'); ?>">
+                                </span>
 
-                </div>
+                                <span id="relationnum<?= $id[$i]; ?>">
+                                    <?= ($i + 1); ?>
+                                </span>
+                            </div>
+
+                            <div class="col-2">
+                                <?php if ($fam_count > 1) { ?>
+                                    <form method="POST" action="index.php?page=editor&amp;menu_tab=marriage">
+                                        <input type="hidden" name="marriage_nr" value="<?= $relationDb->fam_gedcomnumber; ?>">
+                                        <input type="submit" name="dummy3" value="<?= __('Family'); ?>" class="btn btn-sm <?= $button_selected; ?>">
+                                    </form>
+                                <?php } else { ?>
+                                    <?= __('Family'); ?>
+                                <?php } ?>
+                            </div>
+
+                            <div class="col-9">
+                                <b><?= show_person_with_id($relationDb->partner1_id) . ' ' . __('and') . ' ' . show_person_with_id($relationDb->partner2_id); ?></b>
+                                <?php
+                                if ($relationDb->fam_marr_date) {
+                                    echo ' X ' . $datePlace->date_place($relationDb->fam_marr_date, '');
+                                }
+                                ?>
+                            </div>
+                        </div>
+                    </li>
+
+                <?php } ?>
+            </ul>
     <?php
-            }
         }
 
         // *** Automatically calculate birth date if marriage date and marriage age by man is used ***
         if (
-            isset($_POST["fam_man_age"]) && $_POST["fam_man_age"] != '' && $fam_marr_date != '' && $person1->pers_birth_date == '' && $person1->pers_bapt_date == ''
+            isset($_POST["partner1_age"]) && $_POST["partner1_age"] != '' && $fam_marr_date != '' && $person1->pers_birth_date == '' && $person1->pers_bapt_date == ''
         ) {
-            $pers_birth_date = 'ABT ' . (substr($fam_marr_date, -4) - $_POST["fam_man_age"]);
+            $pers_birth_date = 'ABT ' . (substr($fam_marr_date, -4) - $_POST["partner1_age"]);
 
             // *** Check if there is a birth event ***
             $birth_event = $dbh->prepare("SELECT * FROM humo_events WHERE person_id = :person_id AND event_kind = 'birth'");
@@ -219,9 +227,9 @@ if ($person->pers_sexe == 'M') {
 
         // *** Automatically calculate birth date if marriage date and marriage age by woman is used ***
         if (
-            isset($_POST["fam_woman_age"]) && $_POST["fam_woman_age"] != '' && $fam_marr_date != '' && $person2->pers_birth_date == '' && $person2->pers_bapt_date == ''
+            isset($_POST["partner2_age"]) && $_POST["partner2_age"] != '' && $fam_marr_date != '' && $person2->pers_birth_date == '' && $person2->pers_bapt_date == ''
         ) {
-            $pers_birth_date = 'ABT ' . (substr($fam_marr_date, -4) - $_POST["fam_woman_age"]);
+            $pers_birth_date = 'ABT ' . (substr($fam_marr_date, -4) - $_POST["partner2_age"]);
 
             // *** Check if there is a birth event ***
             $birth_event = $dbh->prepare("SELECT * FROM humo_events WHERE person_id = :person_id AND event_kind = 'birth'");
@@ -284,7 +292,7 @@ if ($person->pers_sexe == 'M') {
 </div>
 
 <!-- Marriage editor -->
-<?php if ($person->pers_fams) { ?>
+<?php if ($relations) { ?>
     <?php /*
     Don't use this link, witness buttons won't work anymore
     <form method="POST" action="index.php?page=editor&amp;menu_tab=marriage" style="display : inline;" enctype="multipart/form-data" name="form2" id="form2">
@@ -368,9 +376,10 @@ if ($person->pers_sexe == 'M') {
             };
 
             $new_nr = $db_functions->get_family($fam_remove);
+            $children = $db_functions->get_children($new_nr->fam_id);
         ?>
             <div class="alert alert-danger">
-                <?php if ($new_nr->fam_children) { ?>
+                <?php if ($children) { ?>
                     <strong><?= __('If you continue, ALL children will be disconnected automatically!'); ?></strong><br>
                 <?php } ?>
                 <?= __('Are you sure to remove this mariage?'); ?>
@@ -685,10 +694,10 @@ if ($person->pers_sexe == 'M') {
 
                         <!-- Age of man by marriage -->
                         <div class="row mb-2">
-                            <label for="fam_man_age" class="col-md-3 col-form-label"><?= __('Age person 1'); ?></label>
+                            <label for="partner1_age" class="col-md-3 col-form-label"><?= __('Age person 1'); ?></label>
                             <div class="col-md-3">
                                 <div class="input-group">
-                                    <input type="text" name="fam_man_age" value="<?= $fam_man_age; ?>" size="3" class="form-control form-control-sm">
+                                    <input type="text" name="partner1_age" value="<?= $partner1_age; ?>" size="3" class="form-control form-control-sm">
 
                                     <!-- Help popover -->
                                     <button type="button" class="btn btn-sm btn-secondary"
@@ -702,9 +711,9 @@ if ($person->pers_sexe == 'M') {
 
                         <!-- Age of woman by marriage -->
                         <div class="row mb-2">
-                            <label for="fam_woman_age" class="col-md-3 col-form-label"><?= __('Age person 2'); ?></label>
+                            <label for="partner2_age" class="col-md-3 col-form-label"><?= __('Age person 2'); ?></label>
                             <div class="col-md-3">
-                                <input type="text" name="fam_woman_age" value="<?= $fam_woman_age; ?>" size="3" class="form-control form-control-sm">
+                                <input type="text" name="partner2_age" value="<?= $partner2_age; ?>" size="3" class="form-control form-control-sm">
                             </div>
                         </div>
 
@@ -1197,151 +1206,59 @@ if ($person->pers_sexe == 'M') {
 
     <?php
     if ($marriage) {
-        // TODO: move to model script.
         // *** Automatic order of children ***
         if (isset($_GET['order_children'])) {
-            function date_string($text)
-            {
-                // *** Remove special date items ***
-                $text = str_replace('BEF ', '', $text);
-                $text = str_replace('ABT ', '', $text);
-                $text = str_replace('AFT ', '', $text);
-                $text = str_replace('BET ', '', $text);
-                $text = str_replace('INT ', '', $text);
-                $text = str_replace('EST ', '', $text);
-                $text = str_replace('CAL ', '', $text);
-
-                $day = '';
-                // *** Skip $day if there is only year ***
-                if (strlen($text) > 4) {
-                    // Add 0 if day is single digit: 9 JUN 1954
-                    if (substr($text, 1, 1) === ' ') {
-                        $day = '0' . substr($text, 0, 1);
-                    } elseif (is_numeric(substr($text, 0, 2))) {
-                        $day = substr($text, 0, 2);
-                    } else {
-                        $day = '00';
-                    }
-                } else {
-                    $text = '00 ' . $text; // No month, use 00.
-                    $day = '00'; // No day, use 00.
-                }
-
-                $text = str_replace("JAN", "01", $text);
-                $text = str_replace("FEB", "02", $text);
-                $text = str_replace("MAR", "03", $text);
-                $text = str_replace("APR", "04", $text);
-                $text = str_replace("MAY", "05", $text);
-                $text = str_replace("JUN", "06", $text);
-                $text = str_replace("JUL", "07", $text);
-                $text = str_replace("AUG", "08", $text);
-                $text = str_replace("SEP", "09", $text);
-                $text = str_replace("OCT", "10", $text);
-                $text = str_replace("NOV", "11", $text);
-                $text = str_replace("DEC", "12", $text);
-                //$returnstring = substr($text,-4).substr(substr($text,-7),0,2).substr($text,0,2);
-                $returnstring = substr($text, -4) . substr(substr($text, -7), 0, 2) . $day;
-
-                return $returnstring;
-                // Solve maybe later: date_string 2 mei is smaller then 10 may (2 birth in 1 month is rare...).
-            }
-
-            //echo '<br>&gt;&gt;&gt; '.__('Order children...');
-
-            //TODO only get children...
-            $fam_qry = $dbh->query("SELECT * FROM humo_families WHERE fam_tree_id='" . $tree_id . "' AND fam_gedcomnumber='" . $marriage . "'");
-            $famDb = $fam_qry->fetch(PDO::FETCH_OBJ);
-            $child_array = explode(";", $famDb->fam_children);
-            $nr_children = count($child_array);
-            if ($nr_children > 1) {
-                unset($children_array);
-                for ($i = 0; $i < $nr_children; $i++) {
-                    $childDb = $db_functions->get_person($child_array[$i]);
-
-                    $child_array_nr = $child_array[$i];
-                    if ($childDb->pers_birth_date) {
-                        $children_array[$child_array_nr] = date_string($childDb->pers_birth_date);
-                    } elseif ($childDb->pers_bapt_date) {
-                        $children_array[$child_array_nr] = date_string($childDb->pers_bapt_date);
-                    } else {
-                        $children_array[$child_array_nr] = '';
-                    }
-                }
-
-                asort($children_array);
-
-                $fam_children = '';
-                foreach ($children_array as $key => $val) {
-                    if ($fam_children != '') {
-                        $fam_children .= ';';
-                    }
-                    $fam_children .= $key;
-                }
-
-                if ($famDb->fam_children != $fam_children) {
-                    $sql = "UPDATE humo_families SET fam_children='" . $fam_children . "' WHERE fam_id='" . $famDb->fam_id . "'";
-                    $dbh->query($sql);
-                }
-            }
+            $order_changed = $orderChildren->order($dbh, $db_functions, $familyDb->fam_id);
         }
 
         // *** Show children ***
-        $family = $dbh->query("SELECT * FROM humo_families WHERE fam_tree_id='" . $tree_id . "' AND fam_gedcomnumber='" . $marriage . "'");
-        $familyDb = $family->fetch(PDO::FETCH_OBJ);
-        if ($familyDb->fam_children) {
+        $children = $db_functions->get_children($familyDb->fam_id);
+        if (count($children) > 0) {
     ?>
             <a name="children"></a>
+
+            <h3><?= __('Children'); ?></h3>
+
             <?= __('Use this icon to order children (drag and drop)'); ?>: <img src="images/drag-icon.gif" border="0" alt="<?= __('Drag to change order'); ?>" title="<?= __('Drag to change order'); ?>"><br>
             <?= __('Or automatically order children:'); ?> <a href="index.php?page=<?= $page; ?>&amp;menu_tab=marriage&amp;marriage_nr=<?= $marriage; ?>&amp;order_children=1#children">
                 <?= __('Automatic order children'); ?>
             </a>
+
             <?php if (isset($_GET['order_children'])) { ?>
-                <b><?= __('Children are re-ordered.'); ?></b>
-            <?php
-            }
+                <div class="alert <?= !empty($order_changed) ? 'alert-success' : 'alert-info'; ?>" role="alert">
+                    <b>
+                        <?= !empty($order_changed) ? __('Children are re-ordered.') : __('No changes in order of children.'); ?>
+                    </b>
+                </div>
+            <?php } ?>
 
-            //echo __('Children').':<br>';
-            $fam_children_array = explode(";", $familyDb->fam_children);
-            ?>
             <ul id="sortable<?= $i; ?>" class="sortable-children sortable-pages list-group ui-sortable" data-family-id="<?= $familyDb->fam_id; ?>">
-                <?php
-                foreach ($fam_children_array as $j => $value) {
-                    // *** Create new children variabele, for disconnect child ***
-                    $fam_children = '';
-                    foreach ($fam_children_array as $k => $value) {
-                        if ($k != $j) {
-                            $fam_children .= $fam_children_array[$k] . ';';
-                        }
-                    }
-                    $fam_children = substr($fam_children, 0, -1); // *** strip last ; character ***
-                ?>
-
+                <?php foreach ($children as $child) { ?>
                     <li class="list-group-item">
                         <div class="row">
                             <div class="col-md-1">
-                                <span style="cursor:move;" id="<?= $fam_children_array[$j]; ?>" class="child-handle" data-child-index="<?= $j; ?>">
+                                <span style="cursor:move;" id="<?= $child->id; ?>" class="child-handle" data-child-index="<?= $j; ?>">
                                     <img src="images/drag-icon.gif" border="0" title="<?= __('Drag to change order (saves automatically)'); ?>" alt="<?= __('Drag to change order'); ?>">
                                 </span>
                             </div>
 
                             <div class="col-md-1">
-                                <a href="index.php?page=<?= $page; ?>&amp;family_id=<?= $familyDb->fam_id; ?>&amp;child_disconnect=<?= $fam_children; ?>&amp;child_disconnect_gedcom=<?= $fam_children_array[$j]; ?>">
+                                <a href="index.php?page=<?= $page; ?>&amp;family_id=<?= $familyDb->fam_id; ?>&amp;child_disconnect_id=<?= $child->id; ?>">
                                     <img src="images/person_disconnect.gif" border="0" title="<?= __('Disconnect child'); ?>" alt="<?= __('Disconnect child'); ?>">
                                 </a>
                             </div>
 
                             <div class="col-md-10">
-                                <span id="chldnum<?= $fam_children_array[$j]; ?>">
-                                    <?= ($j + 1); ?>
+                                <span id="chldnum<?= $child->id; ?>">
+                                    <?= ($child->relation_order); ?>
                                 </span>
-                                <?= show_person($fam_children_array[$j], true); ?>
+                                <?= show_person_with_id($child->person_id, true); ?>
                             </div>
                         </div>
                     </li>
                 <?php } ?>
             </ul>
         <?php } ?>
-
 
         <!-- Add child -->
         <?php $hideshow = 702; ?>
@@ -1360,10 +1277,6 @@ if ($person->pers_sexe == 'M') {
 
             <!-- Search existing person as child -->
             <form method="POST" action="index.php?page=editor&amp;menu_tab=marriage" style="display : inline;" name="form7" id="form7">
-                <?php if (isset($familyDb->fam_children)) { ?>
-                    <input type="hidden" name="children" value="<?= $familyDb->fam_children; ?>">
-                <?php               } ?>
-
                 <!-- Event IDs needed to check if event is changed -->
                 <?php if (isset($familyDb->fam_relation_event_id)) { ?>
                     <input type="hidden" name="fam_relation_event_id" value="<?= $familyDb->fam_relation_event_id; ?>">
@@ -1407,6 +1320,8 @@ if ($person->pers_sexe == 'M') {
             </form>
         </div><br><br>
 
+        <!-- Order relations using drag and drop -->
+        <script src="../assets/js/order_relations.js"></script>
         <!-- Order children using drag and drop (using jquery and jqueryui) -->
         <script src="../assets/js/order_children.js"></script>
     <?php
@@ -1423,16 +1338,16 @@ function add_person($person_kind, $pers_sexe)
     $pers_lastname = '';
 
     if ($person_kind == 'partner') {
-        $form = 5;
+        //$form = 5;
         $form_name = 'form5';
     } else {
         // *** Add child to family ***
-        $form = 6;
+        //$form = 6;
         $form_name = 'form6';
 
         // *** Get default prefix and lastname ***
-        if ($familyDb->fam_man) {
-            $personDb = $db_functions->get_person($familyDb->fam_man);
+        if ($familyDb->partner1_id) {
+            $personDb = $db_functions->get_person_with_id($familyDb->partner1_id);
             $pers_prefix = $personDb->pers_prefix;
             $pers_lastname = $personDb->pers_lastname;
         }
@@ -1442,9 +1357,6 @@ function add_person($person_kind, $pers_sexe)
     <form method="POST" style="display: inline;" action="index.php?page=editor#marriage" name="<?= $form_name; ?>" id="<?= $form_name; ?>">
         <?php if ($person_kind != 'partner') { ?>
             <input type="hidden" name="child_connect" value="1">
-            <?php if (isset($familyDb->fam_children)) { ?>
-                <input type="hidden" name="children" value="<?= $familyDb->fam_children; ?>">
-            <?php } ?>
             <!-- TODO check code. Both variables show the same value -->
             <input type="hidden" name="family_id" value="<?= $familyDb->fam_gedcomnumber; ?>">
             <input type="hidden" name="marriage_nr" value="<?= $marriage; ?>">

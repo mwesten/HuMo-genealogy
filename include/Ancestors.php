@@ -21,12 +21,13 @@ class Ancestors
         $ancestor_array = array();
 
         // *** person 1 ***
-        $personDb = $db_functions->get_person($main_person, 'famc-fams');
+        // TODO replace with: get_parents_relation function.
+        $personDb = $db_functions->get_person($main_person, 'parentrelation');
         // *** Get parents ***
-        if ($personDb->pers_famc) {
-            $parentDb = $db_functions->get_family($personDb->pers_famc, 'man-woman');
-            $ancestor_array[2] = $parentDb->fam_man;
-            $ancestor_array[3] = $parentDb->fam_woman;
+        if ($personDb->parent_relation_id) {
+            $parentDb = $db_functions->get_family_partners($personDb->parent_relation_id);
+            $ancestor_array[2] = $parentDb->partner1_gedcomnumber;
+            $ancestor_array[3] = $parentDb->partner2_gedcomnumber;
         }
 
         // Loop to find person data
@@ -34,24 +35,25 @@ class Ancestors
 
         for ($counter = 2; $counter < $count_max; $counter++) {
             if (isset($ancestor_array[$counter])) {
-                $personDb = $db_functions->get_person($ancestor_array[$counter], 'famc-fams');
+                // TODO replace with: get_parents_relation function.
+                $personDb = $db_functions->get_person($ancestor_array[$counter], 'parentrelation');
                 // *** Get parents ***
-                if (isset($personDb->pers_famc) && $personDb->pers_famc) {
+                if (isset($personDb->parent_relation_id) && $personDb->parent_relation_id) {
                     $father_counter = $counter * 2;
                     $mother_counter = $father_counter + 1;
-                    $parentDb = $db_functions->get_family($personDb->pers_famc, 'man-woman');
+                    $parentDb = $db_functions->get_family_partners($personDb->parent_relation_id);
 
                     // *** Check if man is in array allready ***
-                    if (!in_array($parentDb->fam_man, $ancestor_array)) {
-                        $ancestor_array[$father_counter] = $parentDb->fam_man;
+                    if (!in_array($parentDb->partner1_gedcomnumber, $ancestor_array)) {
+                        $ancestor_array[$father_counter] = $parentDb->partner1_gedcomnumber;
                         if ($father_counter > $count_max) {
                             $count_max = $father_counter;
                         }
                     }
 
                     // *** Check if woman is in array allready ***
-                    if (!in_array($parentDb->fam_woman, $ancestor_array)) {
-                        $ancestor_array[$mother_counter] = $parentDb->fam_woman;
+                    if (!in_array($parentDb->partner2_gedcomnumber, $ancestor_array)) {
+                        $ancestor_array[$mother_counter] = $parentDb->partner2_gedcomnumber;
                         if ($mother_counter > $count_max) {
                             $count_max = $mother_counter;
                         }

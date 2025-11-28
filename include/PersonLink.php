@@ -25,21 +25,20 @@ class PersonLink
     public function get_person_link($personDb, $path = ''): string
     {
         // TODO check global.
-        global $uri_path;
+        global $db_functions, $uri_path;
 
         if ($path) {
             $uri_path = $path;
         }
 
         $vars['pers_family'] = '';
-        if ($personDb->pers_famc) {
-            $vars['pers_family'] = $personDb->pers_famc;
+        $firstRelation = $db_functions->get_first_relation($personDb->pers_id);
+        if (isset($firstRelation->relation_gedcomnumber)) {
+            $vars['pers_family'] = $firstRelation->relation_gedcomnumber;
         }
-        if ($personDb->pers_fams) {
-            $pers_fams = explode(';', $personDb->pers_fams);
-            $vars['pers_family'] = $pers_fams[0];
+        elseif (isset($personDb->parent_relation_gedcomnumber)) {
+            $vars['pers_family'] = $personDb->parent_relation_gedcomnumber;
         }
-
         $url = $this->processLinks->get_link($uri_path, 'family', $personDb->pers_tree_id, true, $vars);
         if ($personDb->pers_gedcomnumber) {
             $url .= "main_person=" . $personDb->pers_gedcomnumber;

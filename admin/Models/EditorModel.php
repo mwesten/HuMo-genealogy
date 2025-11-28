@@ -144,10 +144,12 @@ class EditorModel extends AdminBaseModel
                 // *** Person don't exist (anymore)! ***
                 if (!isset($this->person->pers_gedcomnumber)) {
                     $this->pers_gedcomnumber = '';
+                    $this->person = null; // *** Add this line to prevent null property access ***
                 }
             } else {
                 // *** Non valid GEDCOM number, now reset GEDCOM number ***
                 $this->pers_gedcomnumber = '';
+                $this->person = null; // *** Add this line to prevent null property access ***
             }
             $_SESSION['admin_pers_gedcomnumber'] = $this->pers_gedcomnumber;
 
@@ -224,7 +226,12 @@ class EditorModel extends AdminBaseModel
             $this->marriage = $_POST['marriage_nr'];
         }
 
-        if (isset($this->person->pers_fams) && $this->person->pers_fams) {
+        if ($this->person === null) {
+            return;
+        }
+
+        $relations = $this->db_functions->get_relations($this->person->pers_id);
+        if ($relations) {
             if (isset($_SESSION['admin_fam_gedcomnumber'])) {
                 $this->marriage = $_SESSION['admin_fam_gedcomnumber'];
             }
@@ -240,8 +247,10 @@ class EditorModel extends AdminBaseModel
 
             // *** Just in case there is no marriage number found ***
             if (!$this->marriage) {
-                $fams1 = explode(";", $this->person->pers_fams);
-                $this->marriage = $fams1[0];
+                $firstRel = is_array($relations) ? $relations[0] : $relations;
+                if (isset($firstRel->relation_gedcomnumber) && $firstRel->relation_gedcomnumber) {
+                    $this->marriage = $firstRel->relation_gedcomnumber;
+                }
             }
         }
 
@@ -323,80 +332,43 @@ class EditorModel extends AdminBaseModel
         if (isset($_POST['person_remove2'])) {
             $confirm .= '<div class="alert alert-success">';
 
-            $personDb = $this->db_functions->get_person($this->pers_gedcomnumber);
+            $personDb = $this->db_functions->get_person_with_id($this->person->pers_id);
 
-            // *** If person is married: remove marriages from family ***
-            if ($personDb->pers_fams) {
-                $fams_array = explode(";", $personDb->pers_fams);
-                foreach ($fams_array as $key => $value) {
-                    $famDb = $this->db_functions->get_family($fams_array[$key]);
-
-                    if ($famDb->fam_man == $this->pers_gedcomnumber) {
-                        // *** Completely remove marriage if man and woman are removed *** 
-                        if ($famDb->fam_woman == '' || $famDb->fam_woman == '0') {
-
-                            // *** Remove parents by children ***
-                            $fam_children = explode(";", $famDb->fam_children);
-                            foreach ($fam_children as $key2 => $value) {
-                                $sql = "UPDATE humo_persons SET pers_famc=''
-                                    WHERE pers_tree_id='" . $this->tree_id . "' AND pers_gedcomnumber='" . $fam_children[$key2] . "'";
-                                $this->dbh->query($sql);
-                            }
-
-                            $sql = "DELETE FROM humo_families
-                                WHERE fam_tree_id='" . $this->tree_id . "' AND fam_gedcomnumber='" . $famDb->fam_gedcomnumber . "'";
-                            $this->dbh->query($sql);
-                        } else {
-                            $sql = "UPDATE humo_families SET fam_man='0'
-                                WHERE fam_tree_id='" . $this->tree_id . "' AND fam_gedcomnumber='" . $famDb->fam_gedcomnumber . "'";
-                            $this->dbh->query($sql);
-                            $confirm .= __('Person disconnected from marriage(s).') . '<br>';
-                        }
-                    }
-
-                    if ($famDb->fam_woman == $this->pers_gedcomnumber) {
-                        // *** Completely remove marriage if man and woman are removed *** 
-                        if ($famDb->fam_man == '' || $famDb->fam_man == '0') {
-
-                            // *** Remove parents by children ***
-                            $fam_children = explode(";", $famDb->fam_children);
-                            foreach ($fam_children as $key2 => $value) {
-                                $sql = "UPDATE humo_persons SET pers_famc=''
-                                    WHERE pers_tree_id='" . $this->tree_id . "' AND pers_gedcomnumber='" . $fam_children[$key2] . "'";
-                                $this->dbh->query($sql);
-                            }
-
-                            $sql = "DELETE FROM humo_families
-                                WHERE fam_tree_id='" . $this->tree_id . "' AND fam_gedcomnumber='" . $famDb->fam_gedcomnumber . "'";
-                            $this->dbh->query($sql);
-                        } else {
-                            $sql = "UPDATE humo_families SET fam_woman='0'
-                                WHERE fam_tree_id='" . $this->tree_id . "' AND fam_gedcomnumber='" . $famDb->fam_gedcomnumber . "'";
-                            $this->dbh->query($sql);
-                            $confirm .= __('Person disconnected from marriage(s).') . '<br>';
-                        }
-                    }
+            // *** Check if relations have another partner before deletion of relation-persons records ***
+            $sql = "SELECT * FROM humo_relations_persons WHERE person_id = :person_id AND relation_type='partner'";
+            $stmt = $this->dbh->prepare($sql);
+            $stmt->bindValue(':person_id', $this->person->pers_id, PDO::PARAM_STR);
+            $stmt->execute();
+            $relations = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            foreach ($relations as $relation) {
+                $partnerCountStmt = $this->dbh->prepare("SELECT COUNT(*) FROM humo_relations_persons WHERE relation_id = :relation_id AND relation_type = 'partner'");
+                $partnerCountStmt->bindValue(':relation_id', $relation['relation_id'], PDO::PARAM_INT);
+                $partnerCountStmt->execute();
+                $partnerCount = $partnerCountStmt->fetchColumn();
+                // If only 1 partner is connected to this relationship, it will be deleted.
+                if ($partnerCount == 1) {
+                    $sql_delete = "DELETE FROM humo_relations_persons WHERE relation_id = :relation_id";
+                    $stmt_delete = $this->dbh->prepare($sql_delete);
+                    $stmt_delete->bindValue(':relation_id', $relation['relation_id'], PDO::PARAM_INT);
+                    $stmt_delete->execute();
                 }
             }
 
-            // *** If person is a child: remove child number from parents family ***
-            if ($personDb->pers_famc) {
-                $famDb = $this->db_functions->get_family($personDb->pers_famc);
+            $childRelationsStmt = $this->dbh->prepare("SELECT COUNT(*) FROM humo_relations_persons WHERE person_id = :person_id AND relation_type = 'child'");
+            $childRelationsStmt->bindValue(':person_id', $this->person->pers_id, PDO::PARAM_INT);
+            $childRelationsStmt->execute();
+            $childRelationsCount = $childRelationsStmt->fetchColumn();
 
-                $fam_children = explode(";", $famDb->fam_children);
-                foreach ($fam_children as $key => $value) {
-                    if ($fam_children[$key] != $this->pers_gedcomnumber) {
-                        $fam_children2[] = $fam_children[$key];
-                    }
-                }
-                $fam_children3 = '';
-                if (isset($fam_children2[0])) {
-                    $fam_children3 = implode(";", $fam_children2);
-                }
+            // Remove all relation connections (child and marriages).
+            $sql = "DELETE FROM humo_relations_persons WHERE person_id = :person_id";
+            $stmt = $this->dbh->prepare($sql);
+            $stmt->bindValue(':person_id', $this->person->pers_id, PDO::PARAM_INT);
+            $stmt->execute();
 
-                $sql = "UPDATE humo_families SET fam_children='" . $fam_children3 . "' WHERE fam_id='" . $famDb->fam_id . "'";
-                $this->dbh->query($sql);
-
+            if ($relations) {
+                $confirm .= __('Person disconnected from relations.') . '<br>';
+            }
+            if ($childRelationsCount) {
                 $confirm .= __('Person disconnected from parents.') . '<br>';
             }
 
@@ -415,7 +387,6 @@ class EditorModel extends AdminBaseModel
             $sql = "DELETE FROM humo_connections WHERE connect_tree_id='" . $this->tree_id . "' AND connect_connect_id='" . $this->pers_gedcomnumber . "'";
             $this->dbh->query($sql);
 
-            // *** Added in march 2023 ***
             $sql = "DELETE FROM humo_user_notes WHERE note_tree_id='" . $this->tree_id . "' AND note_connect_id='" . $this->pers_gedcomnumber . "'";
             $this->dbh->query($sql);
 
@@ -996,8 +967,6 @@ class EditorModel extends AdminBaseModel
             $sql = "INSERT INTO humo_persons SET
                 pers_tree_id = :tree_id,
                 pers_tree_prefix = :tree_prefix,
-                pers_famc = '',
-                pers_fams = '',
                 pers_gedcomnumber = :new_gedcomnumber,
                 pers_firstname = :pers_firstname,
                 pers_prefix = :pers_prefix,
@@ -1266,7 +1235,6 @@ class EditorModel extends AdminBaseModel
 
             // *** New person: add profession ***
             if (isset($_POST["event_profession"]) && $_POST["event_profession"] != "" && $_POST["event_profession"] != "Profession") {
-                //$event_date = '';
                 $event_place = '';
                 if (isset($_POST["event_place_profession"])) {
                     $event_place = $_POST["event_place_profession"];
@@ -1285,7 +1253,7 @@ class EditorModel extends AdminBaseModel
                     'event_kind' => 'profession',
                     'event_event' => $_POST["event_profession"],
                     'event_gedcom' => '',
-                    'event_date' => 'event_date_profession',
+                    'event_date' => $this->editor_cls->date_process("event_date_profession"),
                     'event_place' => $event_place,
                     'event_text' => $event_text
                 ];
@@ -1312,7 +1280,7 @@ class EditorModel extends AdminBaseModel
                     'event_kind' => 'religion',
                     'event_event' => $_POST["event_religion"],
                     'event_gedcom' => 'RELI',
-                    'event_date' => 'event_date_religion',
+                    'event_date' => $this->editor_cls->date_process("event_date_religion"),
                     'event_place' => $event_place,
                     'event_text' => $event_text
                 ];
@@ -1336,58 +1304,6 @@ class EditorModel extends AdminBaseModel
             $this->cache_latest_changes(true);
         }
 
-        // *** Family move down ***
-        if (isset($_GET['fam_down']) && is_numeric($_GET['fam_down'])) {
-            $child_array_org = explode(";", $this->safeTextDb->safe_text_db($_GET['fam_array']));
-            $child_array = $child_array_org;
-            $child_array_id = $_GET['fam_down'];
-            $child_array[$child_array_id] = $child_array_org[($child_array_id + 1)];
-            $child_array[$child_array_id + 1] = $child_array_org[($child_array_id)];
-            $fams = '';
-            $counter = count($child_array);
-            for ($k = 0; $k < $counter; $k++) {
-                if ($k > 0) {
-                    $fams .= ';';
-                }
-                $fams .= $child_array[$k];
-            }
-            $sql = "UPDATE humo_persons SET
-                pers_fams = :fams,
-                pers_changed_user_id = :userid
-                WHERE pers_id = :person_id";
-            $stmt = $this->dbh->prepare($sql);
-            $stmt->bindValue(':fams', $fams, PDO::PARAM_STR);
-            $stmt->bindValue(':userid', $this->userid, PDO::PARAM_STR);
-            $stmt->bindValue(':person_id', $_GET["person_id"], PDO::PARAM_STR);
-            $stmt->execute();
-        }
-
-        // *** Family move up ***
-        if (isset($_GET['fam_up']) && is_numeric($_GET['fam_up'])) {
-            $child_array_org = explode(";", $this->safeTextDb->safe_text_db($_GET['fam_array']));
-            $child_array = $child_array_org;
-            $child_array_id = $_GET['fam_up'] - 1;
-            $child_array[$child_array_id + 1] = $child_array_org[($child_array_id)];
-            $child_array[$child_array_id] = $child_array_org[($child_array_id + 1)];
-            $fams = '';
-            $counter = count($child_array);
-            for ($k = 0; $k < $counter; $k++) {
-                if ($k > 0) {
-                    $fams .= ';';
-                }
-                $fams .= $child_array[$k];
-            }
-            $sql = "UPDATE humo_persons SET
-                pers_fams = :fams,
-                pers_changed_user_id = :userid
-                WHERE pers_id = :person_id";
-            $stmt = $this->dbh->prepare($sql);
-            $stmt->bindValue(':fams', $fams, PDO::PARAM_STR);
-            $stmt->bindValue(':userid', $this->userid, PDO::PARAM_STR);
-            $stmt->bindValue(':person_id', $_GET["person_id"], PDO::PARAM_STR);
-            $stmt->execute();
-        }
-
         // *** Family disconnect ***
         // *** $_POST['fam_remove3'] = gedcomnumber of family to remove ***
         if (isset($_POST['fam_remove2']) && $validateGedcomnumber->validate($_POST['fam_remove3'])) {
@@ -1396,36 +1312,11 @@ class EditorModel extends AdminBaseModel
             // *** Remove fams number from man and woman ***
             $new_nr = $this->db_functions->get_family($fam_remove);
 
-            // *** Disconnect ALL children from marriage ***
-            if ($new_nr->fam_children) {
-                $child_gedcomnumber = explode(";", $new_nr->fam_children);
-                foreach ($child_gedcomnumber as $i => $value) {
-                    // *** Find child data ***
-                    // TODO check line. Could be used for pers_id to improve update query.
-                    //$resultDb = $this->db_functions->get_person($child_gedcomnumber[$i]);
-
-                    // *** Remove parents from child record ***
-                    $stmt = $this->dbh->prepare(
-                        "UPDATE humo_persons SET
-                            pers_famc='',
-                            pers_changed_user_id=:userid
-                            WHERE pers_tree_id=:tree_id AND pers_gedcomnumber=:gedcomnumber"
-                    );
-                    $stmt->bindValue(':userid', $this->userid, PDO::PARAM_STR);
-                    $stmt->bindValue(':tree_id', $this->tree_id, PDO::PARAM_STR);
-                    $stmt->bindValue(':gedcomnumber', $child_gedcomnumber[$i], PDO::PARAM_STR);
-                    $stmt->execute();
-                }
-            }
-
-            if (isset($new_nr->fam_man)) {
-                $this->fams_remove($new_nr->fam_man, $fam_remove);
-            }
-
-            //unset($fams2);
-            if (isset($new_nr->fam_woman)) {
-                $this->fams_remove($new_nr->fam_woman, $fam_remove);
-            }
+            // Remove children and partner connections.
+            $sql = "DELETE FROM humo_relations_persons WHERE relation_id = :relation_id";
+            $stmt = $this->dbh->prepare($sql);
+            $stmt->bindValue(':relation_id', $new_nr->fam_id, PDO::PARAM_INT);
+            $stmt->execute();
 
             $sql = "DELETE FROM humo_events WHERE relation_id='" . $new_nr->fam_id . "'";
             $this->dbh->query($sql);
@@ -1447,13 +1338,17 @@ class EditorModel extends AdminBaseModel
             $confirm .= '</div>';
 
             // *** If this relation is removed, show 1st relation of person, or link to new relation ***
-            $marriage = '';
-            if (isset($this->person->pers_fams) && $this->person->pers_fams) {
-                $fams1 = explode(";", $this->person->pers_fams);
-                $marriage = $fams1[0];
+            $relation = $this->db_functions->get_first_relation($this->person->pers_id);
+            if ($relation && isset($relation->relation_gedcomnumber)) {
+                $marriage = $relation->relation_gedcomnumber;
+                $_POST["marriage_nr"] = $marriage;
+                $_SESSION['admin_fam_gedcomnumber'] = $marriage;
+            } else {
+                // *** No relations found, clear relation session ***
+                $marriage = '';
+                unset($_POST["marriage_nr"]);
+                unset($_SESSION['admin_fam_gedcomnumber']);
             }
-            $_POST["marriage_nr"] = $marriage;
-            $_SESSION['admin_fam_gedcomnumber'] = $marriage;
         }
 
         // *** Add NEW parents to a child ***
@@ -1466,22 +1361,36 @@ class EditorModel extends AdminBaseModel
             $man_gedcomnumber = 'I' . $temp_number;
             $woman_gedcomnumber = 'I' . ($temp_number + 1);
 
+            // *** Add parent family ***
             $sql = "INSERT INTO humo_families (
-                fam_gedcomnumber, fam_tree_id, fam_kind, fam_man, fam_woman, fam_children,
-                fam_religion,
-                fam_text, fam_new_user_id
+                fam_gedcomnumber, fam_tree_id, fam_kind, fam_religion, fam_text, fam_new_user_id
             ) VALUES (
-                :fam_gedcomnumber, :fam_tree_id, '', :fam_man, :fam_woman, :fam_children,
-                '',
-                '', :fam_new_user_id
+                :fam_gedcomnumber, :fam_tree_id, '','', '', :fam_new_user_id
             )";
             $stmt = $this->dbh->prepare($sql);
             $stmt->bindValue(':fam_gedcomnumber', $fam_gedcomnumber, PDO::PARAM_STR);
             $stmt->bindValue(':fam_tree_id', $this->tree_id, PDO::PARAM_STR);
-            $stmt->bindValue(':fam_man', $man_gedcomnumber, PDO::PARAM_STR);
-            $stmt->bindValue(':fam_woman', $woman_gedcomnumber, PDO::PARAM_STR);
-            $stmt->bindValue(':fam_children', $this->pers_gedcomnumber, PDO::PARAM_STR);
             $stmt->bindValue(':fam_new_user_id', $this->userid, PDO::PARAM_STR);
+            $stmt->execute();
+
+            $relation_id = $this->dbh->lastInsertId();
+
+            // *** Add 1 child to new relation ***
+            $sql = "INSERT INTO humo_relations_persons SET
+                tree_id = :tree_id,
+                relation_id = :relation_id,
+                relation_gedcomnumber = :relation_gedcomnumber,
+                person_id = :person_id,
+                person_gedcomnumber = :person_gedcomnumber,
+                relation_type = 'child',
+                relation_order = 1,
+                partner_order = 0";
+            $stmt = $this->dbh->prepare($sql);
+            $stmt->bindValue(':tree_id', $this->tree_id, PDO::PARAM_STR);
+            $stmt->bindValue(':relation_id', $relation_id, PDO::PARAM_INT);
+            $stmt->bindValue(':relation_gedcomnumber', $fam_gedcomnumber, PDO::PARAM_STR);
+            $stmt->bindValue(':person_id', $this->person->pers_id, PDO::PARAM_INT);
+            $stmt->bindValue(':person_gedcomnumber', $this->pers_gedcomnumber, PDO::PARAM_STR);
             $stmt->execute();
 
             // *** Add father ***
@@ -1498,8 +1407,6 @@ class EditorModel extends AdminBaseModel
                     pers_gedcomnumber = :man_gedcomnumber,
                     pers_tree_id = :tree_id,
                     pers_tree_prefix = :tree_prefix,
-                    pers_famc = '',
-                    pers_fams = :fam_gedcomnumber,
                     pers_firstname = :pers_firstname1,
                     pers_prefix = :pers_prefix1,
                     pers_lastname = :pers_lastname1,
@@ -1515,7 +1422,6 @@ class EditorModel extends AdminBaseModel
             $stmt->bindValue(':man_gedcomnumber', $man_gedcomnumber, PDO::PARAM_STR);
             $stmt->bindValue(':tree_id', $this->tree_id, PDO::PARAM_STR);
             $stmt->bindValue(':tree_prefix', $this->tree_prefix, PDO::PARAM_STR);
-            $stmt->bindValue(':fam_gedcomnumber', $fam_gedcomnumber, PDO::PARAM_STR);
             $stmt->bindValue(':pers_firstname1', $_POST['pers_firstname1'], PDO::PARAM_STR);
             $stmt->bindValue(':pers_prefix1', $_POST['pers_prefix1'], PDO::PARAM_STR);
             $stmt->bindValue(':pers_lastname1', $_POST['pers_lastname1'], PDO::PARAM_STR);
@@ -1523,6 +1429,26 @@ class EditorModel extends AdminBaseModel
             $stmt->bindValue(':pers_alive1', $pers_alive1, PDO::PARAM_STR);
             $stmt->bindValue(':pers_sexe1', $pers_sexe1, PDO::PARAM_STR);
             $stmt->bindValue(':userid', $this->userid, PDO::PARAM_STR);
+            $stmt->execute();
+
+            $man_id = $this->dbh->lastInsertId();
+
+            // *** Add man new relation ***
+            $sql = "INSERT INTO humo_relations_persons SET
+                tree_id = :tree_id,
+                relation_id = :relation_id,
+                relation_gedcomnumber = :relation_gedcomnumber,
+                person_id = :person_id,
+                person_gedcomnumber = :person_gedcomnumber,
+                relation_type = 'partner',
+                relation_order = 1,
+                partner_order = 1";
+            $stmt = $this->dbh->prepare($sql);
+            $stmt->bindValue(':tree_id', $this->tree_id, PDO::PARAM_STR);
+            $stmt->bindValue(':relation_id', $relation_id, PDO::PARAM_INT);
+            $stmt->bindValue(':relation_gedcomnumber', $fam_gedcomnumber, PDO::PARAM_STR);
+            $stmt->bindValue(':person_id', $man_id, PDO::PARAM_INT);
+            $stmt->bindValue(':person_gedcomnumber', $man_gedcomnumber, PDO::PARAM_STR);
             $stmt->execute();
 
             // *** Add special name ***
@@ -1599,8 +1525,6 @@ class EditorModel extends AdminBaseModel
                     pers_gedcomnumber = :woman_gedcomnumber,
                     pers_tree_id = :tree_id,
                     pers_tree_prefix = :tree_prefix,
-                    pers_famc = '',
-                    pers_fams = :fam_gedcomnumber,
                     pers_firstname = :pers_firstname2,
                     pers_prefix = :pers_prefix2,
                     pers_lastname = :pers_lastname2,
@@ -1616,7 +1540,6 @@ class EditorModel extends AdminBaseModel
             $stmt->bindValue(':woman_gedcomnumber', $woman_gedcomnumber, PDO::PARAM_STR);
             $stmt->bindValue(':tree_id', $this->tree_id, PDO::PARAM_STR);
             $stmt->bindValue(':tree_prefix', $this->tree_prefix, PDO::PARAM_STR);
-            $stmt->bindValue(':fam_gedcomnumber', $fam_gedcomnumber, PDO::PARAM_STR);
             $stmt->bindValue(':pers_firstname2', $_POST['pers_firstname2'], PDO::PARAM_STR);
             $stmt->bindValue(':pers_prefix2', $_POST['pers_prefix2'], PDO::PARAM_STR);
             $stmt->bindValue(':pers_lastname2', $_POST['pers_lastname2'], PDO::PARAM_STR);
@@ -1624,6 +1547,26 @@ class EditorModel extends AdminBaseModel
             $stmt->bindValue(':pers_alive2', $pers_alive2, PDO::PARAM_STR);
             $stmt->bindValue(':pers_sexe2', $pers_sexe2, PDO::PARAM_STR);
             $stmt->bindValue(':userid', $this->userid, PDO::PARAM_STR);
+            $stmt->execute();
+
+            $woman_id = $this->dbh->lastInsertId();
+
+            // *** Add woman new relation ***
+            $sql = "INSERT INTO humo_relations_persons SET
+                tree_id = :tree_id,
+                relation_id = :relation_id,
+                relation_gedcomnumber = :relation_gedcomnumber,
+                person_id = :person_id,
+                person_gedcomnumber = :person_gedcomnumber,
+                relation_type = 'partner',
+                relation_order = 1,
+                partner_order = 2";
+            $stmt = $this->dbh->prepare($sql);
+            $stmt->bindValue(':tree_id', $this->tree_id, PDO::PARAM_STR);
+            $stmt->bindValue(':relation_id', $relation_id, PDO::PARAM_INT);
+            $stmt->bindValue(':relation_gedcomnumber', $fam_gedcomnumber, PDO::PARAM_STR);
+            $stmt->bindValue(':person_id', $woman_id, PDO::PARAM_INT);
+            $stmt->bindValue(':person_gedcomnumber', $man_gedcomnumber, PDO::PARAM_STR);
             $stmt->execute();
 
             // *** Add special name ***
@@ -1685,20 +1628,6 @@ class EditorModel extends AdminBaseModel
                 ];
                 $eventManager->update_event($data);
             }
-
-            // *** Add parents to child record ***
-            $stmt = $this->dbh->prepare(
-                "UPDATE humo_persons SET
-                    pers_famc = :fam_gedcomnumber,
-                    pers_changed_user_id = :userid
-                    WHERE pers_tree_id = :tree_id AND pers_gedcomnumber = :pers_gedcomnumber"
-            );
-            $stmt->bindValue(':fam_gedcomnumber', $fam_gedcomnumber, PDO::PARAM_STR);
-            $stmt->bindValue(':userid', $this->userid, PDO::PARAM_STR);
-            $stmt->bindValue(':tree_id', $this->tree_id, PDO::PARAM_STR);
-            $stmt->bindValue(':pers_gedcomnumber', $this->pers_gedcomnumber, PDO::PARAM_STR);
-            $stmt->execute();
-
             $this->family_tree_update();
         }
 
@@ -1708,34 +1637,30 @@ class EditorModel extends AdminBaseModel
 
             // *** Check if manual selected family is existing family in family tree ***
             if (isset($parentsDb->fam_gedcomnumber) && strtoupper($_POST['add_parents']) == $parentsDb->fam_gedcomnumber) {
-                if ($parentsDb->fam_children) {
-                    $fam_children = $parentsDb->fam_children . ';' . $this->pers_gedcomnumber;
+                // *** Check if there are other childs in this family. If so change $relation_order ***
+                $children = $this->db_functions->get_children($parentsDb->fam_id);
+                if ($children) {
+                    $order = count($children);
                 } else {
-                    $fam_children = $this->pers_gedcomnumber;
+                    $order = 0;
                 }
 
-                $sql = "UPDATE humo_families SET
-                    fam_children = :fam_children,
-                    fam_changed_user_id = :userid
-                    WHERE fam_tree_id = :tree_id AND fam_gedcomnumber = :fam_gedcomnumber";
+                // *** Add parent - child record ***
+                $sql = "INSERT INTO humo_relations_persons SET
+                    tree_id = :tree_id,
+                    relation_id = :relation_id,
+                    relation_gedcomnumber = :relation_gedcomnumber,
+                    person_id = :person_id,
+                    person_gedcomnumber = :person_gedcomnumber,
+                    relation_type = 'child',
+                    relation_order = :relation_order";
                 $stmt = $this->dbh->prepare($sql);
-                $stmt->bindValue(':fam_children', $fam_children, PDO::PARAM_STR);
-                $stmt->bindValue(':userid', $this->userid, PDO::PARAM_STR);
                 $stmt->bindValue(':tree_id', $this->tree_id, PDO::PARAM_STR);
-                $stmt->bindValue(':fam_gedcomnumber', $parentsDb->fam_gedcomnumber, PDO::PARAM_STR);
-                $stmt->execute();
-
-                // *** Add parents to child record ***
-                $stmt = $this->dbh->prepare(
-                    "UPDATE humo_persons SET
-                        pers_famc = :fam_gedcomnumber,
-                        pers_changed_user_id = :userid
-                        WHERE pers_tree_id = :tree_id AND pers_gedcomnumber = :pers_gedcomnumber"
-                );
-                $stmt->bindValue(':fam_gedcomnumber', $parentsDb->fam_gedcomnumber, PDO::PARAM_STR);
-                $stmt->bindValue(':userid', $this->userid, PDO::PARAM_STR);
-                $stmt->bindValue(':tree_id', $this->tree_id, PDO::PARAM_STR);
-                $stmt->bindValue(':pers_gedcomnumber', $this->pers_gedcomnumber, PDO::PARAM_STR);
+                $stmt->bindValue(':relation_id', $parentsDb->fam_id, PDO::PARAM_INT);
+                $stmt->bindValue(':relation_gedcomnumber', $parentsDb->fam_gedcomnumber, PDO::PARAM_STR);
+                $stmt->bindValue(':person_id', $this->person->pers_id, PDO::PARAM_INT);
+                $stmt->bindValue(':person_gedcomnumber', $this->person->pers_gedcomnumber, PDO::PARAM_STR);
+                $stmt->bindValue(':relation_order', $order + 1, PDO::PARAM_INT);
                 $stmt->execute();
 
                 $this->family_tree_update();
@@ -1752,87 +1677,63 @@ class EditorModel extends AdminBaseModel
 
         // *** Add child to family ***
         if (isset($_POST['child_connect2']) && $_POST['child_connect2'] && !isset($_POST['submit'])) {
+            // *** Change i10 into I10 ***
+            $_POST["child_connect2"] = ucfirst($_POST["child_connect2"]);
+            // *** Change entry "48" into "I48" ***
+            if (substr($_POST["child_connect2"], 0, 1) !== "I") {
+                $_POST["child_connect2"] = "I" . $_POST["child_connect2"];
+            }
 
             // *** Check valid gedcomnumber and check if child already has parents connected! ***
             $resultDb = $this->db_functions->get_person($_POST["child_connect2"]);
-
-            // *** Check if input is a valid gedcomnumber ***
-            if (isset($resultDb->pers_gedcomnumber)) {
-
-                if ($resultDb->pers_famc && !isset($_POST['child_connecting'])) {
+            if (isset($resultDb->pers_id)) {
+                if ($resultDb->parent_relation_id && !isset($_POST['child_connecting'])) {
                     $confirm .= '<div class="alert alert-danger">';
                     $confirm .= __('Child already has parents connected! Are you sure you want to connect this child?');
                     $confirm .= ' <form method="post" action="index.php?page=editor&amp;menu_tab=marriage" style="display : inline;">';
                     $confirm .= '<input type="hidden" name="family_id" value="' . $_POST['family_id'] . '">';
-                    $confirm .= '<input type="hidden" name="children" value="' . $_POST['children'] . '">';
                     $confirm .= '<input type="hidden" name="child_connect2" value="' . $_POST['child_connect2'] . '">';
                     $confirm .= ' <input type="submit" name="child_connecting" value="' . __('Yes') . '" class="btn btn-sm btn-danger">';
                     $confirm .= ' <input type="submit" name="submit" value="' . __('No') . '" class="btn btn-sm btn-success ms-3">';
                     $confirm .= '</form>';
                     $confirm .= '</div>';
                 } else {
-
                     // *** First check if person already was connected to other parents: remove this person as child from this family. ***
-                    if ($resultDb->pers_famc) {
-                        $famDb = $this->db_functions->get_family($resultDb->pers_famc);
-                        $fam_children = explode(";", $famDb->fam_children);
-                        foreach ($fam_children as $key => $value) {
-                            if ($fam_children[$key] != $_POST["child_connect2"]) {
-                                $fam_children2[] = $fam_children[$key];
-                            }
-                        }
-                        $fam_children3 = '';
-                        if (isset($fam_children2[0])) {
-                            $fam_children3 = implode(";", $fam_children2);
-                        }
+                    if ($resultDb->parent_relation_id) {
+                        //$famDb = $this->db_functions->get_family_with_id($resultDb->parent_relation_id);
 
-                        $sql = "UPDATE humo_families SET fam_children='" . $fam_children3 . "'
-                            WHERE fam_tree_id='" . $this->tree_id . "' AND fam_gedcomnumber='" . $resultDb->pers_famc . "'";
-                        $this->dbh->query($sql);
-                    }
-
-                    // *** Change i10 into I10 ***
-                    $_POST["child_connect2"] = ucfirst($_POST["child_connect2"]);
-                    // *** Change entry "48" into "I48" ***
-                    if (substr($_POST["child_connect2"], 0, 1) !== "I") {
-                        $_POST["child_connect2"] = "I" . $_POST["child_connect2"];
-                    }
-
-                    if (isset($_POST["children"]) && $_POST["children"]) {
-                        $sql = "UPDATE humo_families SET
-                            fam_children = :fam_children,
-                            fam_changed_user_id = :userid
-                            WHERE fam_tree_id = :tree_id AND fam_gedcomnumber = :fam_gedcomnumber";
+                        //$sql = "DELETE FROM humo_relations_persons
+                        //    WHERE person_id=:person_id AND relation_id=:relation_id and relation_type='child'";
+                        $sql = "DELETE FROM humo_relations_persons WHERE person_id=:person_id AND relation_type='child'";
                         $stmt = $this->dbh->prepare($sql);
-                        $stmt->bindValue(':fam_children', $_POST["children"] . ';' . $_POST["child_connect2"], PDO::PARAM_STR);
-                        $stmt->bindValue(':userid', $this->userid, PDO::PARAM_STR);
-                        $stmt->bindValue(':tree_id', $this->tree_id, PDO::PARAM_STR);
-                        $stmt->bindValue(':fam_gedcomnumber', $_POST['family_id'], PDO::PARAM_STR);
+                        $stmt->bindValue(':person_id', $resultDb->pers_id, PDO::PARAM_INT);
+                        //$stmt->bindValue(':relation_id', $famDb->fam_id, PDO::PARAM_INT);
                         $stmt->execute();
+                    }
+
+                    // *** Add person to a new family as child ***
+                    $new_family = $this->db_functions->get_family($_POST['family_id']);
+                    $new_children = $this->db_functions->get_children($new_family->fam_id);
+                    if (isset($new_children)) {
+                        $order = count($new_children) + 1;
                     } else {
-                        $sql = "UPDATE humo_families SET
-                            fam_children = :fam_children,
-                            fam_changed_user_id = :userid
-                            WHERE fam_tree_id = :tree_id AND fam_gedcomnumber = :fam_gedcomnumber";
-                        $stmt = $this->dbh->prepare($sql);
-                        $stmt->bindValue(':fam_children', $_POST["child_connect2"], PDO::PARAM_STR);
-                        $stmt->bindValue(':userid', $this->userid, PDO::PARAM_STR);
-                        $stmt->bindValue(':tree_id', $this->tree_id, PDO::PARAM_STR);
-                        $stmt->bindValue(':fam_gedcomnumber', $_POST['family_id'], PDO::PARAM_STR);
-                        $stmt->execute();
+                        $order = 1;
                     }
-
-                    // *** Add parents to child record ***
-                    $stmt = $this->dbh->prepare(
-                        "UPDATE humo_persons SET
-                            pers_famc = :family_id,
-                            pers_changed_user_id = :userid
-                            WHERE pers_tree_id = :tree_id AND pers_gedcomnumber = :child_gedcomnumber"
-                    );
-                    $stmt->bindValue(':family_id', $_POST['family_id'], PDO::PARAM_STR);
-                    $stmt->bindValue(':userid', $this->userid, PDO::PARAM_STR);
+                    $sql = "INSERT INTO humo_relations_persons SET
+                        tree_id = :tree_id,
+                        relation_id = :relation_id,
+                        relation_gedcomnumber = :relation_gedcomnumber,
+                        person_id = :person_id,
+                        person_gedcomnumber = :person_gedcomnumber,
+                        relation_type = 'child',
+                        relation_order = :relation_order";
+                    $stmt = $this->dbh->prepare($sql);
                     $stmt->bindValue(':tree_id', $this->tree_id, PDO::PARAM_STR);
-                    $stmt->bindValue(':child_gedcomnumber', $_POST["child_connect2"], PDO::PARAM_STR);
+                    $stmt->bindValue(':relation_id', $new_family->fam_id, PDO::PARAM_INT);
+                    $stmt->bindValue(':relation_gedcomnumber', $_POST['family_id'], PDO::PARAM_STR);
+                    $stmt->bindValue(':person_id', $resultDb->pers_id, PDO::PARAM_INT);
+                    $stmt->bindValue(':person_gedcomnumber', $_POST["child_connect2"], PDO::PARAM_STR);
+                    $stmt->bindValue(':relation_order', $order, PDO::PARAM_INT);
                     $stmt->execute();
 
                     $this->family_tree_update();
@@ -1842,27 +1743,11 @@ class EditorModel extends AdminBaseModel
 
         // *** Disconnect child ***
         if (isset($_POST['child_disconnecting'])) {
-            $sql = "UPDATE humo_families SET
-                fam_children = :fam_children,
-                fam_changed_user_id = :userid
-                WHERE fam_id = :fam_id";
-            $stmt = $this->dbh->prepare($sql);
-            $stmt->bindValue(':fam_children', $_POST["child_disconnect2"], PDO::PARAM_STR);
-            $stmt->bindValue(':userid', $this->userid, PDO::PARAM_STR);
-            $stmt->bindValue(':fam_id', $_POST["family_id"], PDO::PARAM_STR);
-            $stmt->execute();
-
-            // *** Remove parents from child record ***
-            $sql = "UPDATE humo_persons SET
-                pers_famc = :famc,
-                pers_changed_user_id = :userid
-                WHERE pers_tree_id = :tree_id AND pers_gedcomnumber = :gedcomnumber";
-            $stmt = $this->dbh->prepare($sql);
-            $stmt->bindValue(':famc', '', PDO::PARAM_STR);
-            $stmt->bindValue(':userid', $this->userid, PDO::PARAM_STR);
-            $stmt->bindValue(':tree_id', $this->tree_id, PDO::PARAM_STR);
-            $stmt->bindValue(':gedcomnumber', $_POST["child_disconnect_gedcom"], PDO::PARAM_STR);
-            $stmt->execute();
+            if (is_numeric($_POST["child_disconnect_id2"])) {
+                $stmt = $this->dbh->prepare("DELETE FROM humo_relations_persons WHERE id = :id");
+                $stmt->bindValue(':id', $_POST["child_disconnect_id2"], PDO::PARAM_INT);
+                $stmt->execute();
+            }
         }
 
         /**
@@ -1897,32 +1782,64 @@ class EditorModel extends AdminBaseModel
                 $woman_gedcomnumber = $partner_gedcomnumber;
             }
 
+            // *** Add family ***
             $stmt = $this->dbh->prepare(
                 "INSERT INTO humo_families SET
                     fam_tree_id = :tree_id,
                     fam_gedcomnumber = :fam_gedcomnumber,
                     fam_kind = '',
-                    fam_man = :fam_man,
-                    fam_woman = :fam_woman,
-                    fam_children = '',
                     fam_religion = '',
                     fam_text = '',
                     fam_new_user_id = :userid"
             );
             $stmt->bindValue(':tree_id', $this->tree_id, PDO::PARAM_STR);
             $stmt->bindValue(':fam_gedcomnumber', $fam_gedcomnumber, PDO::PARAM_STR);
-            $stmt->bindValue(':fam_man', $man_gedcomnumber, PDO::PARAM_STR);
-            $stmt->bindValue(':fam_woman', $woman_gedcomnumber, PDO::PARAM_STR);
             $stmt->bindValue(':userid', $this->userid, PDO::PARAM_STR);
             $stmt->execute();
 
-            // *** Update famc and fams for new added partner ***
+            $relation_id = $this->dbh->lastInsertId();
 
-            // *** Add marriage to person ***
-            $this->fams_add($partner_gedcomnumber, $fam_gedcomnumber);
+            // Add partners to humo_relations_persons table
+            $manDb = $this->db_functions->get_person($man_gedcomnumber);
+            $womanDb = $this->db_functions->get_person($woman_gedcomnumber);
 
-            // *** Add marriage to person ***
-            $this->fams_add($relation_gedcomnumber, $fam_gedcomnumber);
+            if (isset($manDb->pers_id)) {
+                $sql = "INSERT INTO humo_relations_persons SET
+                    tree_id = :tree_id,
+                    relation_id = :relation_id,
+                    relation_gedcomnumber = :relation_gedcomnumber,
+                    person_id = :person_id,
+                    person_gedcomnumber = :person_gedcomnumber,
+                    relation_type = 'partner',
+                    relation_order = 1,
+                    partner_order = 1";
+                $stmt = $this->dbh->prepare($sql);
+                $stmt->bindValue(':tree_id', $this->tree_id, PDO::PARAM_STR);
+                $stmt->bindValue(':relation_id', $relation_id, PDO::PARAM_INT);
+                $stmt->bindValue(':relation_gedcomnumber', $fam_gedcomnumber, PDO::PARAM_STR);
+                $stmt->bindValue(':person_id', $manDb->pers_id, PDO::PARAM_INT);
+                $stmt->bindValue(':person_gedcomnumber', $man_gedcomnumber, PDO::PARAM_STR);
+                $stmt->execute();
+            }
+
+            if (isset($womanDb->pers_id)) {
+                $sql = "INSERT INTO humo_relations_persons SET
+                    tree_id = :tree_id,
+                    relation_id = :relation_id,
+                    relation_gedcomnumber = :relation_gedcomnumber,
+                    person_id = :person_id,
+                    person_gedcomnumber = :person_gedcomnumber,
+                    relation_type = 'partner',
+                    relation_order = 1,
+                    partner_order = 2";
+                $stmt = $this->dbh->prepare($sql);
+                $stmt->bindValue(':tree_id', $this->tree_id, PDO::PARAM_STR);
+                $stmt->bindValue(':relation_id', $relation_id, PDO::PARAM_INT);
+                $stmt->bindValue(':relation_gedcomnumber', $fam_gedcomnumber, PDO::PARAM_STR);
+                $stmt->bindValue(':person_id', $womanDb->pers_id, PDO::PARAM_INT);
+                $stmt->bindValue(':person_gedcomnumber', $woman_gedcomnumber, PDO::PARAM_STR);
+                $stmt->execute();
+            }
 
             // *** Update $pers_gedcomnumber. Should be original value. ***
             $this->pers_gedcomnumber = $relation_gedcomnumber;
@@ -1963,39 +1880,99 @@ class EditorModel extends AdminBaseModel
                     fam_tree_id = :tree_id,
                     fam_gedcomnumber = :fam_gedcomnumber,
                     fam_kind = '',
-                    fam_man = :fam_man,
-                    fam_woman = :fam_woman,
-                    fam_children = '',
                     fam_religion = '',
                     fam_text = '',
                     fam_new_user_id = :userid"
             );
             $stmt->bindValue(':tree_id', $this->tree_id, PDO::PARAM_STR);
             $stmt->bindValue(':fam_gedcomnumber', $fam_gedcomnumber, PDO::PARAM_STR);
-            $stmt->bindValue(':fam_man', $man_gedcomnumber, PDO::PARAM_STR);
-            $stmt->bindValue(':fam_woman', $woman_gedcomnumber, PDO::PARAM_STR);
             $stmt->bindValue(':userid', $this->userid, PDO::PARAM_STR);
             $stmt->execute();
 
-            // *** Add marriage to person records MAN and WOMAN ***
-            $this->fams_add($man_gedcomnumber, $fam_gedcomnumber);
-            $this->fams_add($woman_gedcomnumber, $fam_gedcomnumber);
+            $relation_id = $this->dbh->lastInsertId();
+
+            // *** Add partners to humo_relations_persons table ***
+            $manDb = $this->db_functions->get_person($man_gedcomnumber);
+            if (isset($manDb->pers_id)) {
+                $relations = $this->db_functions->get_relations($manDb->pers_id);
+                $relation_order = count($relations);
+                $relation_order++;
+                $sql = "INSERT INTO humo_relations_persons SET
+                    tree_id = :tree_id,
+                    relation_id = :relation_id,
+                    relation_gedcomnumber = :relation_gedcomnumber,
+                    person_id = :person_id,
+                    person_gedcomnumber = :person_gedcomnumber,
+                    relation_type = 'partner',
+                    relation_order = :relation_order,
+                    partner_order = 1";
+                $stmt = $this->dbh->prepare($sql);
+                $stmt->bindValue(':tree_id', $this->tree_id, PDO::PARAM_STR);
+                $stmt->bindValue(':relation_id', $relation_id, PDO::PARAM_INT);
+                $stmt->bindValue(':relation_gedcomnumber', $fam_gedcomnumber, PDO::PARAM_STR);
+                $stmt->bindValue(':person_id', $manDb->pers_id, PDO::PARAM_INT);
+                $stmt->bindValue(':person_gedcomnumber', $man_gedcomnumber, PDO::PARAM_STR);
+                $stmt->bindValue(':relation_order', $relation_order, PDO::PARAM_INT);
+                $stmt->execute();
+            }
+
+            $womanDb = $this->db_functions->get_person($woman_gedcomnumber);
+            if (isset($womanDb->pers_id)) {
+                $relations = $this->db_functions->get_relations($womanDb->pers_id);
+                $relation_order = count($relations);
+                $relation_order++;
+                $sql = "INSERT INTO humo_relations_persons SET
+                    tree_id = :tree_id,
+                    relation_id = :relation_id,
+                    relation_gedcomnumber = :relation_gedcomnumber,
+                    person_id = :person_id,
+                    person_gedcomnumber = :person_gedcomnumber,
+                    relation_type = 'partner',
+                    relation_order = :relation_order,
+                    partner_order = 2";
+                $stmt = $this->dbh->prepare($sql);
+                $stmt->bindValue(':tree_id', $this->tree_id, PDO::PARAM_STR);
+                $stmt->bindValue(':relation_id', $relation_id, PDO::PARAM_INT);
+                $stmt->bindValue(':relation_gedcomnumber', $fam_gedcomnumber, PDO::PARAM_STR);
+                $stmt->bindValue(':person_id', $womanDb->pers_id, PDO::PARAM_INT);
+                $stmt->bindValue(':person_gedcomnumber', $woman_gedcomnumber, PDO::PARAM_STR);
+                $stmt->bindValue(':relation_order', $relation_order, PDO::PARAM_INT);
+                $stmt->execute();
+            }
 
             $this->family_tree_update();
         }
 
-        // *** Switch parents ***
+        // *** Switch partners order in humo_relations_persons for this family (swap partner_order 1 <-> 2) ***
         if (isset($_POST['parents_switch'])) {
-            $sql = "UPDATE humo_families SET
-                fam_man = :fam_man,
-                fam_woman = :fam_woman
-                WHERE fam_tree_id = :tree_id AND fam_gedcomnumber = :fam_gedcomnumber";
-            $stmt = $this->dbh->prepare($sql);
-            $stmt->bindValue(':fam_man', $_POST["connect_woman"], PDO::PARAM_STR);
-            $stmt->bindValue(':fam_woman', $_POST["connect_man"], PDO::PARAM_STR);
+            // *** First get partner 1 and partner 2 from database ***
+            $stmt = $this->dbh->prepare(
+                "SELECT id, partner_order FROM humo_relations_persons
+                    WHERE tree_id = :tree_id AND relation_gedcomnumber = :fam_gedcomnumber AND relation_type = 'partner'
+                    ORDER BY partner_order"
+            );
             $stmt->bindValue(':tree_id', $this->tree_id, PDO::PARAM_STR);
             $stmt->bindValue(':fam_gedcomnumber', $_POST['marriage'], PDO::PARAM_STR);
             $stmt->execute();
+            $partners = $stmt->fetchAll(PDO::FETCH_OBJ);
+
+            if (count($partners) >= 2) {
+                // swap partner_order of the first two partner rows using a transaction (normally there are only 2 partners).
+                $id1 = (int)$partners[0]->id;
+                $ord1 = (int)$partners[0]->partner_order;
+
+                $id2 = (int)$partners[1]->id;
+                $ord2 = (int)$partners[1]->partner_order;
+
+                $upd = $this->dbh->prepare("UPDATE humo_relations_persons SET partner_order = :partner_order WHERE id = :id");
+
+                $tmpOrder = 99; // use a temporary value to avoid unique/order conflicts
+                $upd->execute([':partner_order' => $tmpOrder, ':id' => $id1]);
+
+                $upd->execute([':partner_order' => $ord1, ':id' => $id2]);
+
+                $upd->execute([':partner_order' => $ord2, ':id' => $id1]);
+            }
 
             // *** Empty search boxes if a switch is made ***
             $_POST['search_quicksearch_woman'] = '';
@@ -2034,14 +2011,55 @@ class EditorModel extends AdminBaseModel
             $_POST["connect_woman"] = ucfirst($_POST["connect_woman"]);
 
             // *** Man is changed in marriage ***
-            if ($_POST["connect_man"] != $_POST["connect_man_old"]) {
-                $this->fams_remove($_POST['connect_man_old'], $_POST['marriage']);
-                $this->fams_add($_POST['connect_man'], $_POST['marriage']);
+            // TODO for now: if age is used, this query will be called. Maybe add parter1_age_old?
+            if ($_POST["connect_man"] != $_POST["connect_man_old"] || $_POST['partner1_age']) {
+                $man_new = $_POST['connect_man'];
+                $manDb = $this->db_functions->get_person($man_new);
+                $man_id = isset($manDb->pers_id) ? $manDb->pers_id : null;
+                $sql = "UPDATE humo_relations_persons SET
+                    person_gedcomnumber = :person_gedcomnumber,
+                    person_id = :person_id,
+                    person_age = :person_age
+                    WHERE relation_gedcomnumber = :relation_gedcomnumber
+                    AND tree_id = :tree_id
+                    AND relation_type = 'partner'
+                    AND partner_order = 1";
+                $stmt = $this->dbh->prepare($sql);
+                $stmt->bindValue(':person_gedcomnumber', $man_new, PDO::PARAM_STR);
+                if ($man_id !== null) {
+                    $stmt->bindValue(':person_id', $man_id, PDO::PARAM_INT);
+                } else {
+                    $stmt->bindValue(':person_id', null, PDO::PARAM_NULL);
+                }
+                $stmt->bindValue(':person_age', $_POST['partner1_age'], PDO::PARAM_STR);
+                $stmt->bindValue(':tree_id', $this->tree_id, PDO::PARAM_STR);
+                $stmt->bindValue(':relation_gedcomnumber', $_POST['marriage'], PDO::PARAM_STR);
+                $stmt->execute();
             }
             // *** Woman is changed in marriage ***
-            if ($_POST["connect_woman"] != $_POST["connect_woman_old"]) {
-                $this->fams_remove($_POST['connect_woman_old'], $_POST['marriage']);
-                $this->fams_add($_POST['connect_woman'], $_POST['marriage']);
+            if ($_POST["connect_woman"] != $_POST["connect_woman_old"] || $_POST['partner2_age']) {
+                $woman_new = $_POST['connect_woman'];
+                $womanDb = $this->db_functions->get_person($woman_new);
+                $woman_id = isset($womanDb->pers_id) ? $womanDb->pers_id : null;
+                $sql = "UPDATE humo_relations_persons SET
+                    person_gedcomnumber = :person_gedcomnumber,
+                    person_id = :person_id,
+                    person_age = :person_age
+                    WHERE relation_gedcomnumber = :relation_gedcomnumber
+                    AND tree_id = :tree_id
+                    AND relation_type = 'partner'
+                    AND partner_order = 2";
+                $stmt = $this->dbh->prepare($sql);
+                $stmt->bindValue(':person_gedcomnumber', $woman_new, PDO::PARAM_STR);
+                if ($woman_id !== null) {
+                    $stmt->bindValue(':person_id', $woman_id, PDO::PARAM_INT);
+                } else {
+                    $stmt->bindValue(':person_id', null, PDO::PARAM_NULL);
+                }
+                $stmt->bindValue(':person_age', $_POST['partner2_age'], PDO::PARAM_STR);
+                $stmt->bindValue(':tree_id', $this->tree_id, PDO::PARAM_STR);
+                $stmt->bindValue(':relation_gedcomnumber', $_POST['marriage'], PDO::PARAM_STR);
+                $stmt->execute();
             }
 
             $fam_div_text = '';
@@ -2054,20 +2072,12 @@ class EditorModel extends AdminBaseModel
 
             $sql = "UPDATE humo_families SET
                 fam_kind = :fam_kind,
-                fam_man = :fam_man,
-                fam_woman = :fam_woman,
-                fam_man_age = :fam_man_age,
-                fam_woman_age = :fam_woman_age,
                 fam_religion = :fam_religion,
                 fam_text = :fam_text,
                 fam_changed_user_id = :fam_changed_user_id
                 WHERE fam_tree_id = :fam_tree_id AND fam_gedcomnumber = :fam_gedcomnumber";
             $stmt = $this->dbh->prepare($sql);
             $stmt->bindValue(':fam_kind', $_POST["fam_kind"], PDO::PARAM_STR);
-            $stmt->bindValue(':fam_man', $_POST["connect_man"], PDO::PARAM_STR);
-            $stmt->bindValue(':fam_woman', $_POST["connect_woman"], PDO::PARAM_STR);
-            $stmt->bindValue(':fam_man_age', $_POST["fam_man_age"], PDO::PARAM_STR);
-            $stmt->bindValue(':fam_woman_age', $_POST["fam_woman_age"], PDO::PARAM_STR);
             $stmt->bindValue(':fam_religion', $_POST["fam_religion"], PDO::PARAM_STR);
             $stmt->bindValue(':fam_text', $this->editor_cls->text_process($_POST["fam_text"], true), PDO::PARAM_STR);
             $stmt->bindValue(':fam_changed_user_id', $this->userid, PDO::PARAM_STR);
@@ -2165,7 +2175,6 @@ class EditorModel extends AdminBaseModel
                 $eventManager->update_event($marr_notice_event);
             }
 
-
             $update_marriage = false;
             if (isset($_POST['fam_marr_event_id'])) {
                 if ($_POST["fam_marr_date_previous"] != $_POST['fam_marr_date_prefix'] . $_POST["fam_marr_date"]) {
@@ -2262,7 +2271,6 @@ class EditorModel extends AdminBaseModel
                 }
                 $eventManager->update_event($marr_church_notice_event);
             }
-
 
             $update_marr_church = false;
             if (isset($_POST['fam_marr_church_event_id'])) {
@@ -3753,57 +3761,6 @@ class EditorModel extends AdminBaseModel
         }
 
         return $confirm;
-    }
-
-    // *** Some functions to add and remove a fams number from a person (if marriage is changed) ***
-    function fams_add($personnr, $familynr): void
-    {
-        // *** Add marriage to person records ***
-        $person_db = $this->db_functions->get_person($personnr);
-        if ($person_db->pers_gedcomnumber) {
-            $fams = $person_db->pers_fams;
-            if ($fams) {
-                $fams .= ';' . $familynr;
-            } else {
-                $fams = $familynr;
-            }
-            $sql = "UPDATE humo_persons SET
-                pers_fams = :fams,
-                pers_changed_user_id = :userid
-                WHERE pers_id = :person_id";
-            $stmt = $this->dbh->prepare($sql);
-            $stmt->bindValue(':fams', $fams, PDO::PARAM_STR);
-            $stmt->bindValue(':userid', $this->userid, PDO::PARAM_STR);
-            $stmt->bindValue(':person_id', $person_db->pers_id, PDO::PARAM_STR);
-            $stmt->execute();
-        }
-    }
-
-    function fams_remove($personnr, $familynr): void
-    {
-        $person_db = $this->db_functions->get_person($personnr);
-        if ($person_db->pers_gedcomnumber) {
-            $fams = explode(";", $person_db->pers_fams);
-            foreach ($fams as $key => $value) {
-                if ($fams[$key] != $familynr) {
-                    $fams2[] = $fams[$key];
-                }
-            }
-            $fams3 = '';
-            if (isset($fams2[0])) {
-                $fams3 = implode(";", $fams2);
-            }
-
-            $sql = "UPDATE humo_persons SET
-                pers_fams = :fams,
-                pers_changed_user_id = :userid
-                WHERE pers_id = :person_id";
-            $stmt = $this->dbh->prepare($sql);
-            $stmt->bindValue(':fams', $fams3, PDO::PARAM_STR);
-            $stmt->bindValue(':userid', $this->userid, PDO::PARAM_STR);
-            $stmt->bindValue(':person_id', $person_db->pers_id, PDO::PARAM_STR);
-            $stmt->execute();
-        }
     }
 
     // *** Calculate and update nr. of persons and nr. of families ***

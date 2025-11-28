@@ -63,12 +63,14 @@ class TreesController
                 $trees = array_merge($trees, $upload_status);
 
                 $trees['gedcom_directory'] = $gedcomModel->get_gedcom_directory();
+                $trees['removed_filenames'] = $gedcomModel->remove_gedcom_files($trees);
+            } elseif ($trees['step'] == '2') {
+                $gedcomModel->update_settings($this->admin_config['db_functions']);
+            } elseif ($trees['step'] == '3') {
+                $gedcomModel->read_gedcom_file();
+                $trees['add_tree'] = $gedcomModel->is_add_tree();
+                $trees['reassign'] = $gedcomModel->is_reassign($this->admin_config['humo_option']);
             }
-            $trees['removed_filenames'] = $gedcomModel->remove_gedcom_files($trees);
-
-            //if ($trees['step'] == '2') {
-            //
-            //}
         } elseif ($trees['menu_tab'] == 'tree_data') {
             $trees['tree_pict_path'] = $treesModel->get_tree_pict_path($this->admin_config['dbh'], $this->admin_config['tree_id']);
 

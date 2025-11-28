@@ -38,21 +38,21 @@ class TreeMerge
 
         $spouses1 = '';
         $children1 = '';
-        if ($leftDb->pers_fams) {
-            $fams = explode(';', $leftDb->pers_fams);
-            foreach ($fams as $value) {
-                $famDb = $db_functions->get_family($value);
+        $left_relations = $db_functions->get_relations($leftDb->pers_id);
+        if (isset($left_relations) && count($left_relations) > 0) {
+            foreach ($left_relations as $relation) {
+                $famDb = $db_functions->get_family_with_id($relation->relation_id);
 
-                $spouse_ged = $famDb->fam_man == $leftDb->pers_gedcomnumber ? $famDb->fam_woman : $famDb->fam_man;
+                $spouse_ged = $famDb->partner1_gedcomnumber == $leftDb->pers_gedcomnumber ? $famDb->partner2_gedcomnumber : $famDb->partner1_gedcomnumber;
                 $spouseDb = $db_functions->get_person($spouse_ged);
                 $privacy = $personPrivacy->get_privacy($spouseDb);
                 $name = $personName->get_person_name($spouseDb, $privacy);
                 $spouses1 .= $name["standard_name"] . '<br>';
 
-                if ($famDb->fam_children) {
-                    $child = explode(';', $famDb->fam_children);
-                    foreach ($child as $ch_value) {
-                        $childDb = $db_functions->get_person($ch_value);
+                $children = $db_functions->get_children($famDb->fam_id);
+                if ($children) {
+                    foreach ($children as $child) {
+                        $childDb = $db_functions->get_person_with_id($child->person_id);
                         $privacy = $personPrivacy->get_privacy($childDb);
                         $name = $personName->get_person_name($childDb, $privacy);
                         $children1 .= $name["standard_name"] . '<br>';
@@ -65,17 +65,15 @@ class TreeMerge
 
         $father1 = '';
         $mother1 = '';
-        if ($leftDb->pers_famc) {
-            $qry2 = "SELECT * FROM humo_families WHERE fam_tree_id='" . $this->trees['tree_id'] . "' AND fam_gedcomnumber ='" . $leftDb->pers_famc . "'";
-            $parents = $this->dbh->query($qry2);
-            $parentsDb = $parents->fetch(PDO::FETCH_OBJ);
+        if ($leftDb->parent_relation_id) {
+            $parentsDb = $db_functions->get_family_partners($leftDb->parent_relation_id);
 
-            $fatherDb = $db_functions->get_person($parentsDb->fam_man);
+            $fatherDb = $db_functions->get_person_with_id($parentsDb->partner1_id);
             $privacy = $personPrivacy->get_privacy($fatherDb);
             $name = $personName->get_person_name($fatherDb, $privacy);
             $father1 .= $name["standard_name"] . '<br>';
 
-            $motherDb = $db_functions->get_person($parentsDb->fam_woman);
+            $motherDb = $db_functions->get_person_with_id($parentsDb->partner2_id);
             $privacy = $personPrivacy->get_privacy($motherDb);
             $name = $personName->get_person_name($motherDb, $privacy);
             $mother1 .= $name["standard_name"] . '<br>';
@@ -86,20 +84,21 @@ class TreeMerge
 
         $spouses2 = '';
         $children2 = '';
-        if ($rightDb->pers_fams) {
-            $fams = explode(';', $rightDb->pers_fams);
-            foreach ($fams as $value) {
-                $famDb = $db_functions->get_family($value);
-                $spouse_ged = $famDb->fam_man == $rightDb->pers_gedcomnumber ? $famDb->fam_woman : $famDb->fam_man;
+        $right_relations = $db_functions->get_relations($rightDb->pers_id);
+        if (isset($right_relations) && count($right_relations) > 0) {
+            foreach ($right_relations as $relation) {
+                $famDb = $db_functions->get_family_with_id($relation->relation_id);
+                // TODO use id's
+                $spouse_ged = $famDb->partner1_gedcomnumber == $rightDb->pers_gedcomnumber ? $famDb->partner2_gedcomnumber : $famDb->partner1_gedcomnumber;
                 $spouseDb = $db_functions->get_person($spouse_ged);
                 $privacy = $personPrivacy->get_privacy($spouseDb);
                 $name = $personName->get_person_name($spouseDb, $privacy);
                 $spouses2 .= $name["standard_name"] . '<br>';
 
-                if ($famDb->fam_children) {
-                    $child = explode(';', $famDb->fam_children);
-                    foreach ($child as $ch_value) {
-                        $childDb = $db_functions->get_person($ch_value);
+                $children = $db_functions->get_children($famDb->fam_id);
+                if ($children) {
+                    foreach ($children as $child) {
+                        $childDb = $db_functions->get_person_with_id($child->person_id);
                         $privacy = $personPrivacy->get_privacy($childDb);
                         $name = $personName->get_person_name($childDb, $privacy);
                         $children2 .= $name["standard_name"] . '<br>';
@@ -112,20 +111,209 @@ class TreeMerge
 
         $father2 = '';
         $mother2 = '';
-        if ($rightDb->pers_famc && $rightDb->pers_famc != "") {
-            $qry2 = "SELECT * FROM humo_families WHERE fam_tree_id='" . $this->trees['tree_id'] . "' AND fam_gedcomnumber ='" . $rightDb->pers_famc . "'";
-            $parents = $this->dbh->query($qry2);
-            $parentsDb = $parents->fetch(PDO::FETCH_OBJ);
+        if ($rightDb->parent_relation_id && $rightDb->parent_relation_id != "") {
+            $parentsDb = $db_functions->get_family_partners($rightDb->parent_relation_id);
 
-            $fatherDb = $db_functions->get_person($parentsDb->fam_man);
+            $fatherDb = $db_functions->get_person_with_id($parentsDb->partner1_id);
             $privacy = $personPrivacy->get_privacy($fatherDb);
             $name = $personName->get_person_name($fatherDb, $privacy);
             $father2 .= $name["standard_name"] . '<br>';
 
-            $motherDb = $db_functions->get_person($parentsDb->fam_woman);
+            $motherDb = $db_functions->get_person_with_id($parentsDb->partner2_id);
             $privacy = $personPrivacy->get_privacy($motherDb);
             $name = $personName->get_person_name($motherDb, $privacy);
             $mother2 .= $name["standard_name"] . '<br>';
+        }
+
+        // *** Enhanced matchScore calculation ***
+        $matches = 0;
+        $maxPossibleScore = 0;
+
+        // Name matching (weight: high importance)
+        $maxPossibleScore += 10;
+        if ($leftDb->pers_firstname && $rightDb->pers_firstname) {
+            if ($leftDb->pers_firstname == $rightDb->pers_firstname) {
+                $matches += 10;
+            } elseif (
+                stripos($leftDb->pers_firstname, $rightDb->pers_firstname) !== false ||
+                stripos($rightDb->pers_firstname, $leftDb->pers_firstname) !== false
+            ) {
+                // Partial firstname match
+                $matches += 5;
+            } elseif (levenshtein(strtolower($leftDb->pers_firstname), strtolower($rightDb->pers_firstname)) <= 2) {
+                // Similar names (typos, variations)
+                $matches += 3;
+            }
+        }
+
+        $maxPossibleScore += 10;
+        if ($leftDb->pers_lastname && $rightDb->pers_lastname) {
+            if ($leftDb->pers_lastname == $rightDb->pers_lastname) {
+                $matches += 10;
+            } elseif (
+                stripos($leftDb->pers_lastname, $rightDb->pers_lastname) !== false ||
+                stripos($rightDb->pers_lastname, $leftDb->pers_lastname) !== false
+            ) {
+                $matches += 5;
+            } elseif (levenshtein(strtolower($leftDb->pers_lastname), strtolower($rightDb->pers_lastname)) <= 2) {
+                $matches += 3;
+            }
+        }
+
+        // Birth date matching (weight: high importance)
+        $maxPossibleScore += 8;
+        if ($leftDb->pers_birth_date && $rightDb->pers_birth_date) {
+            if ($leftDb->pers_birth_date == $rightDb->pers_birth_date) {
+                $matches += 8;
+            } else {
+                // Extract years for partial match
+                preg_match('/\d{4}/', $leftDb->pers_birth_date, $leftYear);
+                preg_match('/\d{4}/', $rightDb->pers_birth_date, $rightYear);
+                if (!empty($leftYear) && !empty($rightYear)) {
+                    $yearDiff = abs((int)$leftYear[0] - (int)$rightYear[0]);
+                    if ($yearDiff == 0) {
+                        $matches += 6; // Same year, different date
+                    } elseif ($yearDiff <= 2) {
+                        $matches += 3; // Close years (possible data entry error)
+                    }
+                }
+            }
+        }
+
+        // Birth place matching (weight: medium importance)
+        $maxPossibleScore += 6;
+        if ($leftDb->pers_birth_place && $rightDb->pers_birth_place) {
+            if ($leftDb->pers_birth_place == $rightDb->pers_birth_place) {
+                $matches += 6;
+            } elseif (
+                stripos($leftDb->pers_birth_place, $rightDb->pers_birth_place) !== false ||
+                stripos($rightDb->pers_birth_place, $leftDb->pers_birth_place) !== false
+            ) {
+                $matches += 4; // Partial match (e.g., "Amsterdam" vs "Amsterdam, Noord-Holland")
+            }
+        }
+
+        // Death date matching (weight: medium importance)
+        $maxPossibleScore += 6;
+        if ($leftDb->pers_death_date && $rightDb->pers_death_date) {
+            if ($leftDb->pers_death_date == $rightDb->pers_death_date) {
+                $matches += 6;
+            } else {
+                preg_match('/\d{4}/', $leftDb->pers_death_date, $leftYear);
+                preg_match('/\d{4}/', $rightDb->pers_death_date, $rightYear);
+                if (!empty($leftYear) && !empty($rightYear) && abs((int)$leftYear[0] - (int)$rightYear[0]) <= 2) {
+                    $matches += 3;
+                }
+            }
+        }
+
+        // Gender matching (weight: medium importance)
+        $maxPossibleScore += 5;
+        if ($leftDb->pers_sexe && $rightDb->pers_sexe) {
+            if ($leftDb->pers_sexe == $rightDb->pers_sexe) {
+                $matches += 5;
+            } else {
+                $matches -= 10; // Strong penalty for gender mismatch
+            }
+        }
+
+        // Spouse matching (weight: high importance)
+        $maxPossibleScore += 12;
+        if ($spouses1 && $spouses2) {
+            $leftSpouses = array_filter(array_map('trim', explode('<br>', $spouses1)));
+            $rightSpouses = array_filter(array_map('trim', explode('<br>', $spouses2)));
+
+            $spouseMatches = 0;
+            foreach ($leftSpouses as $leftSpouse) {
+                foreach ($rightSpouses as $rightSpouse) {
+                    if ($leftSpouse === $rightSpouse) {
+                        $spouseMatches++;
+                    } elseif (
+                        stripos($leftSpouse, $rightSpouse) !== false ||
+                        stripos($rightSpouse, $leftSpouse) !== false
+                    ) {
+                        $spouseMatches += 0.5;
+                    }
+                }
+            }
+
+            if ($spouseMatches > 0) {
+                $matches += min(12, $spouseMatches * 6); // Max 12 points, 6 per matching spouse
+            }
+        }
+
+        // Parent matching (weight: high importance)
+        $maxPossibleScore += 10;
+        $parentMatches = 0;
+        if ($father1 && $father2) {
+            if (trim($father1) === trim($father2)) {
+                $parentMatches += 5;
+            } elseif (stripos($father1, $father2) !== false || stripos($father2, $father1) !== false) {
+                $parentMatches += 3;
+            }
+        }
+        if ($mother1 && $mother2) {
+            if (trim($mother1) === trim($mother2)) {
+                $parentMatches += 5;
+            } elseif (stripos($mother1, $mother2) !== false || stripos($mother2, $mother1) !== false) {
+                $parentMatches += 3;
+            }
+        }
+        $matches += min(10, $parentMatches);
+
+        // Children matching (weight: medium-high importance)
+        $maxPossibleScore += 8;
+        if ($children1 && $children2) {
+            $leftChildren = array_filter(array_map('trim', explode('<br>', $children1)));
+            $rightChildren = array_filter(array_map('trim', explode('<br>', $children2)));
+
+            $childMatches = 0;
+            foreach ($leftChildren as $leftChild) {
+                foreach ($rightChildren as $rightChild) {
+                    if ($leftChild === $rightChild) {
+                        $childMatches++;
+                    } elseif (
+                        stripos($leftChild, $rightChild) !== false ||
+                        stripos($rightChild, $leftChild) !== false
+                    ) {
+                        $childMatches += 0.5;
+                    }
+                }
+            }
+
+            if ($childMatches > 0) {
+                $matches += min(8, $childMatches * 2); // Max 8 points, 2 per matching child
+            }
+        }
+
+        // Patronym matching (weight: low importance, specific to Dutch genealogy)
+        $maxPossibleScore += 3;
+        if ($leftDb->pers_patronym && $rightDb->pers_patronym) {
+            if ($leftDb->pers_patronym == $rightDb->pers_patronym) {
+                $matches += 3;
+            } elseif (
+                stripos($leftDb->pers_patronym, $rightDb->pers_patronym) !== false ||
+                stripos($rightDb->pers_patronym, $leftDb->pers_patronym) !== false
+            ) {
+                $matches += 2;
+            }
+        }
+
+        // Calculate final match score as percentage
+        // Ensure we don't divide by zero
+        $matchScore = $maxPossibleScore > 0 ? round(($matches / $maxPossibleScore) * 100) : 0;
+
+        // Cap between 0 and 100
+        $matchScore = max(0, min(100, $matchScore));
+
+        // Adjust color thresholds
+        $scoreColor = 'red';
+        if ($matchScore >= 80) {
+            $scoreColor = 'green';
+        } elseif ($matchScore >= 60) {
+            $scoreColor = 'orange';
+        } elseif ($matchScore >= 40) {
+            $scoreColor = '#cc6600'; // dark orange
         }
 ?>
 
@@ -140,6 +328,14 @@ class TreeMerge
                         <?= __('Manual merge'); ?>
                     <?php } ?>
                 </th>
+
+                <th style="text-align:right;font-size:110%;color:<?= $scoreColor; ?>;">
+                    <?php printf(__('Score %d%% match'), $matchScore); ?>
+                    <br><small class="text-muted" style="font-size:80%;font-weight:normal;">
+                        (<?= round($matches, 1); ?>/<?= $maxPossibleScore; ?> <?= __('points'); ?>)
+                    </small>
+                </th>
+
             </tr>
 
             <tr>
@@ -198,10 +394,10 @@ class TreeMerge
 
             //TEST *** Address by relation ***
             // A person can be married multiple times (left and right side). Probably needed to rebuild show_addresses_merge scripts to show them seperately?
-            //$r_fams = explode(';',$rightDb->pers_fams);
-            //for($i=0;$i<count($r_fams);$i++) {
-            //	echo $r_fams[$i].'! ';
-            //	show_addresses_merge('',$r_fams[$i]);
+            //$relations = $db_functions->get_relations($rightDb->pers_id);
+            //foreach ($relations as $relation) {
+            //	echo $relation->relation_gedcomnumber.'! ';
+            //	show_addresses_merge('',$relation->relation_gedcomnumber);
             //}
             ?>
 

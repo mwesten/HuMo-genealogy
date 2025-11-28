@@ -102,35 +102,29 @@ class OutlineReportModel extends FamilyModel
         $swap_parent1_parent2 = false;
 
         // *** Standard main_person is the father ***
-        if ($familyDb->fam_man) {
-            $parent1 = $familyDb->fam_man;
+        if ($familyDb->partner1_gedcomnumber) {
+            $parent1 = $familyDb->partner1_gedcomnumber;
         }
         // *** If mother is selected, mother will be main_person ***
-        if ($familyDb->fam_woman == $outline_main_person) {
-            $parent1 = $familyDb->fam_woman;
+        if ($familyDb->partner2_gedcomnumber == $outline_main_person) {
+            $parent1 = $familyDb->partner2_gedcomnumber;
             $swap_parent1_parent2 = true;
         }
 
-        // *** Check family with parent1: N.N. ***
         if ($parent1) {
-            // *** Save man's families in array ***
-            $personDb = $this->db_functions->get_person($parent1, 'famc-fams');
-            $marriage_array = explode(";", $personDb->pers_fams);
-            $nr_families = substr_count($personDb->pers_fams, ";");
-        } else {
-            $marriage_array[0] = $outline_family_id;
-            $nr_families = "0";
+            $personDb = $this->db_functions->get_person($parent1);
+            $relations = $this->db_functions->get_relations($personDb->pers_id);
         }
 
         // *** Loop multiple marriages of main_person ***
-        for ($parent1_marr = 0; $parent1_marr <= $nr_families; $parent1_marr++) {
-            $familyDb = $this->db_functions->get_family($marriage_array[$parent1_marr]);
+        foreach ($relations as $relation) {
+            $familyDb = $this->db_functions->get_family_with_id($relation->relation_id);
 
             // *** Privacy filter man and woman ***
-            $person_manDb = $this->db_functions->get_person($familyDb->fam_man);
+            $person_manDb = $this->db_functions->get_person($familyDb->partner1_gedcomnumber);
             $privacy_man = $personPrivacy->get_privacy($person_manDb);
 
-            $person_womanDb = $this->db_functions->get_person($familyDb->fam_woman);
+            $person_womanDb = $this->db_functions->get_person($familyDb->partner2_gedcomnumber);
             $privacy_woman = $personPrivacy->get_privacy($person_womanDb);
 
             $marriage_cls = new \Genealogy\Include\MarriageCls($familyDb, $privacy_man, $privacy_woman);
@@ -219,7 +213,8 @@ class OutlineReportModel extends FamilyModel
                 $this->html_output .= ' x ' . $directionMarkers->dirmark1;
             } else {
                 $this->html_output .= "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;";
-                if ($parent1_marr == 0) {
+                //if ($parent1_marr == 0) {
+                if (count($relations) == 0) {
                     if ($family_privacy) {
                         $this->html_output .= $marriage_cls->marriage_data($familyDb, '', 'short') . "<br>";
                     } else {
@@ -227,7 +222,8 @@ class OutlineReportModel extends FamilyModel
                         //$this->html_output.= $marriage_cls->marriage_data($familyDb) . "<br>";
                     }
                 } else {
-                    $this->html_output .= $marriage_cls->marriage_data($familyDb, $parent1_marr + 1, 'shorter') . ' <br>';
+                    //$this->html_output .= $marriage_cls->marriage_data($familyDb, $parent1_marr + 1, 'shorter') . ' <br>';
+                    $this->html_output .= $marriage_cls->marriage_data($familyDb, $relation->relation_id + 1, 'shorter') . ' <br>';
                 }
             }
 
@@ -269,12 +265,10 @@ class OutlineReportModel extends FamilyModel
             /**
              * Show children
              */
-            if ($familyDb->fam_children) {
-                $childnr = 1;
-                $child_array = explode(";", $familyDb->fam_children);
-                foreach ($child_array as $i => $value) {
-                    $childDb = $this->db_functions->get_person($child_array[$i]);
-
+            $children = $this->db_functions->get_children($familyDb->fam_id);
+            if ($children) {
+                foreach ($children as $child) {
+                    $childDb = $this->db_functions->get_person_with_id($child->person_id);
                     // *** Totally hide children if setting is active ***
                     if ($totallyFilterPerson->isTotallyFiltered($this->user, $childDb)) {
                         if (!$show_privacy_text) {
@@ -287,11 +281,9 @@ class OutlineReportModel extends FamilyModel
                     $child_privacy = $personPrivacy->get_privacy($childDb);
 
                     // *** Build descendant_report ***
-                    if ($childDb->pers_fams) {
-                        // *** 1st family of child ***
-                        $child_family = explode(";", $childDb->pers_fams);
-                        $child1stfam = $child_family[0];
-                        $this->outline_report_html($child1stfam, $childDb->pers_gedcomnumber, $generation_number);  // recursive
+                    $first_relation = $this->db_functions->get_first_relation($childDb->pers_id);
+                    if (isset($first_relation->relation_gedcomnumber)) {
+                        $this->outline_report_html($first_relation->relation_gedcomnumber, $childDb->pers_gedcomnumber, $generation_number);  // recursive
                     } else {
                         // Child without own family
                         if ($this->nr_generations >= $generation_number) {
@@ -317,10 +309,8 @@ class OutlineReportModel extends FamilyModel
                         }
                     }
                     $this->html_output .= "\n";
-                    $childnr++;
                 }
             }
-
             $this->html_output .= '</ul>';
         } // Show  multiple marriages
     }

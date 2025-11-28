@@ -263,8 +263,13 @@ $datePlace = new \Genealogy\Include\DatePlace();
                                         $orderlast = $user['group_kindindex'] == "j" ? "CONCAT(pers_prefix,pers_lastname)" : "pers_lastname";
 
                                         // TODO: process search for name or search for id.
-                                        // TODO: extend querry. Also check if there are children in family?
-                                        $desc_search = "SELECT * FROM humo_persons WHERE pers_tree_id='" . $tree_id . "' AND pers_fams !='' ORDER BY " . $orderlast . ", pers_firstname";
+                                        // TODO: extend query. Also check if there are children in family?
+                                        //$desc_search = "SELECT * FROM humo_persons WHERE pers_tree_id='" . $tree_id . "' AND pers_fams !='' ORDER BY " . $orderlast . ", pers_firstname";
+                                        $desc_search = "SELECT p.*, r.relation_gedcomnumber AS pers_fams
+                                            FROM humo_persons p
+                                            JOIN humo_relations_persons r ON r.person_id = p.pers_id AND r.relation_type = 'partner'
+                                            WHERE p.pers_tree_id = '" . $tree_id . "'
+                                            ORDER BY " . $orderlast . ", p.pers_firstname";
                                         $desc_search_result = $dbh->query($desc_search);
 
                                         if ($_POST['search_quicksearch_man'] != '') {
@@ -298,7 +303,7 @@ $datePlace = new \Genealogy\Include\DatePlace();
                                                 $privacy = $personPrivacy->get_privacy($desc_searchDb);
                                                 $name = $personName->get_person_name($desc_searchDb, $privacy);
                                             ?>
-                                                <option value="<?= $link2; ?>persged=<?= $desc_searchDb->pers_gedcomnumber; ?>&persfams=<?= $desc_searchDb->pers_fams; ?>">
+                                                <option value="<?= $link2; ?>persged=<?= $desc_searchDb->pers_gedcomnumber; ?>&amp;persfams=1">
                                                     <?= $name["index_name"]; ?> [<?= $desc_searchDb->pers_gedcomnumber; ?>]
                                                 </option>
                                             <?php } ?>
@@ -362,8 +367,12 @@ $datePlace = new \Genealogy\Include\DatePlace();
                                         $orderlast = $user['group_kindindex'] == "j" ? "CONCAT(pers_prefix,pers_lastname)" : "pers_lastname";
 
                                         // TODO: process search for name or search for id.
-                                        //$anc_search = "SELECT * FROM humo_persons WHERE pers_tree_id='" . $tree_id . "' AND pers_fams !='' ORDER BY " . $orderlast . ", pers_firstname";
-                                        $anc_search = "SELECT * FROM humo_persons WHERE pers_tree_id='" . $tree_id . "' AND pers_famc !='' ORDER BY " . $orderlast . ", pers_firstname";
+                                        //$anc_search = "SELECT * FROM humo_persons WHERE pers_tree_id='" . $tree_id . "' AND pers_famc !='' ORDER BY " . $orderlast . ", pers_firstname";
+                                        $anc_search = "SELECT p.*, r.relation_gedcomnumber AS parent_relation_gedcomnumber
+                                            FROM humo_persons p
+                                            INNERJOIN humo_relations_persons r ON r.person_id = p.pers_id AND r.relation_type = 'partner'
+                                            WHERE p.pers_tree_id = '" . $tree_id . "'
+                                            ORDER BY " . $orderlast . ", p.pers_firstname";
                                         $anc_search_result = $dbh->query($anc_search);
 
                                         if ($_POST['search_quicksearch_man'] != '') {
@@ -397,7 +406,7 @@ $datePlace = new \Genealogy\Include\DatePlace();
                                                 $privacy = $personPrivacy->get_privacy($anc_searchDb);
                                                 $name = $personName->get_person_name($anc_searchDb, $privacy);
                                             ?>
-                                                <option value="<?= $link2; ?>anc_persged=<?= $anc_searchDb->pers_gedcomnumber; ?>&anc_persfams=<?= $anc_searchDb->pers_fams; ?>">
+                                                <option value="<?= $link2; ?>anc_persged=<?= $anc_searchDb->pers_gedcomnumber; ?>">
                                                     <?= $name["index_name"]; ?> [<?= $anc_searchDb->pers_gedcomnumber; ?>]
                                                 </option>
                                             <?php } ?>
@@ -456,7 +465,7 @@ $datePlace = new \Genealogy\Include\DatePlace();
 
     <?php
     // *** Optional row ***
-    if (isset($_POST['items']) || isset($_GET['persged']) && isset($_GET['persfams']) || isset($_GET['anc_persged']) && isset($_GET['anc_persfams'])) {
+    if (isset($_POST['items']) || isset($_GET['persged']) && isset($_GET['persfams']) || isset($_GET['anc_persged'])) {
     ?>
         <div class="row mb-2 p-2 bg-info">
             <div class="col-auto">
@@ -481,7 +490,7 @@ $datePlace = new \Genealogy\Include\DatePlace();
                 <?php } ?>
 
                 <!-- Find ancestors -->
-                <?php if (isset($_GET['anc_persged']) && isset($_GET['anc_persfams'])) { ?>
+               <?php if (isset($_GET['anc_persged'])) { ?>
                     <div id="anc_search">
                         <?php if ($maps['anc_array'] != '') { ?>
                             <?= __('Filter by ancestors of: ') . trim($maps['chosen_name']); ?>. <a href="<?= $link; ?>"><?= __('Switch ancestor filter off'); ?></a>

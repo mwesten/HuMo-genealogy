@@ -1031,12 +1031,11 @@ function display_table($relation)
                     $privacy = $personPrivacy->get_privacy($persidDb);
                     $name = $personName->get_person_name($persidDb, $privacy);
 
-                    if ($persidDb->pers_fams) {
-                        $fams = $persidDb->pers_fams;
-                        $tempfam = explode(";", $fams);
-                        $fam = $tempfam[0];
+                    $first_relation = $db_functions->get_first_relation($persidDb->pers_id);
+                    if (isset($first_relation->person_gedcomnumber)) {
+                        $fam = $first_relation->person_gedcomnumber;
                     } else {
-                        $fam = $persidDb->pers_famc;
+                        $fam = $persidDb->parent_relation_gedcomnumber;
                     }
                     $vars['pers_family'] = $fam;
                     $link = $processLinks->get_link($uri_path, 'family', $tree_id, true, $vars);
@@ -1120,12 +1119,11 @@ function display_table($relation)
         $privacy = $personPrivacy->get_privacy($persidDb);
         $name = $personName->get_person_name($persidDb, $privacy);
 
-        if ($persidDb->pers_fams) {
-            $fams = $persidDb->pers_fams;
-            $tempfam = explode(";", $fams);
-            $fam = $tempfam[0];
+        $first_relation = $db_functions->get_first_relation($persidDb->pers_id);
+        if (isset($first_relation->person_gedcomnumber)) {
+            $fam = $first_relation->person_gedcomnumber;
         } else {
-            $fam = $persidDb->pers_famc;
+            $fam = $persidDb->parent_relation_gedcomnumber;
         }
         $vars['pers_family'] = $fam;
         $link = $processLinks->get_link($uri_path, 'family', $tree_id, true, $vars);
@@ -1177,12 +1175,11 @@ function display_table($relation)
                             <td style="border:0px;">&nbsp;</td>
                         <?php
                         }
-                        if ($persidDb->pers_fams) {
-                            $fams = $persidDb->pers_fams;
-                            $tempfam = explode(";", $fams);
-                            $fam = $tempfam[0];
+                        $first_relation = $db_functions->get_first_relation($persidDb->pers_id);
+                        if (isset($first_relation->person_gedcomnumber)) {
+                            $fam = $first_relation->person_gedcomnumber;
                         } else {
-                            $fam = $persidDb->pers_famc;
+                            $fam = $persidDb->parent_relation_gedcomnumber;
                         }
                         $vars['pers_family'] = $fam;
                         $link = $processLinks->get_link($uri_path, 'family', $tree_id, true, $vars);
@@ -1199,12 +1196,11 @@ function display_table($relation)
                             $privacy = $personPrivacy->get_privacy($persidDb);
                             $name = $personName->get_person_name($persidDb, $privacy);
 
-                            if ($persidDb->pers_fams) {
-                                $fams = $persidDb->pers_fams;
-                                $tempfam = explode(";", $fams);
-                                $fam = $tempfam[0];
+                            $first_relation = $db_functions->get_first_relation($persidDb->pers_id);
+                            if (isset($first_relation->person_gedcomnumber)) {
+                                $fam = $first_relation->person_gedcomnumber;
                             } else {
-                                $fam = $persidDb->pers_famc;
+                                $fam = $persidDb->parent_relation_gedcomnumber;
                             }
 
                         ?>
@@ -1241,12 +1237,11 @@ function display_table($relation)
                         $privacy = $personPrivacy->get_privacy($persidDb);
                         $name = $personName->get_person_name($persidDb, $privacy);
 
-                        if ($persidDb->pers_fams) {
-                            $fams = $persidDb->pers_fams;
-                            $tempfam = explode(";", $fams);
-                            $fam = $tempfam[0];
+                        $first_relation = $db_functions->get_first_relation($persidDb->pers_id);
+                        if (isset($first_relation->person_gedcomnumber)) {
+                            $fam = $first_relation->person_gedcomnumber;
                         } else {
-                            $fam = $persidDb->pers_famc;
+                            $fam = $persidDb->parent_relation_gedcomnumber;
                         }
                         $vars['pers_family'] = $fam;
                         $link = $processLinks->get_link($uri_path, 'family', $tree_id, true, $vars);
@@ -1269,12 +1264,11 @@ function display_table($relation)
                             $privacy = $personPrivacy->get_privacy($persidDb);
                             $name = $personName->get_person_name($persidDb, $privacy);
 
-                            if ($persidDb->pers_fams) {
-                                $fams = $persidDb->pers_fams;
-                                $tempfam = explode(";", $fams);
-                                $fam = $tempfam[0];
+                            $first_relation = $db_functions->get_first_relation($persidDb->pers_id);
+                            if (isset($first_relation->person_gedcomnumber)) {
+                                $fam = $first_relation->person_gedcomnumber;
                             } else {
-                                $fam = $persidDb->pers_famc;
+                                $fam = $persidDb->parent_relation_gedcomnumber;
                             }
                             $vars['pers_family'] = $fam;
                             $link = $processLinks->get_link($uri_path, 'family', $tree_id, true, $vars);

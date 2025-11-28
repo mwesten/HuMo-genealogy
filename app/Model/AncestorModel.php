@@ -44,14 +44,14 @@ class AncestorModel extends FamilyModel
         // person 01
         $personDb = $this->db_functions->get_person($pers_gedcomnumber);
         $data["gedcomnumber"][1] = $personDb->pers_gedcomnumber;
-        $pers_famc[1] = $personDb->pers_famc;
+        $parent_relation_id[1] = $personDb->parent_relation_id;
         $data["sexe"][1] = $personDb->pers_sexe;
         $parent_array[2] = '';
         $parent_array[3] = '';
-        if ($pers_famc[1]) {
-            $parentDb = $this->db_functions->get_family($pers_famc[1]);
-            $parent_array[2] = $parentDb->fam_man;
-            $parent_array[3] = $parentDb->fam_woman;
+        if ($parent_relation_id[1]) {
+            $parentDb = $this->db_functions->get_family($parent_relation_id[1]);
+            $parent_array[2] = $parentDb->partner1_gedcomnumber;
+            $parent_array[3] = $parentDb->partner2_gedcomnumber;
             $data["marr_date"][2] = $parentDb->fam_marr_date;
             $data["marr_place"][2] = $parentDb->fam_marr_place;
         }
@@ -65,12 +65,12 @@ class AncestorModel extends FamilyModel
 
         for ($counter = 2; $counter < $count_max; $counter++) {
             $data["gedcomnumber"][$counter] = '';
-            $pers_famc[$counter] = '';
+            $parent_relation_id[$counter] = '';
             $data["sexe"][$counter] = '';
             if ($parent_array[$counter]) {
                 $personDb = $this->db_functions->get_person($parent_array[$counter]);
                 $data["gedcomnumber"][$counter] = $personDb->pers_gedcomnumber;
-                $pers_famc[$counter] = $personDb->pers_famc;
+                $parent_relation_id[$counter] = $personDb->parent_relation_id;
                 $data["sexe"][$counter] = $personDb->pers_sexe;
             }
 
@@ -80,10 +80,10 @@ class AncestorModel extends FamilyModel
             $parent_array[$Fcounter] = '';
             $data["marr_date"][$Mcounter] = '';
             $data["marr_place"][$Mcounter] = '';
-            if ($pers_famc[$counter]) {
-                $parentDb = $this->db_functions->get_family($pers_famc[$counter]);
-                $parent_array[$Mcounter] = $parentDb->fam_man;
-                $parent_array[$Fcounter] = $parentDb->fam_woman;
+            if ($parent_relation_id[$counter]) {
+                $parentDb = $this->db_functions->get_family($parent_relation_id[$counter]);
+                $parent_array[$Mcounter] = $parentDb->partner1_gedcomnumber;
+                $parent_array[$Fcounter] = $parentDb->partner2_gedcomnumber;
                 $data["marr_date"][$Mcounter] = $parentDb->fam_marr_date;
                 $data["marr_place"][$Mcounter] = $parentDb->fam_marr_place;
             }

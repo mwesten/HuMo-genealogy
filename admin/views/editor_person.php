@@ -283,22 +283,22 @@ Don't use this link, witness and other buttons won't work anymore
         <div class="p-2 m-2 genealogy_search">
 
             <?php
-            if ($person->pers_famc) {
+            if ($person->parent_relation_id) {
                 // *** Search for parents ***
-                $family_parentsDb = $db_functions->get_family($person->pers_famc, 'man-woman');
+                $family_parentsDb = $db_functions->get_family_partners($person->parent_relation_id);
 
                 echo '<b>' . ucfirst(__('parents')) . '</b>';
 
                 //*** Father ***
-                if ($family_parentsDb->fam_man) {
-                    echo ' ' . show_person($family_parentsDb->fam_man);
+                if ($family_parentsDb->partner1_gedcomnumber) {
+                    echo ' ' . show_person($family_parentsDb->partner1_gedcomnumber);
                 }
 
                 echo ' ' . __('and') . ' ';
 
                 //*** Mother ***
-                if ($family_parentsDb->fam_woman) {
-                    echo show_person($family_parentsDb->fam_woman);
+                if ($family_parentsDb->partner2_gedcomnumber) {
+                    echo show_person($family_parentsDb->partner2_gedcomnumber);
                 }
             } else {
                 $hideshow = 701;

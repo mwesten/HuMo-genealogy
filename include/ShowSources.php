@@ -28,7 +28,7 @@ class ShowSources
     function show_sources2(string $connect_kind, string $connect_sub_kind, string $connect_connect_id)
     {
         global $db_functions, $tree_id, $user, $humo_option, $uri_path, $data;
-        global $pdf_source, $source_footnotes, $screen_mode, $pdf_footnotes, $pdf;
+        global $pdf_source, $source_footnotes, $screen_mode, $pdf_footnotes, $pdf, $pdf_source_array;
         global $source_footnote_connect_id, $source_combiner;
         global $templ_person, $templ_relation; // *** PDF export ***
 
@@ -69,6 +69,12 @@ class ShowSources
                         $source_footnotes[] = $sourceDb->source_id;
                         $pdf_footnotes[] = $pdf->AddLink();
                         $pdf_source[$connectDb->connect_source_id] = $connectDb->connect_source_id;
+
+                        $pdf_source_array['connect_role'][] = $connectDb->connect_role;
+                        $pdf_source_array['connect_page'][] = $connectDb->connect_page;
+                        $pdf_source_array['source_repo_page'][] = $sourceDb->source_repo_page;
+                        $pdf_source_array['connect_text'][] = $connectDb->connect_text;
+                        $pdf_source_array['connect_date_place'][] = $datePlace->date_place($connectDb->connect_date, $connectDb->connect_place);
                     }
 
                     // *** Show text "Source by person/Sources by person" ***
@@ -90,6 +96,12 @@ class ShowSources
                         $pdf_source[$connectDb->connect_source_id] = $connectDb->connect_source_id;
                         $pdf_footnotes[] = $pdf->AddLink();
                         $source_footnotes[] = $sourceDb->source_id;
+
+                        $pdf_source_array['connect_role'][] = $connectDb->connect_role;
+                        $pdf_source_array['connect_page'][] = $connectDb->connect_page;
+                        $pdf_source_array['source_repo_page'][] = $sourceDb->source_repo_page;
+                        $pdf_source_array['connect_text'][] = $connectDb->connect_text;
+                        $pdf_source_array['connect_date_place'][] = $datePlace->date_place($connectDb->connect_date, $connectDb->connect_place);
 
                         $j = array_key_last($source_footnotes);
                         $j++;
@@ -135,6 +147,7 @@ class ShowSources
                         $source_array['text'] .= "!!" . $j . '~'; // ~ is delimiter for multiple sources
                     }
                 } elseif ($data["source_presentation"] == 'footnote' && $source_status === 'publish') {
+                    /*
                     // *** Combine footnotes with the same source including the same source role and source page... ***
                     $combiner_check = $connectDb->connect_source_id . '_' . $connectDb->connect_role . '_' . $connectDb->connect_page . '_' . $connectDb->connect_date . ' ' . $connectDb->connect_place . ' ' . $connectDb->connect_text;
 
@@ -142,6 +155,10 @@ class ShowSources
                     if (isset($sourceDb->source_title) && $sourceDb->source_title == '') {
                         $combiner_check = $connectDb->connect_role . '_' . $connectDb->connect_page . '_' . $connectDb->connect_date . ' ' . $connectDb->connect_place . ' ' . $sourceDb->source_text;
                     }
+                    */
+
+                    // *** Nov 2025: source citations are moved to persons and families. Now only show all sources, without citations at botton of page ***
+                    $combiner_check = $connectDb->connect_source_id;
 
                     $check = false;
                     // *** Check if the source (including role and page) is already used ***
@@ -215,7 +232,64 @@ class ShowSources
                     } elseif ($screen_mode == 'RTF') {
                         $rtf_text = __('sources') . ' ';
                     }
-                    $source_array['text'] .= ' <a href="' . str_replace("&", "&amp;", $_SERVER['REQUEST_URI']) . '#source_ref' . $j2 . '"><sup>' . $rtf_text . $j2 . ')</sup></a>';
+                    $source_array['text'] .= ' [<a href="' . str_replace("&", "&amp;", $_SERVER['REQUEST_URI']) . '#source_ref' . $j2 . '">' . $rtf_text . $j2 . '</a>]';
+
+                    // *** Show source citation ***
+                    if ($connectDb->connect_role || $connectDb->connect_page || (isset($sourceDb->source_repo_page) && $sourceDb->source_repo_page) || $connectDb->connect_date || $connectDb->connect_place || $connectDb->connect_text) {
+                        $source_array['text'] .= ' <small>' . __('Source citation') . '</small>: ';
+                        $startCitation = false;
+                    }
+
+                    if ($connectDb->connect_date || $connectDb->connect_place) {
+                        if (!$startCitation) {
+                            $startCitation = true;
+                        } else {
+                            $source_array['text'] .= ', ';
+                        }
+
+                        $source_array['text'] .= '<small>' . $datePlace->date_place($connectDb->connect_date, $connectDb->connect_place) . "</small>";
+                    }
+
+                    // *** Show extra source text ***
+                    if ($connectDb->connect_text) {
+                        if (!$startCitation) {
+                            $startCitation = true;
+                        } else {
+                            $source_array['text'] .= ', ';
+                        }
+
+                        //$source_array['text'] .= '<small><b>' . __('extra text') . ':</b> ' . nl2br($connectDb->connect_text) . '</small>';
+                        $source_array['text'] .= '<small><i>' . nl2br($connectDb->connect_text) . '</i></small>';
+                    }
+
+                    // *** Source role ***
+                    if ($connectDb->connect_role) {
+                        if (!$startCitation) {
+                            $startCitation = true;
+                        } else {
+                            $source_array['text'] .= ', ';
+                        }
+                        $source_array['text'] .= '<small><b>' . __('role') . '</b>: ' . $connectDb->connect_role . '</small>';
+                    }
+
+                    // *** Source page (connection table) ***
+                    if ($connectDb->connect_page) {
+                        if (!$startCitation) {
+                            $startCitation = true;
+                        } else {
+                            $source_array['text'] .= ', ';
+                        }
+                        $source_array['text'] .= '<small><b>' . __('page') . '</b>: ' . $connectDb->connect_page . '</small>';
+                    }
+                    // *** Page by source ***
+                    if (isset($sourceDb->source_repo_page) && $sourceDb->source_repo_page) {
+                        if (!$startCitation) {
+                            $startCitation = true;
+                        } else {
+                            $source_array['text'] .= ', ';
+                        }
+                        $source_array['text'] .= '<small><b>' . __('page') . '</b>: ' . $sourceDb->source_repo_page . '</small>';
+                    }
                 } else {
                     // *** Link to shared source ***
                     if ($connectDb->connect_source_id && $source_status === 'publish') {
@@ -324,20 +398,21 @@ class ShowSources
                         // *** Only show link if there is a shared source ***
                         if ($user['group_sources'] == 'j' && $sourceDb->source_title != '') {
                             $source_array['text'] .= '</a>';
-                        } // *** End of link ***
+                        }
                     }
 
                     // *** Show (extra) source text ***
-                    if ($connectDb->connect_text && $source_status === 'publish') {
-                        $source_array['text'] .= ', ' . __('source text') . ': ' . nl2br($connectDb->connect_text);
-                    }
+                    // TODO: show citation here?
+                    //if ($connectDb->connect_text && $source_status === 'publish') {
+                    //    $source_array['text'] .= ', ' . __('source text') . ': ' . nl2br($connectDb->connect_text);
+                    //}
 
                     // *** Show picture by source ***
                     $showMedia = new ShowMedia;
                     $result = $showMedia->show_media('connect', $connectDb->connect_id);
                     $source_array['text'] .= $result[0];
                 }
-            } // *** Loop multiple source ***
+            } // *** Loop multiple sources ***
 
         } // *** End of show sources ***
 

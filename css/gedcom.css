@@ -700,16 +700,94 @@ td.extended_woman {
 
 /* End of items outline report */
 
+/* Style for chat genealogy history window */
+#question-history-panel {
+    left: 16px;
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: .5rem;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+    overflow: auto;
+    padding: .5rem;
+    font-size: .9rem;
+}
+
+#question-history-panel .list-group-item {
+    cursor: pointer;
+}
+
+#question-history-panel .list-group-item:hover {
+    background: #f8f9fa;
+}
+
+@media (max-width: 900px) {
+
+    /* hide panel on small screens */
+    #question-history-panel {
+        display: none;
+    }
+
+    /* give chat more room on small screens */
+    .container.py-4 {
+        padding-left: 1rem;
+        padding-right: 1rem;
+    }
+}
+
+/* Style for chat genealogy window */
+.chat-bubble {
+    padding: .65rem .75rem;
+    border-radius: .75rem;
+    line-height: 1.25;
+    /* white-space: pre-line; */
+    white-space: normal;
+    word-break: break-word;
+    font-size: .95rem;
+}
+
+.chat-bubble.assistant {
+    border-top-left-radius: .25rem;
+    min-width: 50%;
+    max-width: 75%;
+}
+
+.chat-bubble.user {
+    border-top-right-radius: .25rem;
+    min-width: 50%;
+    max-width: 75%;
+}
+
+.d-flex.justify-end {
+    justify-content: flex-end;
+}
+
+/* Optional scrollbar styling */
+#chat-history::-webkit-scrollbar {
+    width: 8px;
+}
+
+#chat-history::-webkit-scrollbar-track {
+    background: #f1f1f1;
+}
+
+#chat-history::-webkit-scrollbar-thumb {
+    background: #c7c7c7;
+    border-radius: 4px;
+}
+
+#chat-history::-webkit-scrollbar-thumb:hover {
+    background: #a0a0a0;
+}
+
+/* Footer styles */
 footer {
     width: 100%;
-    /* min-height: 20%; */
     min-height: 150px;
     bottom: 0;
     left: 0;
     background-color: #f1f1f1;
 
     position: relative;
-    /* margin-top: 30px; */
     padding: 10px;
     clear: both;
 

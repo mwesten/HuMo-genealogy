@@ -321,8 +321,9 @@ class ShowMedia
         }
 
         // *** Change path for admin scripts ***
-        $prefix = '';
-        if (file_exists('../images/missing-image.jpg')) {
+        if (file_exists('images/missing-image.jpg')) {
+            $prefix = '';
+        } else {
             $prefix = '../';
         }
 

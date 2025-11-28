@@ -80,8 +80,7 @@ $languageDate = new Genealogy\Include\LanguageDate;
             FROM humo_persons p
             INNER JOIN humo_events e ON e.person_id = p.pers_id AND e.event_kind = 'birth'
             LEFT JOIN humo_events d ON d.person_id = p.pers_id AND d.event_kind = 'death'
-            WHERE p.pers_tree_id = :tree_id
-              AND (e.date_month = :month)
+            WHERE p.pers_tree_id = :tree_id AND (e.date_month = :month)
             ORDER BY birth_day, birth_year";
 
         try {
@@ -97,8 +96,8 @@ $languageDate = new Genealogy\Include\LanguageDate;
         }
     ?>
         <div class="row">
-            <div class="col-md-2"></div>
-            <div class="col-md-8">
+            <div class="col-md-1"></div>
+            <div class="col-md-10">
                 <table class="table">
                     <thead class="table-primary">
                         <tr>
@@ -115,13 +114,13 @@ $languageDate = new Genealogy\Include\LanguageDate;
                         $birth_day = $record->birth_day . ' ' . $data["month"];
 
                         // *** Get all data for privacy filter ***
-                        $record2 = $db_functions -> get_person_with_id($record->pers_id);
+                        $record2 = $db_functions->get_person_with_id($record->pers_id);
                         $privacy = $personPrivacy->get_privacy($record2);
                         $name = $personName->get_person_name($record2, $privacy);
 
                         if (!$privacy) {
                             // *** Person url example (optional: "main_person=I23"): http://localhost/humo-genealogy/family/2/F10?main_person=I23/ ***
-                            $url = $personLink->get_person_link($record);
+                            $url = $personLink->get_person_link($record2);
 
                             $death_date = $record->pers_death_date;
                             $age = (date("Y") - $record->birth_year);
@@ -169,19 +168,22 @@ $languageDate = new Genealogy\Include\LanguageDate;
 
         // *** Build query ***
         if ($data["civil"]) {
-            $sql = "SELECT f.*, 
-                    abs(SUBSTRING(e.event_date,1,2)) as marr_day, 
-                    SUBSTRING(e.event_date,-4) as marr_year
+            $sql = "SELECT 
+                    f.*,
+                    e.date_day AS marr_day,
+                    e.date_year AS marr_year,
+                    (SELECT rp.person_id FROM humo_relations_persons rp WHERE rp.relation_id = f.fam_id AND rp.partner_order = 1 LIMIT 1) AS partner1_id,
+                    (SELECT rp.person_id FROM humo_relations_persons rp WHERE rp.relation_id = f.fam_id AND rp.partner_order = 2 LIMIT 1) AS partner2_id
                 FROM humo_families f
                 INNER JOIN humo_events e ON e.relation_id = f.fam_id
                 WHERE f.fam_tree_id = :tree_id
-                    AND (SUBSTRING(e.event_date, 4,3) = :month OR SUBSTRING(e.event_date, 3,3) = :month)
-                    AND e.event_kind = 'marriage'
+                AND e.date_month = :month
+                AND e.event_kind = 'marriage'
                 ORDER BY marr_day, marr_year";
             try {
                 $qry = $dbh->prepare($sql);
                 $qry->bindValue(':tree_id', $tree_id, PDO::PARAM_STR);
-                $qry->bindValue(':month', $data["month"], PDO::PARAM_STR);
+                $qry->bindValue(':month', $data["month_int"], PDO::PARAM_INT);
                 $qry->execute();
             } catch (PDOException $e) {
                 echo $e->getMessage() . "<br/>";
@@ -192,31 +194,34 @@ $languageDate = new Genealogy\Include\LanguageDate;
                 $wed[$cnt]['marday'] = $record->marr_day . ' ' . $data["month"];
                 $wed[$cnt]['maryr'] = $record->marr_year;
                 $day = $record->marr_day;
-                if (strlen($record->marr_day) == 1) {
+                if (isset($record->marr_day) && strlen($record->marr_day) == 1) {
                     $day = "0" . $day;
                 }
                 $wed[$cnt]['dayyear'] = $day . $record->marr_year;
-                $wed[$cnt]['man'] = $record->fam_man;
-                $wed[$cnt]['woman'] = $record->fam_woman;
+                $wed[$cnt]['man'] = $record->partner1_id;
+                $wed[$cnt]['woman'] = $record->partner2_id;
                 $wed[$cnt]['type'] = __('Civil');
                 $cnt++;
             }
         }
 
         if ($data["relig"]) {
-            $sql = "SELECT f.*, 
-                    abs(SUBSTRING(e.event_date,1,2)) as marr_day, 
-                    SUBSTRING(e.event_date,-4) as marr_year
+            $sql = "SELECT 
+                    f.*,
+                    e.date_day AS marr_day,
+                    e.date_year AS marr_year,
+                    (SELECT rp.person_id FROM humo_relations_persons rp WHERE rp.relation_id = f.fam_id AND rp.partner_order = 1 LIMIT 1) AS partner1_id,
+                    (SELECT rp.person_id FROM humo_relations_persons rp WHERE rp.relation_id = f.fam_id AND rp.partner_order = 2 LIMIT 1) AS partner2_id
                 FROM humo_families f
                 INNER JOIN humo_events e ON e.relation_id = f.fam_id
                 WHERE f.fam_tree_id = :tree_id
-                    AND (SUBSTRING(e.event_date, 4,3) = :month OR SUBSTRING(e.event_date, 3,3) = :month)
-                    AND e.event_kind = 'marr_church'
+                AND e.date_month = :month
+                AND e.event_kind = 'marr_church'
                 ORDER BY marr_day, marr_year";
             try {
                 $qry = $dbh->prepare($sql);
                 $qry->bindValue(':tree_id', $tree_id, PDO::PARAM_STR);
-                $qry->bindValue(':month', $data["month"], PDO::PARAM_STR);
+                $qry->bindValue(':month', $data["month_int"], PDO::PARAM_STR);
                 $ccc = $qry->execute();
             } catch (PDOException $e) {
                 echo $e->getMessage() . '<br>';
@@ -230,8 +235,8 @@ $languageDate = new Genealogy\Include\LanguageDate;
                     $day = "0" . $day;
                 }  // for sorting array
                 $wed[$cnt]['dayyear'] = $day . $record->marr_year;
-                $wed[$cnt]['man'] = $record->fam_man;
-                $wed[$cnt]['woman'] = $record->fam_woman;
+                $wed[$cnt]['man'] = $record->partner1_id;
+                $wed[$cnt]['woman'] = $record->partner2_id;
                 $wed[$cnt]['type'] = __('Religious');
                 $cnt++;
             }
@@ -239,8 +244,8 @@ $languageDate = new Genealogy\Include\LanguageDate;
         ?>
 
         <div class="row">
-            <div class="col-md-2"></div>
-            <div class="col-md-8">
+            <div class="col-md-1"></div>
+            <div class="col-md-10">
                 <table class="table">
                     <thead class="table-primary">
                         <tr>
@@ -267,7 +272,7 @@ $languageDate = new Genealogy\Include\LanguageDate;
 
                         foreach ($wed as $key => $value) {
                             // get husband
-                            $manDb = $db_functions->get_person($value['man']);
+                            $manDb = $db_functions->get_person_with_id($value['man']);
                             $man_privacy = $personPrivacy->get_privacy($manDb);
                             if (!$value['man']) {
                                 $man_name = 'N.N.';
@@ -281,7 +286,7 @@ $languageDate = new Genealogy\Include\LanguageDate;
                             }
 
                             // get wife
-                            $womanDb = $db_functions->get_person($value['woman']);
+                            $womanDb = $db_functions->get_person_with_id($value['woman']);
                             $woman_privacy = $personPrivacy->get_privacy($womanDb);
                             if (!$value['woman']) {
                                 $woman_name = 'N.N.';
@@ -300,7 +305,7 @@ $languageDate = new Genealogy\Include\LanguageDate;
                             if (!$man_privacy && !$woman_privacy) {
                     ?>
                                 <!-- Highlight present day -->
-                                <tr <?php if ($marr_day == $data["today"]) echo 'class="table-primary"'; ?>>
+                                <tr <?= $marr_day == $data["today"] ? 'class="table-primary"' : ''; ?>>
                                     <td><?= $calendar_day == $last_cal_day ? '<br>' : $calendar_day . ' ' . $data["show_month"]; ?></td>
                                     <?php $last_cal_day = $calendar_day; ?>
 

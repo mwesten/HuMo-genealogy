@@ -161,18 +161,18 @@ class TimelineModel extends BaseModel
         global $language;
         $directionMarkers = new \Genealogy\Include\DirectionMarkers($language["dir"]);
 
-        // *** MARRIAGES & CHILDREN ***
-        if (isset($personDb->pers_fams) && $personDb->pers_fams) {
+        // *** Relations & children ***
+        $relations = $this->db_functions->get_relations($personDb->pers_id);
+        if (isset($relations)) {
             $process_age = new CalculateDates;
-
-            $data["marriages"] = explode(";", $personDb->pers_fams);
-            $count_marriages = count($data["marriages"]);
-            for ($i = 0; $i < $count_marriages; $i++) {
+            $i = 0;
+            foreach ($relations as $relation) {
+                $i++;
                 $data["children"][$i] = '';
                 $data["marryear"][$i] = '';
                 $marrdate[$i] = '';
-                $familyDb = $this->db_functions->get_family($data["marriages"][$i]);
-                $spouse = $personDb->pers_gedcomnumber == $familyDb->fam_man ? $familyDb->fam_woman : $familyDb->fam_man;
+                $familyDb = $this->db_functions->get_family_with_id($relation->relation_id);
+                $spouse = $personDb->pers_gedcomnumber == $familyDb->partner1_gedcomnumber ? $familyDb->partner2_gedcomnumber : $familyDb->partner1_gedcomnumber;
                 $spouse2Db = $this->db_functions->get_person($spouse);
                 $privacy = true;
                 if ($spouse2Db) {
@@ -239,8 +239,13 @@ class TimelineModel extends BaseModel
                     $data["privacy_filtered"] = true;
                 }
 
-                if ($familyDb->fam_children) {
-                    $data["children"][$i] = explode(";", $familyDb->fam_children);
+                $children = $this->db_functions->get_children($familyDb->fam_id);
+                if ($children) {
+                    $data["children"][$i] = [];
+                    foreach ($children as $child) {
+                        $data["children"][$i][] = $child->person_gedcomnumber;
+                    }
+
                     $count_children = count($data["children"][$i]);
                     for ($m = 0; $m < $count_children; $m++) {
                         $data["chmarriages"][$i][$m] = ''; // enter value so we wont get error messages
@@ -300,18 +305,32 @@ class TimelineModel extends BaseModel
                             // *** Privacy filter activated ***
                             $data["privacy_filtered"] = true;
                         }
-                        if ($chldDb->pers_fams) {
-                            $data["chmarriages"][$i][$m] = explode(";", $chldDb->pers_fams);
-                            $count_chmarriages = count($data["chmarriages"][$i][$m]);
-                            for ($p = 0; $p < $count_chmarriages; $p++) {
+
+                        // *** Children relations and grandchildren ***
+                        $relations = $this->db_functions->get_relations($chldDb->pers_id);
+                        if (isset($relations)) {
+                            // We build relation array to properly handle multiple relations
+                            $relation_array = '';
+                            foreach ($relations as $relation) {
+                                if ($relation_array) {
+                                    $relation_array = $relation_array . ';';
+                                }
+                                $relation_array = $relation_array . $relation->relation_gedcomnumber;
+                            }
+                            $data["chmarriages"][$i][$m] = explode(";", $relation_array);
+
+                            $p = 0;
+                            foreach ($relations as $relation) {
+                                $p++;
+                                $data["chmarriages"][$i][$m][$p] = $relation->relation_gedcomnumber;
                                 $data["grchildren"][$i][$m][$p] = ''; // enter value so webserver wont throw error messages
                                 $data["chmarryear"][$i][$m][$p] = '';
                                 $data["chmarrdate"][$i][$m][$p] = '';
                                 $temp = '';
                                 $chfamilyDb = $this->db_functions->get_family($data["chmarriages"][$i][$m][$p]);
 
-                                // CHILDREN'S MARRIAGES
-                                $chspouse = $chldDb->pers_gedcomnumber == $chfamilyDb->fam_man ? $chfamilyDb->fam_woman : $chfamilyDb->fam_man;
+                                // Children's marriages
+                                $chspouse = $chldDb->pers_gedcomnumber == $chfamilyDb->partner1_gedcomnumber ? $chfamilyDb->partner2_gedcomnumber : $chfamilyDb->partner1_gedcomnumber;
                                 $chspouse2Db = $this->db_functions->get_person($chspouse);
                                 $privacy = $personPrivacy->get_privacy($chspouse2Db);
                                 $name = $personName->get_person_name($chspouse2Db, $privacy);
@@ -355,8 +374,12 @@ class TimelineModel extends BaseModel
                                 }
                                 // END CHILDREN'S MARRIAGES
 
-                                if ($chfamilyDb->fam_children) {
-                                    $data["grchildren"][$i][$m][$p] = explode(";", $chfamilyDb->fam_children);
+                                $children = $this->db_functions->get_children($chfamilyDb->fam_id);
+                                if ($children) {
+                                    $data["grchildren"][$i][$m][$p] = [];
+                                    foreach ($children as $child) {
+                                        $data["grchildren"][$i][$m][$p][] = $child->person_gedcomnumber;
+                                    }
                                     $count_grchildren = count($data["grchildren"][$i][$m][$p]);
                                     for ($g = 0; $g < $count_grchildren; $g++) {
                                         $grchldDb = $this->db_functions->get_person($data["grchildren"][$i][$m][$p][$g]);
@@ -409,7 +432,7 @@ class TimelineModel extends BaseModel
                                     } // end for grchildren
                                 }    // end if grchildren
                             } // end for chmarriages
-                        } //end if chldDb->pers_fams
+                        }
                     } //end for
                 } // end if children
             }

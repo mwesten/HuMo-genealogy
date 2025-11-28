@@ -46,12 +46,14 @@ class PersonPopup
 
             // *** Link to own family or parents ***
             $pers_family = '';
-            if ($personDb->pers_famc) {
-                $pers_family = $personDb->pers_famc;
+            if ($personDb->parent_relation_gedcomnumber) {
+                $pers_family = $personDb->parent_relation_gedcomnumber;
             }
-            if ($personDb->pers_fams) {
-                $pers_fams = explode(';', $personDb->pers_fams);
-                $pers_family = $pers_fams[0];
+            $relation = $db_functions->get_first_relation($personDb->pers_id);
+             $relation_gedcomnumber = '';
+            if (isset($relation->relation_gedcomnumber)) {
+                $pers_family = $relation->relation_gedcomnumber;
+                $relation_gedcomnumber = $relation->relation_gedcomnumber;
             }
 
             $name = $personName->get_person_name($personDb, $privacy);
@@ -59,30 +61,33 @@ class PersonPopup
 
             // *** If child doesn't have own family, directly jump to child in familyscreen using #child_I1234 ***
             $direct_link = '';
-            if ($personDb->pers_fams == '') {
+            if ($relation_gedcomnumber == '') {
                 $direct_link = '#person_' . $personDb->pers_gedcomnumber;
             }
             $popover_content .=  '<li><a class="dropdown-item" href="' . $family_url . $direct_link . '"><img src="images/family.gif" border="0" alt="' . __('Family group sheet') . '"> ' . __('Family group sheet') . '</a></li>';
 
-            if ($user['group_gen_protection'] == 'n' && $personDb->pers_fams != '') {
-                // *** Only show a descendant_report icon if there are children ***
-                $check_children = false;
-                $check_family = explode(";", $personDb->pers_fams);
-                foreach ($check_family as $i => $value) {
-                    $check_childrenDb = $db_functions->get_family($check_family[$i]);
-                    if ($check_childrenDb->fam_children) {
-                        $check_children = true;
+            // *** Descendants (only show a descendant_report icon if there are children) ***
+            $relations = $db_functions->get_relations($personDb->pers_id);
+            $check_children = false;
+            if ($user['group_gen_protection'] == 'n' && count($relations) > 0) {
+                foreach ($relations as $relation) {
+                    if (!empty($relation->relation_id)) {
+                        $children = $db_functions->get_children($relation->relation_id);
+                        if (isset($children) && count($children) > 0) {
+                            $check_children = true;
+                            break;
+                        }
                     }
                 }
                 if ($check_children) {
-                    $vars['pers_family'] = $pers_family;
+                    $vars['pers_family'] = $relation_gedcomnumber;
                     $path_tmp = $processLinks->get_link($uri_path, 'family', $personDb->pers_tree_id, true, $vars);
                     $path_tmp .= "main_person=" . $personDb->pers_gedcomnumber . '&amp;descendant_report=1';
                     $popover_content .= '<li><a class="dropdown-item" href="' . $path_tmp . '" rel="nofollow"><img src="images/descendant.gif" border="0" alt="' . __('Descendants') . '"> ' . __('Descendants') . '</a></li>';
                 }
             }
 
-            if ($user['group_gen_protection'] == 'n' && $personDb->pers_famc != '') {
+            if ($user['group_gen_protection'] == 'n' && $personDb->parent_relation_id != '') {
                 // == Ancestor report: link & icons by Klaas de Winkel ==
                 $vars['id'] = $personDb->pers_gedcomnumber;
                 $path_tmp = $processLinks->get_link($uri_path, 'ancestor_report', $personDb->pers_tree_id, false, $vars);
@@ -93,7 +98,7 @@ class PersonPopup
             if (!$privacy) {
                 $tmldates = 0;
                 if (
-                    $personDb->pers_birth_date || $personDb->pers_bapt_date || $personDb->pers_death_date || $personDb->pers_buried_date || $personDb->pers_fams
+                    $personDb->pers_birth_date || $personDb->pers_bapt_date || $personDb->pers_death_date || $personDb->pers_buried_date || $relation_gedcomnumber
                 ) {
                     $tmldates = 1;
                 }
@@ -110,7 +115,7 @@ class PersonPopup
             }
 
             // DNA charts
-            if ($user['group_gen_protection'] == 'n' and ($personDb->pers_famc != "" or ($personDb->pers_fams != "" and $check_children))) {
+            if ($user['group_gen_protection'] == 'n' && ($personDb->parent_relation_id != "" || ($relation_gedcomnumber != "" && $check_children))) {
                 if ($personDb->pers_sexe == "M") $charttype = "ydna";
                 else $charttype = "mtdna";
                 if ($humo_option["url_rewrite"] == 'j') {
@@ -121,7 +126,7 @@ class PersonPopup
                 $popover_content .= '<li><a class="dropdown-item" href="' . $path_tmp . '" rel="nofollow"><img src="images/dna.png" border="0" alt="' . __('DNA Charts') . '"> ' . __('DNA Charts') . '</a></li>';
             }
 
-            if ($user['group_gen_protection'] == 'n' && $personDb->pers_famc != '' && $personDb->pers_fams != '' && $check_children) {
+            if ($user['group_gen_protection'] == 'n' && $personDb->parent_relation_id != '' && $relation_gedcomnumber != '' && $check_children) {
                 // hourglass only if there is at least one generation of ancestors and of children.
                 $vars['pers_family'] = $pers_family;
                 $path_tmp = $processLinks->get_link($uri_path, 'hourglass', $personDb->pers_tree_id, true, $vars);

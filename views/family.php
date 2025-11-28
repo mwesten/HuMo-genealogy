@@ -136,29 +136,37 @@ else {
             $parent2 = '';
             $swap_parent1_parent2 = false;
             // *** Standard main person is the father ***
-            if ($familyDb->fam_man) {
-                $parent1 = $familyDb->fam_man;
+            if ($familyDb->partner1_gedcomnumber) {
+                $parent1 = $familyDb->partner1_gedcomnumber;
             }
             // *** After clicking the mother, the mother is main person ***
-            if ($familyDb->fam_woman == $data["main_person"]) {
-                $parent1 = $familyDb->fam_woman;
+            if ($familyDb->partner2_gedcomnumber == $data["main_person"]) {
+                $parent1 = $familyDb->partner2_gedcomnumber;
                 $swap_parent1_parent2 = true;
             }
 
             // *** Check for parent1: N.N. ***
-            if ($parent1) {
-                // *** Save parent1 families in array ***
+            //$relations = [];
+            if (isset($parent1) && $parent1 != '') {
                 $personDb = $db_functions->get_person($parent1);
-                $marriage_array = explode(";", $personDb->pers_fams);
-                $count_marr = substr_count($personDb->pers_fams, ";");
+                $relations = $db_functions->get_relations($personDb->pers_id);
             } else {
-                $marriage_array[0] = $family_id_loop;
-                $count_marr = "0";
+                // *** Parent1 = N.N. case ***
+                //$marriage_array[0] = $family_id_loop;
+                //$count_marr = "0";
+
+                $relations = [];
+                $relation = new stdClass();
+                $relation->relation_gedcomnumber = $family_id_loop;
+                $relations[] = $relation;
             }
 
             // *** Loop multiple marriages of main_person ***
-            for ($parent1_marr = 0; $parent1_marr <= $count_marr; $parent1_marr++) {
-                $id = $marriage_array[$parent1_marr];
+            //for ($parent1_marr = 0; $parent1_marr <= $count_marr; $parent1_marr++) {
+            foreach ($relations as $relation) {
+                //$id = $marriage_array[$parent1_marr];
+                $id = $relation->relation_gedcomnumber;
+
                 $familyDb = $db_functions->get_family($id);
 
                 // *** Don't count search bots, crawlers etc. ***
@@ -171,7 +179,7 @@ else {
 
                     // *** Extended statistics ***
                     if ($data["descendant_report"] == false && $user['group_statistics'] == 'j') {
-                        $stat_easy_id = $familyDb->fam_tree_id . '-' . $familyDb->fam_gedcomnumber . '-' . $familyDb->fam_man . '-' . $familyDb->fam_woman;
+                        $stat_easy_id = $familyDb->fam_tree_id . '-' . $familyDb->fam_gedcomnumber . '-' . $familyDb->partner1_gedcomnumber . '-' . $familyDb->partner2_gedcomnumber;
 
                         // *** Only 255 characters allowed for stat_user_agent ***
                         $stat_user_agent = $_SERVER['HTTP_USER_AGENT'];
@@ -185,8 +193,8 @@ else {
                             stat_user_agent='" . $stat_user_agent . "',
                             stat_tree_id='" . $familyDb->fam_tree_id . "',
                             stat_gedcom_fam='" . $familyDb->fam_gedcomnumber . "',
-                            stat_gedcom_man='" . $familyDb->fam_man . "',
-                            stat_gedcom_woman='" . $familyDb->fam_woman . "',
+                            stat_gedcom_man='" . $familyDb->partner1_gedcomnumber . "',
+                            stat_gedcom_woman='" . $familyDb->partner2_gedcomnumber . "',
                             stat_date_stat='" . date("Y-m-d H:i") . "',
                             stat_date_linux='" . time() . "'";
                         $dbh->query($update_sql);
@@ -289,11 +297,11 @@ else {
                 }
 
                 if ($swap_parent1_parent2 == true) {
-                    $parent1 = $familyDb->fam_woman;
-                    $parent2 = $familyDb->fam_man;
+                    $parent1 = $familyDb->partner2_gedcomnumber;
+                    $parent2 = $familyDb->partner1_gedcomnumber;
                 } else {
-                    $parent1 = $familyDb->fam_man;
-                    $parent2 = $familyDb->fam_woman;
+                    $parent1 = $familyDb->partner1_gedcomnumber;
+                    $parent2 = $familyDb->partner2_gedcomnumber;
                 }
                 $parent1Db = $db_functions->get_person($parent1);
                 $parent1_privacy = $personPrivacy->get_privacy($parent1Db);
@@ -316,7 +324,8 @@ else {
                 }
 
                 // *** Add tip in family screen ***
-                if (!$botDetector->isBot() && $descendant_loop == 0 && $parent1_marr == 0) {
+                //if (!$botDetector->isBot() && $descendant_loop == 0 && $parent1_marr == 0) {
+                if (!$botDetector->isBot() && $descendant_loop == 0 && count($relations) == 0) {
     ?>
                     <div class="d-print-none"><b>
                             <?php printf(__('TIP: use %s for other (ancestor and descendant) reports.'), '<img src="images/reports.gif" alt="' . __('Reports') . '" title="' . __('Reports') . '">'); ?>
@@ -463,22 +472,19 @@ else {
                     /**
                      * Show children
                      */
-                    if ($familyDb->fam_children) {
-                        $childnr = 1;
-                        $child_array = explode(";", $familyDb->fam_children);
+                    $children = $db_functions->get_children($familyDb->fam_id);
+                    if ($children) {
                         $show_privacy_text = false;
-
-                        // TODO improve layout in RTF export
                     ?>
                         <div class="py-3">
                             <b>
-                                <?= (count($child_array) == '1') ? __('Child') . ':' : __('Children') . ':'; ?>
+                                <?= (count($children) == '1') ? __('Child') . ':' : __('Children') . ':'; ?>
                             </b>
                         </div>
 
                         <?php
-                        foreach ($child_array as $i => $value) {
-                            $childDb = $db_functions->get_person($child_array[$i]);
+                        foreach ($children as $i => $child) {
+                            $childDb = $db_functions->get_person_with_id($child->person_id);
                             $child_privacy = $personPrivacy->get_privacy($childDb);
 
                             // *** Person must be totally hidden ***
@@ -492,14 +498,18 @@ else {
                         ?>
 
                             <div class="children">
-                                <div class="child_nr" id="person_<?= $childDb->pers_gedcomnumber; ?>"><?= $childnr; ?>.</div>
+                                <div class="child_nr" id="person_<?= $childDb->pers_gedcomnumber; ?>"><?= $child->relation_order; ?>.</div>
                                 <?php
                                 echo $personName_extended->name_extended($childDb, $child_privacy, "child");
 
                                 // *** Build descendant_report ***
-                                if ($data["descendant_report"] == true && $childDb->pers_fams && $descendant_loop < $max_generation) {
+                                $childRelations = $db_functions->get_relations($childDb->pers_id);
+                                if ($data["descendant_report"] == true && isset($childRelations) && count($childRelations) > 0 && $descendant_loop < $max_generation) {
                                     // *** 1st family of child ***
-                                    $child_family = explode(";", $childDb->pers_fams);
+                                    $child_family = array();
+                                    foreach ($childRelations as $childRelation) {
+                                        $child_family[] = $childRelation->relation_gedcomnumber;
+                                    }
 
                                     // *** Check for double families in descendant report (if a person relates or marries another person in the same family) ***
                                     if (isset($check_double) && in_array($child_family[0], $check_double)) {
@@ -528,7 +538,6 @@ else {
                                 ?>
                             </div><br>
                         <?php
-                            $childnr++;
                         }
                     }
 
@@ -547,65 +556,71 @@ else {
                                 </div>
                             </td>
                         </tr>
-                    <?php
+                        <?php
                     }
 
                     /**
                      * Check for adoptive parent ESPECIALLY MADE FOR ALDFAER
                      */
-                    $famc_adoptive_by_person_qry_prep = $db_functions->get_events_kind($familyDb->fam_man, 'adoption_by_person');
-                    foreach ($famc_adoptive_by_person_qry_prep as $famc_adoptiveDb) {
-                        $childDb = $db_functions->get_person_with_id($famc_adoptiveDb->person_id);
-                        $privacy_child = $personPrivacy->get_privacy($childDb);
-                    ?>
-                        <tr>
-                            <td colspan="4">
-                                <div class="children">
-                                    <b>
-                                        <?php if ($famc_adoptiveDb->event_gedcom == 'steph') { ?>
-                                            <?= __('Stepchild'); ?>:
-                                        <?php } elseif ($famc_adoptiveDb->event_gedcom == 'legal') { ?>
-                                            <?= __('Legal child'); ?>:
-                                        <?php } elseif ($famc_adoptiveDb->event_gedcom == 'foster') { ?>
-                                            <?= __('Foster child'); ?>:
-                                        <?php } else { ?>
-                                            <?= __('Adopted child:'); ?>
-                                        <?php } ?>
-                                    </b>
-                                    <?= $personName_extended->name_extended($childDb, $child_privacy, "child"); ?>
-                                </div>
-                            </td>
-                        </tr>
-                    <?php
+                    if (isset($familyDb->partner1_gedcomnumber)) {
+                        $famc_adoptive_by_person_qry_prep = $db_functions->get_events_kind($familyDb->partner1_gedcomnumber, 'adoption_by_person');
+                        foreach ($famc_adoptive_by_person_qry_prep as $famc_adoptiveDb) {
+                            $childDb = $db_functions->get_person_with_id($famc_adoptiveDb->person_id);
+                            $privacy_child = $personPrivacy->get_privacy($childDb);
+                        ?>
+                            <tr>
+                                <td colspan="4">
+                                    <div class="children">
+                                        <b>
+                                            <?php if ($famc_adoptiveDb->event_gedcom == 'steph') { ?>
+                                                <?= __('Stepchild'); ?>:
+                                            <?php } elseif ($famc_adoptiveDb->event_gedcom == 'legal') { ?>
+                                                <?= __('Legal child'); ?>:
+                                            <?php } elseif ($famc_adoptiveDb->event_gedcom == 'foster') { ?>
+                                                <?= __('Foster child'); ?>:
+                                            <?php } else { ?>
+                                                <?= __('Adopted child:'); ?>
+                                            <?php } ?>
+                                        </b>
+                                        <?= $personName_extended->name_extended($childDb, $child_privacy, "child"); ?>
+                                    </div>
+                                </td>
+                            </tr>
+                        <?php
+                        }
                     }
 
                     /**
                      * Check for adoptive parent ESPECIALLY MADE FOR ALDFAER
                      */
-                    $famc_adoptive_by_person_qry_prep = $db_functions->get_events_kind($familyDb->fam_woman, 'adoption_by_person');
-                    foreach ($famc_adoptive_by_person_qry_prep as $famc_adoptiveDb) {
-                        $childDb = $db_functions->get_person_with_id($famc_adoptiveDb->person_id);
-                        $child_privacy = $personPrivacy->get_privacy($childDb);
+                    if (isset($familyDb->partner2_gedcomnumber)) {
+                        $famc_adoptive_by_person_qry_prep = $db_functions->get_events_kind($familyDb->partner2_gedcomnumber, 'adoption_by_person');
+                        foreach ($famc_adoptive_by_person_qry_prep as $famc_adoptiveDb) {
+                            $childDb = $db_functions->get_person_with_id($famc_adoptiveDb->person_id);
+                            $child_privacy = $personPrivacy->get_privacy($childDb);
+                        ?>
+                            <tr>
+                                <td colspan="4">
+                                    <div class="children">
+                                        <b>
+                                            <?php if ($famc_adoptiveDb->event_gedcom == 'steph') { ?>
+                                                <?= __('Stepchild'); ?>:
+                                            <?php } elseif ($famc_adoptiveDb->event_gedcom == 'legal') { ?>
+                                                <?= __('Legal child'); ?>:
+                                            <?php    } elseif ($famc_adoptiveDb->event_gedcom == 'foster') { ?>
+                                                <?= __('Foster child'); ?>:
+                                            <?php } else { ?>
+                                                <?= __('Adopted child:'); ?>
+                                            <?php } ?>
+                                        </b>
+                                        <?= $personName_extended->name_extended($childDb, $child_privacy, "child"); ?>
+                                    </div>
+                                </td>
+                            </tr>
+                    <?php
+                        }
+                    }
                     ?>
-                        <tr>
-                            <td colspan="4">
-                                <div class="children">
-                                    <b>
-                                        <?php if ($famc_adoptiveDb->event_gedcom == 'steph') { ?>
-                                            <?= __('Stepchild'); ?>:
-                                        <?php } elseif ($famc_adoptiveDb->event_gedcom == 'legal') { ?>
-                                            <?= __('Legal child'); ?>:
-                                        <?php    } elseif ($famc_adoptiveDb->event_gedcom == 'foster') { ?>
-                                            <?= __('Foster child'); ?>:
-                                        <?php } else { ?>
-                                            <?= __('Adopted child:'); ?>
-                                        <?php } ?>
-                                    </b>
-                                    <?= $personName_extended->name_extended($childDb, $child_privacy, "child"); ?>
-                                </div>
-                            </td>
-                        </tr>
-                    <?php } ?>
                 </table><br>
 
                 <?php
@@ -742,7 +757,7 @@ else {
                         }
                     }
 
-                    // MARRIED
+                    // Married
                     $location_var = $familyDb->fam_marr_place;
                     if ($location_var != '') {
                         $location_prep->execute();
@@ -773,55 +788,58 @@ else {
                         }
                     }
 
+                    // Children
+                    $children = $db_functions->get_children($familyDb->fam_id);
+                    if ($children) {
+                        foreach ($children as $child) {
+                            $childDb = $db_functions->get_person_with_id($child->person_id);
+                            if ($childDb !== false) {
+                                $child_privacy = $personPrivacy->get_privacy($childDb);
+                                if (!$child_privacy) {
 
-                    $child_array = explode(";", $familyDb->fam_children);
-                    for ($i = 0; $i <= substr_count($familyDb->fam_children, ";"); $i++) {
-                        $childDb = $db_functions->get_person($child_array[$i]);
-                        if ($childDb !== false) {
-                            $child_privacy = $personPrivacy->get_privacy($childDb);
-                            if (!$child_privacy) {
+                                    // *** Child birth ***
+                                    $location_var = $childDb->pers_birth_place;
+                                    if ($location_var != '') {
+                                        $location_prep->execute();
+                                        $child_result = $location_prep->rowCount();
 
-                                // *** Child birth ***
-                                $location_var = $childDb->pers_birth_place;
-                                if ($location_var != '') {
-                                    $location_prep->execute();
-                                    $child_result = $location_prep->rowCount();
+                                        if ($child_result > 0) {
+                                            $info = $location_prep->fetch();
 
-                                    if ($child_result > 0) {
-                                        $info = $location_prep->fetch();
-
-                                        $name = $personName->get_person_name($childDb, $child_privacy);
-                                        $google_name = $name["standard_name"];
-                                        $key = array_search($childDb->pers_birth_place, $location_array);
-                                        if (isset($key) && $key > 0) {
-                                            $text_array[$key] .= $newline . addslashes($google_name . ", " . __('BORN_SHORT') . ' ' . $childDb->pers_birth_place);
-                                        } else {
-                                            $location_array[] = $childDb->pers_birth_place;
-                                            $lat_array[] = $info['location_lat'];
-                                            $lon_array[] = $info['location_lng'];
-                                            $text_array[] = addslashes($google_name . ", " . __('BORN_SHORT') . ' ' . $childDb->pers_birth_place);
+                                            $name = $personName->get_person_name($childDb, $child_privacy);
+                                            $google_name = $name["standard_name"];
+                                            $key = array_search($childDb->pers_birth_place, $location_array);
+                                            if (isset($key) && $key > 0) {
+                                                $text_array[$key] .= $newline . addslashes($google_name . ", " . __('BORN_SHORT') . ' ' . $childDb->pers_birth_place);
+                                            } else {
+                                                $location_array[] = $childDb->pers_birth_place;
+                                                $lat_array[] = $info['location_lat'];
+                                                $lon_array[] = $info['location_lng'];
+                                                $text_array[] = addslashes($google_name . ", " . __('BORN_SHORT') . ' ' . $childDb->pers_birth_place);
+                                            }
                                         }
                                     }
-                                }
-                                // *** Child death ***
-                                $location_var = $childDb->pers_death_place;
-                                if ($location_var != '') {
-                                    $location_prep->execute();
-                                    $child_result = $location_prep->rowCount();
 
-                                    if ($child_result > 0) {
-                                        $info = $location_prep->fetch();
+                                    // *** Child death ***
+                                    $location_var = $childDb->pers_death_place;
+                                    if ($location_var != '') {
+                                        $location_prep->execute();
+                                        $child_result = $location_prep->rowCount();
 
-                                        $name = $personName->get_person_name($childDb, $child_privacy);
-                                        $google_name = $name["standard_name"];
-                                        $key = array_search($childDb->pers_death_place, $location_array);
-                                        if (isset($key) && $key > 0) {
-                                            $text_array[$key] .= $newline . addslashes($google_name . ", " . __('DIED_SHORT') . ' ' . $childDb->pers_death_place);
-                                        } else {
-                                            $location_array[] = $childDb->pers_death_place;
-                                            $lat_array[] = $info['location_lat'];
-                                            $lon_array[] = $info['location_lng'];
-                                            $text_array[] = addslashes($google_name . ", " . __('DIED_SHORT') . ' ' . $childDb->pers_death_place);
+                                        if ($child_result > 0) {
+                                            $info = $location_prep->fetch();
+
+                                            $name = $personName->get_person_name($childDb, $child_privacy);
+                                            $google_name = $name["standard_name"];
+                                            $key = array_search($childDb->pers_death_place, $location_array);
+                                            if (isset($key) && $key > 0) {
+                                                $text_array[$key] .= $newline . addslashes($google_name . ", " . __('DIED_SHORT') . ' ' . $childDb->pers_death_place);
+                                            } else {
+                                                $location_array[] = $childDb->pers_death_place;
+                                                $lat_array[] = $info['location_lat'];
+                                                $lon_array[] = $info['location_lng'];
+                                                $text_array[] = addslashes($google_name . ", " . __('DIED_SHORT') . ' ' . $childDb->pers_death_place);
+                                            }
                                         }
                                     }
                                 }

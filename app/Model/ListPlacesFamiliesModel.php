@@ -115,7 +115,12 @@ class ListPlacesFamiliesModel extends BaseModel
             marr_church_notice.event_date AS fam_marr_church_notice_date,
 
             marr_church_location.location_location AS fam_marr_church_place,
-            marr_church.event_date AS fam_marr_church_date
+            marr_church.event_date AS fam_marr_church_date,
+
+            man_rel.person_id AS partner1_id,
+            man_rel.person_gedcomnumber AS partner1_gedcomnumber,
+            woman_rel.person_id AS partner2_id,
+            woman_rel.person_gedcomnumber AS partner2_gedcomnumber
 
             FROM humo_families
 
@@ -138,6 +143,9 @@ class ListPlacesFamiliesModel extends BaseModel
             ON humo_families.fam_id = marr_church.relation_id AND marr_church.event_kind = 'marr_church'
             LEFT JOIN humo_location AS marr_church_location
             ON marr_church.place_id = marr_church_location.location_id
+
+            LEFT JOIN humo_relations_persons man_rel ON man_rel.relation_id = humo_families.fam_id AND man_rel.relation_type = 'partner' AND man_rel.partner_order = 1
+            LEFT JOIN humo_relations_persons woman_rel ON woman_rel.relation_id = humo_families.fam_id AND woman_rel.relation_type = 'partner' AND woman_rel.partner_order = 2
         ";
 
         // *** Search marriage place ***

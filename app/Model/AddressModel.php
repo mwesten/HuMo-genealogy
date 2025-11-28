@@ -7,6 +7,7 @@ use Genealogy\Include\PersonName;
 use Genealogy\Include\PersonLink;
 use Genealogy\Include\ShowSources;
 use Genealogy\App\Model\BaseModel;
+use Genealogy\Include\DatePlace;
 
 class AddressModel extends BaseModel
 {
@@ -42,9 +43,13 @@ class AddressModel extends BaseModel
         $personPrivacy = new PersonPrivacy();
         $personName = new PersonName();
         $personLink = new PersonLink();
+        $datePlace = new DatePlace();
 
         // *** Search address in connections table ***
         $event_qry = $this->db_functions->get_connections('person_address', $id);
+        if (count($event_qry) > 0) {
+            $text .= '<h5>'.__('Address by person') . '</h5>';
+        }
         foreach ($event_qry as $eventDb) {
             // *** Person address ***
             if ($eventDb->connect_connect_id) {
@@ -55,15 +60,75 @@ class AddressModel extends BaseModel
                 // *** Person url example (optional: "main_person=I23"): http://localhost/humo-genealogy/family/2/F10?main_person=I23/ ***
                 $url = $personLink->get_person_link($personDb);
 
-                $text .= __('Address by person') . ': <a href="' . $url . '">' . $name["standard_name"] . '</a>';
+                //$text .= __('Address by person') . ': <a href="' . $url . '">' . $name["standard_name"] . '</a>';
 
+                $date = $datePlace->date_place($eventDb->connect_date, '');
+
+                $text .= '<div class="row">';
+                $text .= '<div class="col-md-1">' . $date . '</div><div class="col-md-11"><a href="' . $url . '">' . $name["standard_name"] . '</a>';
                 if ($eventDb->connect_role) {
-                    $text .= ' ' . $eventDb->connect_role;
+                    $text .= '; ' . $eventDb->connect_role;
                 }
-                $text .= '<br>';
+                if ($eventDb->connect_text) {
+                    $text .= '; ' . nl2br($eventDb->connect_text);
+                }
+                $text .= '</div></div>';
             }
         }
         unset($event_qry);
+
+
+        // *** Search address in connections table for relations ***
+        $relation_qry = $this->db_functions->get_connections('family_address', $id);
+        if (count($relation_qry) > 0) {
+            $text .= '<h5 class="mt-3">'.__('Address by relation') . '</h5>';
+        }
+        foreach ($relation_qry as $relationDb) {
+            // *** Relation address ***
+            if ($relationDb->connect_connect_id) {
+                $relationData = $this->db_functions->get_family($relationDb->connect_connect_id);
+                if ($relationData) {
+                    $date = $datePlace->date_place($relationDb->connect_date, '');
+                    
+                    $text .= '<div class="row">';
+                    $text .= '<div class="col-md-1">' . $date . '</div><div class="col-md-11">';
+
+                    // *** Show man (father) ***
+                    if ($relationData->partner1_id) {
+                        $manDb = $this->db_functions->get_person_with_id($relationData->partner1_id);
+                        if ($manDb) {
+                            $privacy = $personPrivacy->get_privacy($manDb);
+                            $manName = $personName->get_person_name($manDb, $privacy);
+                            $manUrl = $personLink->get_person_link($manDb);
+                            $text .= '<a href="' . $manUrl . '">' . $manName["standard_name"] . '</a>';
+                        }
+                    }
+
+                    // *** Show woman (mother) ***
+                    if ($relationData->partner2_id) {
+                        $womanDb = $this->db_functions->get_person_with_id($relationData->partner2_id);
+                        if ($womanDb) {
+                            $privacy = $personPrivacy->get_privacy($womanDb);
+                            $womanName = $personName->get_person_name($womanDb, $privacy);
+                            $womanUrl = $personLink->get_person_link($womanDb);
+                            $text .= ' &amp; <a href="' . $womanUrl . '">' . $womanName["standard_name"] . '</a>';
+                        }
+                    }
+
+                    if ($relationDb->connect_role) {
+                        $text .= '; ' . $relationDb->connect_role;
+                    }
+                    if ($relationDb->connect_text) {
+                        $text .= '; ' . nl2br($relationDb->connect_text);
+                    }
+                    $text .= '</div></div>';
+                }
+            }
+        }
+        unset($relation_qry);
+
+
+
         return $text;
     }
 }

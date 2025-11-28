@@ -106,29 +106,30 @@ class TreeCheckChangesModel extends AdminBaseModel
             if ($tree_check['editor']) {
                 // *** Show latest changes and additions: editor is selected ***
                 // *** Remark: ordering is done in the array, but also needed here to get good results if $tree_check['limit'] is a low value ***
-                $person_qry = "(SELECT *, fam_changed_datetime AS changed_datetime
-                    FROM humo_families WHERE fam_tree_id='" . $this->tree_id . "' AND fam_changed_datetime IS NOT NULL AND fam_changed_user_id='" . $tree_check['editor'] . "')
-                    UNION (SELECT *, fam_new_datetime AS changed_datetime
-                    FROM humo_families WHERE fam_tree_id='" . $this->tree_id . "' AND fam_changed_datetime IS NULL AND fam_new_user_id='" . $tree_check['editor'] . "')
+                $person_qry = "(SELECT f.*, f.fam_changed_datetime AS changed_datetime,
+                    (SELECT rp.person_id FROM humo_relations_persons rp WHERE rp.relation_id = f.fam_id AND rp.partner_order = 1 LIMIT 1) AS partner1_id
+                    FROM humo_families f WHERE f.fam_tree_id='" . $this->tree_id . "' AND f.fam_changed_datetime IS NOT NULL AND f.fam_changed_user_id='" . $tree_check['editor'] . "')
+                    UNION (SELECT f.*, f.fam_new_datetime AS changed_datetime,
+                    (SELECT rp.person_id FROM humo_relations_persons rp WHERE rp.relation_id = f.fam_id AND rp.partner_order = 1 LIMIT 1) AS partner1_id
+                    FROM humo_families f WHERE f.fam_tree_id='" . $this->tree_id . "' AND f.fam_changed_datetime IS NULL AND f.fam_new_user_id='" . $tree_check['editor'] . "')
                     ORDER BY changed_datetime DESC LIMIT 0," . $tree_check['limit'];
             } else {
                 // *** Show latest changes and additions ***
                 // *** Remark: ordering is done in the array, but also needed here to get good results if $tree_check['limit'] is a low value ***
-                $person_qry = "(SELECT *, fam_changed_datetime AS changed_datetime
-                    FROM humo_families WHERE fam_tree_id='" . $this->tree_id . "' AND fam_changed_datetime IS NOT NULL)
-                    UNION (SELECT *, fam_new_datetime AS changed_datetime
-                    FROM humo_families WHERE fam_tree_id='" . $this->tree_id . "' AND fam_changed_datetime IS NULL)
+                $person_qry = "(SELECT f.*, f.fam_changed_datetime AS changed_datetime,
+                    (SELECT rp.person_id FROM humo_relations_persons rp WHERE rp.relation_id = f.fam_id AND rp.partner_order = 1 LIMIT 1) AS partner1_id
+                    FROM humo_families f WHERE f.fam_tree_id='" . $this->tree_id . "' AND f.fam_changed_datetime IS NOT NULL)
+                    UNION (SELECT f.*, f.fam_new_datetime AS changed_datetime,
+                    (SELECT rp.person_id FROM humo_relations_persons rp WHERE rp.relation_id = f.fam_id AND rp.partner_order = 1 LIMIT 1) AS partner1_id
+                    FROM humo_families f WHERE f.fam_tree_id='" . $this->tree_id . "' AND f.fam_changed_datetime IS NULL)
                     ORDER BY changed_datetime DESC LIMIT 0," . $tree_check['limit'];
             }
-
             $person_result = $this->dbh->query($person_qry);
             while ($person = $person_result->fetch(PDO::FETCH_OBJ)) {
-                // TODO check if standard functions can be used.
-                //$personDb=$this->db_functions->get_person($parent1);
-                $person2_qry = "(SELECT * FROM humo_persons WHERE pers_tree_id='" . $this->tree_id . "' AND pers_gedcomnumber='" . $person->fam_man . "')";
+                //$person2_qry = "(SELECT * FROM humo_persons WHERE pers_tree_id='" . $this->tree_id . "' AND pers_gedcomnumber='" . $person->partner1 . "')";
+                $person2_qry = "(SELECT * FROM humo_persons WHERE pers_id='" . $person->partner1_id . "')";
                 $person2_result = $this->dbh->query($person2_qry);
                 $person2 = $person2_result->fetch(PDO::FETCH_OBJ);
-
                 if (isset($person2->pers_tree_id)) {
                     $tree_check['changes'][$row][0] = __('Family');
 

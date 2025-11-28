@@ -36,8 +36,8 @@ for ($i = 0; $i < $maxperson; $i++) {
     $data["fanchart_item"][$i]['birth_bapt_date'] = '';
     $data["fanchart_item"][$i]['death_burr_date'] = '';
     $data["fanchart_item"][$i]['pers_sexe'] = '';
-    $data["fanchart_item"][$i]['pers_fams'] = '';
-    $data["fanchart_item"][$i]['pers_famc'] = '';
+    $data["fanchart_item"][$i]['first_relation'] = '';
+    $data["fanchart_item"][$i]['parent_relation'] = '';
 }
 
 // *** Recursive function to fill the array with person data ***
@@ -67,34 +67,24 @@ function fillarray($nr, $pers_gedcomnumber): void
             $data["fanchart_item"][$nr]['death_burr_date'] = '';
         }
 
-        if ($nr == 1) {
-            // *** If selected, show descendant chart at bottom of page ***
-            $indexnr = '';
-            if ($personmnDb->pers_famc) {
-                $indexnr = $personmnDb->pers_famc;
-            }
-            if ($personmnDb->pers_fams) {
-                $pers_fams = explode(';', $personmnDb->pers_fams);
-                $indexnr = $pers_fams[0];
-            }
-        }
+        $relation = $db_functions->get_first_relation($personmnDb->pers_id);
+        $data["fanchart_item"][$nr]['first_relation'] = $relation->relation_gedcomnumber;
 
-        $data["fanchart_item"][$nr]['pers_fams'] = $personmnDb->pers_fams;
         $data["fanchart_item"][$nr]['pers_gedcomnumber'] = $pers_gedcomnumber;
         $data["fanchart_item"][$nr]['pers_sexe'] = $personmnDb->pers_sexe;
 
-        if ($personmnDb->pers_famc) {
-            $record_family = $db_functions->get_family($personmnDb->pers_famc);
-            if ($record_family->fam_man) {
-                fillarray($nr * 2, $record_family->fam_man);
+        if ($personmnDb->parent_relation_id) {
+            $record_family = $db_functions->get_family_with_id($personmnDb->parent_relation_id);
+            if ($record_family->partner1_gedcomnumber) {
+                fillarray($nr * 2, $record_family->partner1_gedcomnumber);
             }
-            if ($record_family->fam_woman) {
-                fillarray($nr * 2 + 1, $record_family->fam_woman);
+            if ($record_family->partner2_gedcomnumber) {
+                fillarray($nr * 2 + 1, $record_family->partner2_gedcomnumber);
             }
         }
 
         // *** famc ***
-        $data["fanchart_item"][$nr]['pers_famc'] = $personmnDb->pers_famc;
+        $data["fanchart_item"][$nr]['parent_relation'] = $personmnDb->parent_relation_gedcomnumber;
     }
 }
 
@@ -484,13 +474,7 @@ function print_fan_chart($data, $fanw = 840, $fandeg = 270): void
                 $imagemap .= "$tx, $ty";
 
                 // *** Person url example (optional: "main_person=I23"): http://localhost/humo-genealogy/family/2/F10?main_person=I23/ ***
-                // TODO check this
-                $personLinkDb = new stdClass();
-                $personLinkDb->pers_tree_id = $tree_id;
-                $personLinkDb->pers_famc = $data["fanchart_item"][$sosa]['pers_famc'];
-                $personLinkDb->pers_fams = $data["fanchart_item"][$sosa]['pers_fams'];
-                $personLinkDb->pers_gedcomnumber = $data["fanchart_item"][$sosa]['pers_gedcomnumber'];
-
+                $personLinkDb = $db_functions->get_person($data["fanchart_item"][$sosa]['pers_gedcomnumber']);
                 $personLink = new \Genealogy\Include\PersonLink();
                 $url = $personLink->get_person_link($personLinkDb);
 
@@ -498,22 +482,25 @@ function print_fan_chart($data, $fanw = 840, $fandeg = 270): void
 
                 // *** Add first spouse to base person's tooltip ***
                 $spousename = '';
-                if ($gen == 0 && $data["fanchart_item"][1]['pers_fams'] != "") {
-                    // *** Variable $data["fanchart_item"][1]['pers_fams'] could be: F191;F192 (multiple marriages) ***
-                    $first_fam_gedcomnumber = explode(";", $data["fanchart_item"][1]['pers_fams']);
-                    if (count($first_fam_gedcomnumber) > 1) {
-                        $first_fam_gedcomnumber = $first_fam_gedcomnumber[0];
-                    } else {
-                        $first_fam_gedcomnumber = $data["fanchart_item"][1]['pers_fams'];
-                    }
+                if ($gen == 0 && $data["fanchart_item"][1]['first_relation'] != "") {
+                    $first_fam_gedcomnumber = $data["fanchart_item"][1]['first_relation'];
 
                     // base person and has spouse
-                    $spouse = $data["fanchart_item"][1]['pers_sexe'] == "F" ? "fam_man" : "fam_woman";
-                    $spouse_result = $dbh->query("SELECT " . $spouse . " FROM humo_families
-                        WHERE fam_tree_id='" . $tree_id . "' AND fam_gedcomnumber='" . $first_fam_gedcomnumber . "'");
-                    $spouseDb = $spouse_result->fetch();
-
-                    $spouse2Db = $db_functions->get_person($spouseDb[$spouse]);
+                    $spouse = $data["fanchart_item"][1]['pers_sexe'] == "F" ? 1 : 2;
+                    // get partners from humo_relations_persons (partner1_gedcomnumber, partner2_gedcomnumber)
+                    $stmt = $dbh->prepare(
+                        "SELECT person_gedcomnumber, person_id
+                         FROM humo_relations_persons
+                         WHERE tree_id = :tree_id AND relation_gedcomnumber = :relation_gedcomnumber
+                         AND relation_type='partner' AND partner_order = :partner_order"
+                    );
+                    $stmt->execute([
+                        ':tree_id'    => $tree_id,
+                        ':relation_gedcomnumber'    => $first_fam_gedcomnumber,
+                        ':partner_order' => $spouse
+                    ]);
+                    $spouseDb = $stmt->fetch(PDO::FETCH_OBJ);
+                    $spouse2Db = $db_functions->get_person_with_id($spouseDb->person_id);
                     $privacy = $personPrivacy->get_privacy($spouse2Db);
                     $spname = $personName->get_person_name($spouse2Db, $privacy);
                     $spouse_lan = $data["fanchart_item"][1]['pers_sexe'] == "F" ? "SPOUSE_MALE" : "SPOUSE_FEMALE";
@@ -666,16 +653,6 @@ $path_tmp = $processLinks->get_link($uri_path, 'fanchart', $tree_id, false, $var
                 <input type="radio" name="printing" value="2" class="form-check-input" <?= $data["printing"] == 2 ? 'checked' : ''; ?>> <?= __('white'); ?>
             </div>
         </div>
-        <?php
-        /*
-        <div class="col">
-            <div>
-                <input type="hidden" name="show_desc" value="0">
-                <input type="checkbox" name="show_desc" value="1" class="form-check-input" <?= $showdesc == "1" ? 'checked' : ''; ?>> <span style="font-size:10px;"><?= __('descendants'); ?><br>&nbsp;&nbsp;&nbsp;&nbsp;<?= __('under fanchart'); ?></span>
-            </div>
-        </div>
-        */
-        ?>
         <div class="col">
             <input type="submit" value="<?= __('View'); ?>" class="btn btn-sm btn-success"><br>
         </div>
@@ -702,16 +679,5 @@ if ($china_message == 1) {
         <?= __('Unzip and place in "include/fanchart/chinese/" folder'); ?>
     </div>
 <?php
-}
-*/
-
-// *** Show descendants ***
-/*
-if ($showdesc == "1") {
-    $fan_w =  9.3 * $data["fan_width"];
-    if ($data["fan_style"] == 2) $top_pos = $fan_w / 2 + 165;
-    elseif ($data["fan_style"] == 3) $top_pos = 0.856 * $fan_w;
-    elseif ($data["fan_style"] == 4) $top_pos = $fan_w;
-    echo '<iframe src="descendant/' . $tree_prefix . '/' . $indexnr . '?main_person=' . $data["main_person"] . '&amp;menu=1" id="iframe1"  style="position:absolute;top:' . $top_pos . 'px;left:0px;width:100%;height:700px;" ;" ></iframe';
 }
 */

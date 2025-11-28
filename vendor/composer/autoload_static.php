@@ -69,6 +69,7 @@ class ComposerStaticInit6a6772df2521c6860a448e9115f2793a
         'Genealogy\\Include\\LanguagePersonName' => __DIR__ . '/../..' . '/include/LanguagePersonName.php',
         'Genealogy\\Include\\MarriageCls' => __DIR__ . '/../..' . '/include/MarriageCls.php',
         'Genealogy\\Include\\MediaPath' => __DIR__ . '/../..' . '/include/MediaPath.php',
+        'Genealogy\\Include\\OrderChildren' => __DIR__ . '/../..' . '/include/OrderChildren.php',
         'Genealogy\\Include\\ParseGedcomDate' => __DIR__ . '/../..' . '/include/ParseGedcomDate.php',
         'Genealogy\\Include\\PersonData' => __DIR__ . '/../..' . '/include/PersonData.php',
         'Genealogy\\Include\\PersonLink' => __DIR__ . '/../..' . '/include/PersonLink.php',

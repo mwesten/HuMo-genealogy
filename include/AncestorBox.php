@@ -50,7 +50,7 @@ class AncestorBox
             $replacement_text = '<span class="anc_box_name' . $ancestor_sheet . '">' . $name2 . '</span>';
 
             // >>>>> link to show rest of ancestor chart
-            if ($box_appearance == 'small' && isset($personDb->pers_gedcomnumber) && $personDb->pers_famc) {
+            if ($box_appearance == 'small' && isset($personDb->pers_gedcomnumber) && $personDb->parent_relation_gedcomnumber) {
                 $replacement_text .= ' &gt;&gt;&gt;' . $directionMarkers->dirmark1;
             }
 

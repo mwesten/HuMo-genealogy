@@ -369,17 +369,17 @@ class Migration20
             SET person_id = NULL
             WHERE person_id IS NOT NULL
             AND person_id NOT IN (SELECT pers_id FROM humo_persons)
-        ");
+            ");
         try {
             $this->dbh->exec("
             ALTER TABLE humo_events
             ADD CONSTRAINT fk_event_person
             FOREIGN KEY (person_id) REFERENCES humo_persons(pers_id)
             ON DELETE SET NULL ON UPDATE CASCADE
-        ");
+            ");
         } catch (\Exception $e) {
             // Just ignore, probably some invalid values are still in the table.
-            echo '<br><b>' . __('Minor problem: constraint fk_event_person failed.') . '</b>';
+            printf('<br><b>' . __('Minor problem: constraint %s failed.') . '</b>', 'fk_event_person');
         }
 
         // *** Just to be sure: clean up values before adding foreign key constraint ***
@@ -388,17 +388,17 @@ class Migration20
             SET relation_id = NULL
             WHERE relation_id IS NOT NULL
             AND relation_id NOT IN (SELECT fam_id FROM humo_families)
-        ");
+            ");
         try {
             $this->dbh->exec("
             ALTER TABLE humo_events
             ADD CONSTRAINT fk_event_family
             FOREIGN KEY (relation_id) REFERENCES humo_families(fam_id)
             ON DELETE SET NULL ON UPDATE CASCADE
-        ");
+            ");
         } catch (\Exception $e) {
             // Just ignore, probably some invalid values are still in the table.
-            echo '<br><b>' . __('Minor problem: constraint fk_event_family failed.') . '</b>';
+            printf('<br><b>' . __('Minor problem: constraint %s failed.') . '</b>', 'fk_event_family');
         }
 
         // *** just to be sure: clean up values before adding foreign key constraint ***
@@ -407,17 +407,17 @@ class Migration20
             SET place_id = NULL
             WHERE place_id IS NOT NULL
             AND place_id NOT IN (SELECT location_id FROM humo_location)
-        ");
-        try{
-        $this->dbh->exec("
+            ");
+        try {
+            $this->dbh->exec("
             ALTER TABLE humo_events
             ADD CONSTRAINT fk_event_place
             FOREIGN KEY (place_id) REFERENCES humo_location(location_id)
             ON DELETE SET NULL ON UPDATE CASCADE
-        ");
+            ");
         } catch (\Exception $e) {
             // Just ignore, probably some invalid values are still in the table.
-            echo '<br><b>' . __('Minor problem: constraint fk_event_place failed.') . '</b>';
+            printf('<br><b>' . __('Minor problem: constraint %s failed.') . '</b>', 'fk_event_place');
         }
 
         // *** Set event_changed_datetime to NULL in all new items (because these values were changed during the upgrade) ***
@@ -425,7 +425,7 @@ class Migration20
             UPDATE humo_events
             SET event_changed_datetime = NULL
             WHERE event_new_datetime = '" . $event_new_datetime . "'
-        ");
+            ");
 
         // *** Free geoplugin no longer available ***
         $stmt = $this->dbh->exec("UPDATE humo_settings SET setting_value = '' WHERE setting_variable = 'ip_api_geoplugin_old'");

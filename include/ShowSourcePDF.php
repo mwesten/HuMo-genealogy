@@ -51,18 +51,18 @@ class ShowSourcePDF
         if ($sourceDb->source_publ) {
             $source_publ = $sourceDb->source_publ;
             /*
-        $pdflink=1;
-        if (substr($source_publ,0,7)=='http://'){
-            $link=$source_publ;
-            $source_publ='<a href="'.$link.'">'.$link.'</a>';
             $pdflink=1;
-        }
-        if (substr($source_publ,0,8)=='https://'){
-            $link=$source_publ;
-            $source_publ='<a href="'.$link.'">'.$link.'</a>';
-            $pdflink=1;
-        }
-        */
+            if (substr($source_publ,0,7)=='http://'){
+                $link=$source_publ;
+                $source_publ='<a href="'.$link.'">'.$link.'</a>';
+                $pdflink=1;
+            }
+            if (substr($source_publ,0,8)=='https://'){
+                $link=$source_publ;
+                $source_publ='<a href="'.$link.'">'.$link.'</a>';
+                $pdflink=1;
+            }
+            */
             $pdf->SetFont('DejaVu', 'B', 10);
             $pdf->Write(6, __('Publication') . ": ");
             $pdf->SetFont('DejaVu', '', 10);

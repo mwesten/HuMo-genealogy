@@ -342,42 +342,6 @@ if (!defined('ADMIN_PAGE')) {
 
 // *** Step 2 generate tables ***
 elseif ($trees['step'] == '2') {
-    $setting_value = 'n';
-    if (isset($_POST["add_source"])) {
-        $setting_value = 'y';
-    }
-    $db_functions->update_settings('gedcom_read_add_source', $setting_value);
-
-    $setting_value = 'n';
-    if (isset($_POST["reassign_gedcomnumbers"])) {
-        $setting_value = 'y';
-    }
-    $db_functions->update_settings('gedcom_read_reassign_gedcomnumbers', $setting_value);
-
-    $setting_value = 'n';
-    if (isset($_POST["order_by_date"])) {
-        $setting_value = 'y';
-    }
-    $db_functions->update_settings('gedcom_read_order_by_date', $setting_value);
-
-    $setting_value = 'n';
-    if (isset($_POST["order_by_fams"])) {
-        $setting_value = 'y';
-    }
-    $db_functions->update_settings('gedcom_read_order_by_fams', $setting_value);
-
-    /*
-    $setting_value = 'n';
-    if (isset($_POST["process_geo_location"])) {
-        $setting_value = 'y';
-    }
-    $db_functions->update_settings('gedcom_read_process_geo_location', $setting_value);
-    */
-
-    if (isset($_POST['gedcom_process_pict_path'])) {
-        $db_functions->update_settings('gedcom_process_pict_path', $_POST['gedcom_process_pict_path']);
-    }
-
     $humo_option["gedcom_read_save_pictures"] = 'n';
     $setting_value = 'n';
     if (isset($_POST["save_pictures"])) {
@@ -385,15 +349,6 @@ elseif ($trees['step'] == '2') {
         $humo_option["gedcom_read_save_pictures"] = 'y'; // *** Because variable is needed directly ***
     }
     $db_functions->update_settings('gedcom_read_save_pictures', $setting_value);
-
-    if (isset($_POST['commit_records'])) {
-        $db_functions->update_settings('gedcom_read_commit_records', $_POST['commit_records']);
-    }
-
-    if (isset($_POST['time_out']) && is_numeric($_POST['time_out'])) {
-        $db_functions->update_settings('gedcom_read_time_out', $_POST['time_out']);
-    }
-
 
     if (!isset($_POST['add_tree']) || isset($_POST['add_tree']) && $_POST['add_tree'] == 'no') {
         $_SESSION['add_tree'] = false;
@@ -408,30 +363,25 @@ elseif ($trees['step'] == '2') {
             <input type="hidden" name="add_tree" value="no">
             <input type="hidden" name="step" value="2">
 
-            <?php
-            if (isset($_POST['check_processed'])) {
-                echo '<input type="hidden" name="check_processed" value="1">';
-            }
-            /* TODO: change all variables (move to model)
-            if ($trees['check_processed']) {
-            ?>
+            <?php if (isset($_POST['check_processed'])) { ?>
                 <input type="hidden" name="check_processed" value="1">
-            <?php
-            }
-            */
+            <?php } ?>
 
-            if (isset($_POST['show_gedcomnumbers'])) {
-            ?>
+            <?php /*
+            <?php if ($trees['check_processed']) { ?>
+                <input type="hidden" name="check_processed" value="1">
+            <?php }?>
+            */ ?>
+
+            <?php if (isset($_POST['show_gedcomnumbers'])) { ?>
                 <input type="hidden" name="show_gedcomnumbers" value="1">
-            <?php
-            }
-            if (isset($_POST['debug_mode'])) {
-            ?>
+            <?php } ?>
+
+            <?php if (isset($_POST['debug_mode'])) { ?>
                 <input type="hidden" name="debug_mode" value="1">
-            <?php
-            }
-            if (isset($_POST['time_out']) && is_numeric($_POST['time_out'])) {
-            ?>
+            <?php } ?>
+
+            <?php if (isset($_POST['time_out']) && is_numeric($_POST['time_out'])) { ?>
                 <input type="hidden" name="time_out" value="<?= $_POST['time_out']; ?>">
             <?php } ?>
 
@@ -597,34 +547,32 @@ elseif ($trees['step'] == '2') {
     $_SESSION['save_gen_program'] = $gen_program;
     $gen_program_version = '';
     $_SESSION['save_gen_program_version'] = $gen_program_version;
+
+    if (!isset($_POST['add_tree'])) {
+        // *** Reset nr of persons and families ***
+        $sql = $dbh->query("UPDATE humo_trees SET tree_persons='', tree_families='' WHERE tree_prefix='" . $tree_prefix . "'");
+    }
     ?>
+
     <br><br>
     <form method="post" action="index.php?page=tree&amp;menu_admin=tree_gedcom">
         <input type="hidden" name="tree_id" value="<?= $trees['tree_id']; ?>">
         <input type="hidden" name="gedcom_accent" value="<?= $accent; ?>">
         <input type="hidden" name="gedcom_file" value="<?= $_POST['gedcom_file']; ?>">
-        <?php
-        // TODO check values
-        if (isset($_POST['check_processed'])) {
-            echo '<input type="hidden" name="check_processed" value="1">';
-        }
-        if (isset($_POST['show_gedcomnumbers'])) {
-            echo '<input type="hidden" name="show_gedcomnumbers" value="1">';
-        }
-        if (isset($_POST['debug_mode'])) {
-            echo '<input type="hidden" name="debug_mode" value="1">';
-        }
-        if (isset($_POST['time_out']) && is_numeric($_POST['time_out'])) {
-            echo '<input type="hidden" name="time_out" value="' . $_POST['time_out'] . '">';
-        }
+        <?php if (isset($_POST['check_processed'])) { ?>
+            <input type="hidden" name="check_processed" value="1">
+        <?php } ?>
+        <?php if (isset($_POST['show_gedcomnumbers'])) { ?>
+            <input type="hidden" name="show_gedcomnumbers" value="1">
+        <?php } ?>
+        <?php if (isset($_POST['debug_mode'])) { ?>
+            <input type="hidden" name="debug_mode" value="1">
+        <?php } ?>
+        <?php if (isset($_POST['time_out']) && is_numeric($_POST['time_out'])) { ?>
+            <input type="hidden" name="time_out" value="<?= $_POST['time_out']; ?>">
+        <?php } ?>
 
-        if (!isset($_POST['add_tree'])) {
-            // *** Reset nr of persons and families ***
-            $sql = $dbh->query("UPDATE humo_trees SET tree_persons='', tree_families='' WHERE tree_prefix='" . $tree_prefix . "'");
-        }
-
-        if (isset($_POST['add_tree']) && $_POST['add_tree'] == 'yes') {
-        ?>
+        <?php if (isset($_POST['add_tree']) && $_POST['add_tree'] == 'yes') { ?>
             <input type="hidden" name="add_tree" value="yes">
         <?php } else { ?>
             <input type="hidden" name="add_tree" value="no">
@@ -649,25 +597,7 @@ elseif ($trees['step'] == '2') {
  * STEP 3 READ GEDCOM file
  */
 elseif ($trees['step'] == '3') {
-    // *** Processing time ***
-    if ($_SESSION['save_starttime'] == 0) {
-        $_SESSION['save_starttime'] = time();
-    }
-    $_SESSION['save_start_timeout'] = time(); // *** Start controlled time-out ***
-
-    // begin step 3 merge additions
-    $add_tree = false;
-    if ($_SESSION['add_tree'] == true) {
-        $add_tree = true;
-        unset($_SESSION['add_tree']); // we don't want the session variable to persist - can cause problems!
-    }
-
-    $reassign = false;
-    if ($humo_option["gedcom_read_reassign_gedcomnumbers"] == 'y') {
-        $reassign = true;
-    }
-
-    if ($add_tree == true) {
+    if ($trees['add_tree'] == true) {
         // if we add a tree we have to change the gedcomnumbers of pers, fam, source, addresses and notes
         // so that they will be different from the existing ones.
         // therefore we check what is the largest gednr in each of them
@@ -703,20 +633,19 @@ elseif ($trees['step'] == '3') {
     // we have to make sure that the dupl_arr session is unset if it exists.
     if (isset($_SESSION['dupl_arr_' . $trees['tree_id']])) {
         unset($_SESSION['dupl_arr_' . $trees['tree_id']]);
-        // we have to make sure the present_compare session is unset, if exists
     }
+    // we have to make sure the present_compare session is unset, if exists
     if (isset($_SESSION['present_compare_' . $trees['tree_id']])) {
         unset($_SESSION['present_compare_' . $trees['tree_id']]);
     }
     // End step 3 merge additions 
 
-    // *** Weblog Class ***
-
+    // TODO check variable. Convert to a $trees variable?
     // variables to reassign new gedcomnumbers (in gedcom_cls.php)
     if (isset($reassign_array)) {
         unset($reassign_array);
     }
-    if ($reassign == true) {
+    if ($trees['reassign'] == true) {
         // reassign gedcomnumbers when importing tree
         $new_gednum["I"] = 1;
         $new_gednum["F"] = 1;
@@ -727,7 +656,7 @@ elseif ($trees['step'] == '3') {
         $new_gednum["RP"] = 1;
         $new_gednum["N"] = 1;
     }
-    if ($add_tree == true) {
+    if ($trees['add_tree'] == true) {
         // reassign gedcomnumbers when importing added tree in merging
         $new_gednum["I"] = $largest_pers_ged;
         $new_gednum["F"] = $largest_fam_ged;
@@ -739,14 +668,12 @@ elseif ($trees['step'] == '3') {
         $new_gednum["N"] = $largest_text_ged;
     }
 
-    $gedcomImport = new \Genealogy\Include\GedcomImport($dbh, $tree_id, $tree_prefix, $humo_option, $add_tree, $reassign);
+    $gedcomImport = new \Genealogy\Include\GedcomImport($dbh, $tree_id, $tree_prefix, $humo_option, $trees['add_tree'], $trees['reassign']);
 
     require(__DIR__ . "/../include/prefixes.php");
     $loop2 = count($pers_prefix);
     for ($i = 0; $i < $loop2; $i++) {
-        //$prefix[$i]=addslashes($pers_prefix[$i]);
-        $prefix[$i] = $pers_prefix[$i];
-        $prefix[$i] = str_replace("_", " ", $prefix[$i]);
+        $prefix[$i] = str_replace("_", " ", $pers_prefix[$i]);
         $prefix_length[$i] = strlen($prefix[$i]);
     }
 
@@ -762,18 +689,18 @@ elseif ($trees['step'] == '3') {
             <input type="hidden" name="timeout_restart" value="1">
             <input type="hidden" name="gedcom_accent" value="<?= $_POST['gedcom_accent']; ?>">
 
-            <?php
-            // TODO check values
-            if (isset($_POST['check_processed'])) {
-                echo '<input type="hidden" name="check_processed" value="1">';
-            }
-            if (isset($_POST['show_gedcomnumbers'])) {
-                echo '<input type="hidden" name="show_gedcomnumbers" value="1">';
-            }
-            if (isset($_POST['debug_mode'])) {
-                echo '<input type="hidden" name="debug_mode" value="1">';
-            }
-            ?>
+            <?php if (isset($_POST['check_processed'])) { ?>
+                <input type="hidden" name="check_processed" value="1">
+            <?php } ?>
+
+            <?php if (isset($_POST['show_gedcomnumbers'])) { ?>
+                <input type="hidden" name="show_gedcomnumbers" value="1">
+            <?php } ?>
+
+            <?php if (isset($_POST['debug_mode'])) { ?>
+                <input type="hidden" name="debug_mode" value="1">
+            <?php } ?>
+
             <?= __('ONLY use in case of a time-out, to continue click:'); ?> <input type="submit" name="timeout" value="<?= __('Restart'); ?>" class="btn btn-sm btn-secondary">
             <?= __('Restarts reading of GEDCOM using a controlled time-out.'); ?>
         </form><br><br>
@@ -930,9 +857,31 @@ elseif ($trees['step'] == '3') {
         //echo mb_detect_encoding($buffer); // *** Show character set: doesn't seem to work properly... ***
         //echo '<br>';
 
-        //$buffer=addslashes($buffer);
         return $buffer;
     }
+
+
+    // *** Create temporary table here to process GEDCOM numbers for children and relations ***
+    $tableCheck = $dbh->query("SHOW TABLES LIKE 'humo_temp_relations_persons'");
+    if ($tableCheck->rowCount() > 0) {
+        // *** Previous temp. table wasn't removed ***
+        $dbh->exec("DROP TABLE humo_temp_relations_persons");
+    }
+    $dbh->exec("
+        CREATE TABLE humo_temp_relations_persons (
+            id INT UNSIGNED AUTO_INCREMENT,
+            relation_id INT UNSIGNED NOT NULL,
+            relation_gedcomnumber VARCHAR(30) DEFAULT NULL,
+            person_id INT UNSIGNED NOT NULL,
+            person_gedcomnumber VARCHAR(30) DEFAULT NULL,
+            person_age VARCHAR(15) CHARACTER SET utf8,
+            tree_id SMALLINT(5) NOT NULL,
+            relation_type VARCHAR(20) DEFAULT NULL,
+            relation_order TINYINT UNSIGNED DEFAULT NULL,
+            partner_order TINYINT UNSIGNED DEFAULT NULL,
+            PRIMARY KEY (id)
+        );
+    ");
 
 
     // TEST: lock tables. Unfortunately not much faster than usual... ONLY FOR MYISAM TABLES!
@@ -1420,16 +1369,152 @@ elseif ($trees['step'] == '4') {
     <!-- Progress information -->
     <div id="information"></div>
 
+
+    <!-- Process relations and children from temp table -->
     <?php
+    $dbh->exec("
+        ALTER TABLE humo_temp_relations_persons
+        ADD INDEX idx_relation_gedcomnumber (relation_gedcomnumber),
+        ADD INDEX idx_person_gedcomnumber (person_gedcomnumber),
+        ADD INDEX idx_tree_id (tree_id),
+        ADD INDEX idx_relation_type (relation_type)
+    ");
+
+    $commit_counter = 0;
+    $commit_records = $humo_option["gedcom_read_commit_records"];
+    if ($commit_records > 1) {
+        $dbh->beginTransaction();
+    }
+
+    // *** Process partners/ spouses (processed from 1 HUSB and 1 WIFE) ***
+    $relations_qry = $dbh->query("SELECT * FROM humo_temp_relations_persons WHERE relation_type='partner'");
+    while ($relation = $relations_qry->fetch(PDO::FETCH_ASSOC)) {
+        // *** Get persons and relation order (only in table if there are multiple relations! Processed from 1 FAMS) ***
+        $order_qry = $dbh->query("SELECT * FROM humo_temp_relations_persons
+            WHERE relation_type='order' AND relation_gedcomnumber='" . $relation['relation_gedcomnumber'] . "'
+            AND person_gedcomnumber='" . $relation['person_gedcomnumber'] . "' AND tree_id='" . $trees['tree_id'] . "'");
+
+        //echo $trees['tree_id'] . ' ' . $relation['relation_gedcomnumber'] . ' ' . $relation['person_gedcomnumber'] . ' ' . $order['relation_order'] . '<br>';
+        $order = $order_qry->fetch(PDO::FETCH_ASSOC);
+
+        if (isset($order['relation_order'])) {
+            $relation_order = $order['relation_order'];
+        } else {
+            $relation_order = 1;
+        }
+
+        if (isset($order->person_id)) {
+            $person_id = $order->person_id;
+        } else {
+            $person_id = null;
+            $person_stmt = $dbh->prepare("SELECT pers_id FROM humo_persons
+                WHERE pers_gedcomnumber = :person_gedcomnumber AND pers_tree_id = :tree_id LIMIT 1");
+            $person_stmt->execute([
+                ':person_gedcomnumber' => $relation['person_gedcomnumber'],
+                ':tree_id' => $trees['tree_id']
+            ]);
+            $person_row = $person_stmt->fetch(PDO::FETCH_ASSOC);
+            if ($person_row && isset($person_row['pers_id'])) {
+                $person_id = $person_row['pers_id'];
+            }
+        }
+
+        $stmt = $dbh->prepare("
+            INSERT INTO humo_relations_persons 
+            (relation_id, person_id, tree_id, relation_gedcomnumber, person_gedcomnumber, person_age, relation_order, partner_order, relation_type)
+            VALUES (:relation_id, :person_id, :tree_id, :relation_gedcomnumber, :person_gedcomnumber, :person_age, :relation_order, :partner_order, 'partner')
+            ");
+
+        try {
+            $stmt->execute([
+                ':relation_id' => $relation['relation_id'],
+                ':relation_gedcomnumber' => $relation['relation_gedcomnumber'],
+                ':person_id' => $person_id,
+                ':person_gedcomnumber' => $relation['person_gedcomnumber'],
+                ':person_age' => $relation['person_age'],
+                ':tree_id' => $trees['tree_id'],
+                ':relation_order' => $relation_order,
+                ':partner_order' => $relation['partner_order']
+            ]);
+        } catch (\Exception $e) {
+            // Ignore individual insert errors but continue processing
+        }
+
+        // *** Commit genealogical data every x records. CAN ONLY BE USED WITH InnoDB TABLES!! ***
+        if ($commit_records > 1) {
+            $commit_counter++;
+            if ($commit_counter > $humo_option["gedcom_read_commit_records"]) {
+                $commit_counter = 0;
+                // *** Save data in database ***
+                if ($dbh->inTransaction()) {
+                    $dbh->commit();
+                }
+                // *** Start next process batch ***
+                $dbh->beginTransaction();
+            }
+        }
+    }
+
+
+    // *** Process children ***
+    $relations_qry = $dbh->query("SELECT * FROM humo_temp_relations_persons WHERE relation_type='child'");
+    while ($relation = $relations_qry->fetch(PDO::FETCH_ASSOC)) {
+        $person_id = null;
+        $person_stmt = $dbh->prepare("SELECT pers_id FROM humo_persons WHERE pers_gedcomnumber = :person_gedcomnumber AND pers_tree_id = :tree_id LIMIT 1");
+        $person_stmt->execute([
+            ':person_gedcomnumber' => $relation['person_gedcomnumber'],
+            ':tree_id' => $trees['tree_id']
+        ]);
+        $person_row = $person_stmt->fetch(PDO::FETCH_ASSOC);
+        if ($person_row && isset($person_row['pers_id'])) {
+            $person_id = $person_row['pers_id'];
+        }
+
+        $stmt = $dbh->prepare("
+            INSERT INTO humo_relations_persons
+            (relation_id, person_id, tree_id, relation_gedcomnumber, person_gedcomnumber, relation_order, relation_type, partner_order)
+            VALUES (:relation_id, :person_id, :tree_id, :relation_gedcomnumber, :person_gedcomnumber, :relation_order, 'child', 0)
+            ");
+
+        // use try
+        $stmt->execute([
+            ':relation_id' => $relation['relation_id'],
+            ':relation_gedcomnumber' => $relation['relation_gedcomnumber'],
+            ':person_id' => $person_id,
+            ':person_gedcomnumber' => $relation['person_gedcomnumber'],
+            ':tree_id' => $trees['tree_id'],
+            ':relation_order' => $relation['relation_order']
+        ]);
+
+        // *** Commit genealogical data every x records. CAN ONLY BE USED WITH InnoDB TABLES!! ***
+        if ($commit_records > 1) {
+            $commit_counter++;
+            if ($commit_counter > $humo_option["gedcom_read_commit_records"]) {
+                $commit_counter = 0;
+                // *** Save data in database ***
+                if ($dbh->inTransaction()) {
+                    $dbh->commit();
+                }
+                // *** Start next process batch ***
+                $dbh->beginTransaction();
+            }
+        }
+    }
+
+    if ($commit_records > 1) {
+        $dbh->commit();
+    }
+
+    // *** Remove temp table ***
+    $dbh->exec("DROP TABLE IF EXISTS humo_temp_relations_persons;");
+
     $total = 1;
     $i = 0;
-
     // *** Quick check for seperate saved texts in database (used in Aldfaer program and Reunion) and store them as standard texts ***
     $search_text_qry = $dbh->query("SELECT text_id FROM humo_texts WHERE text_tree_id='" . $trees['tree_id'] . "' LIMIT 0,1");
     $count_text = $search_text_qry->rowCount();
     if ($count_text > 0) {
         // *** Number of records in text table, used to show a status counter ***
-        //$total_text_qry = $dbh->query("SELECT COUNT(*) FROM humo_texts WHERE text_tree_id='" . $trees['tree_id'] . "'");
         $total_text_qry = $dbh->query("SELECT COUNT(text_id) FROM humo_texts WHERE text_tree_id='" . $trees['tree_id'] . "'");
         $total_text_db = $total_text_qry->fetch();
         $total_texts = $total_text_db[0];
@@ -1466,11 +1551,10 @@ elseif ($trees['step'] == '4') {
                 $percent = "0.5%"; // show at least some green
             }
             echo '<script>';
-            //echo 'document.getElementById("progress").innerHTML="<div style=\"width:' . $percent . ';background-color:#00CC00;\">&nbsp;</div>";';
             echo 'document.getElementById("information").innerHTML="' . $i . ' / ' . $nr_records . ' ' . __('lines processed') . ' (' . $perc . '%).";';
             echo '</script>';
-
     ?>
+
             <!-- Apr. 2024 New bootstrap bar -->
             <script>
                 var bar = document.querySelector(".progress-bar");
@@ -1502,8 +1586,8 @@ elseif ($trees['step'] == '4') {
         $person2_qry = $dbh->query("SELECT pers_id FROM humo_persons WHERE pers_tree_id='" . $trees['tree_id'] . "'");
         /* Isn't faster?
         $person2_qry=$dbh->query("SELECT pers_id FROM humo_persons
-        	WHERE pers_tree_id='".$trees['tree_id']."'
-        	AND LEFT(pers_text,1)='@'
+            WHERE pers_tree_id='".$trees['tree_id']."'
+            AND LEFT(pers_text,1)='@'
             OR LEFT(pers_name_text,1)='@'
             OR LEFT(pers_birth_text,1)='@'
             OR LEFT(pers_bapt_text,1)='@'
@@ -1702,12 +1786,6 @@ elseif ($trees['step'] == '4') {
         // *** Memory improvement, only read 1 full record at a time ***
         $fam_qry2 = $dbh->query("SELECT fam_id FROM humo_families WHERE fam_tree_id='" . $trees['tree_id'] . "'");
         while ($famDb2 = $fam_qry2->fetch(PDO::FETCH_OBJ)) {
-            /*
-            $fam_qry = $dbh->query("SELECT fam_id, fam_gedcomnumber, fam_text, fam_relation_text, fam_marr_notice_text,
-                fam_marr_text, fam_marr_church_notice_text, fam_marr_church_text, fam_div_text
-                FROM humo_families WHERE fam_id='" . $famDb2->fam_id . "'");
-            $famDb = $fam_qry->fetch(PDO::FETCH_OBJ);
-            */
             $famDb = $db_functions->get_family_with_id($famDb2->fam_id);
 
             $fam_text = '';
@@ -1955,139 +2033,159 @@ elseif ($trees['step'] == '4') {
         }
     }
 
-    // *** Jeroen Beemster Jan 2006. Code rewritten in June 2013 by Huub. Order children and marriages ***
-    // If there are children without dates, ordering doesn't work very good...
+    /**
+     * Order children.
+     * Jeroen Beemster Jan 2006.
+     * Code rewritten in june 2013 by Huub.
+     * Changed into a class october 2025 by Huub.
+     */
     if ($humo_option["gedcom_read_order_by_date"] == 'y') {
         $db_functions->set_tree_id($trees['tree_id']);
 
-        // TODO double function.
-        function date_string($text)
-        {
-            $text = str_replace("JAN", "01", $text);
-            $text = str_replace("FEB", "02", $text);
-            $text = str_replace("MAR", "03", $text);
-            $text = str_replace("APR", "04", $text);
-            $text = str_replace("MAY", "05", $text);
-            $text = str_replace("JUN", "06", $text);
-            $text = str_replace("JUL", "07", $text);
-            $text = str_replace("AUG", "08", $text);
-            $text = str_replace("SEP", "09", $text);
-            $text = str_replace("OCT", "10", $text);
-            $text = str_replace("NOV", "11", $text);
-            $text = str_replace("DEC", "12", $text);
-            return substr($text, -4) . substr(substr($text, -7), 0, 2) . substr($text, 0, 2);
-            // Solve maybe later: date_string 2 mei is smaller then 10 may (2 birth in 1 month is rare...).
-        }
-
         echo '<br>&gt;&gt;&gt; ' . __('Order children...');
 
-        // TODO only get fam_id and fam_children
-        $fam_qry = $dbh->query("SELECT * FROM humo_families WHERE fam_tree_id='" . $trees['tree_id'] . "' AND fam_children!='' AND (INSTR(fam_children,';')>0) ");
-        while ($famDb = $fam_qry->fetch(PDO::FETCH_OBJ)) {
-            $child_array = explode(";", $famDb->fam_children);
-            //echo '<br>'.$famDb->fam_children.' ';
-            $nr_children = count($child_array);
-            unset($children_array);
-            for ($i = 0; $i < $nr_children; $i++) {
-                $childDb = $db_functions->get_person($child_array[$i]);
-
-                $child_array_nr = $child_array[$i];
-                if ($childDb->pers_birth_date) {
-                    $children_array[$child_array_nr] = date_string($childDb->pers_birth_date);
-                } elseif ($childDb->pers_bapt_date) {
-                    $children_array[$child_array_nr] = date_string($childDb->pers_bapt_date);
-                } else {
-                    $children_array[$child_array_nr] = '';
-                }
-                //echo $children_array[$child_array_nr].' ';
-            }
-
-            asort($children_array);
-
-            $fam_children = '';
-            foreach ($children_array as $key => $val) {
-                if ($fam_children != '') {
-                    $fam_children .= ';';
-                }
-                $fam_children .= $key;
-            }
-
-            if ($famDb->fam_children != $fam_children) {
-                $dbh->query("UPDATE humo_families SET fam_children='" . $fam_children . "' WHERE fam_id='" . $famDb->fam_id . "'");
-            }
+        $orderChildren = new \Genealogy\Include\OrderChildren();
+        $relationIds = [];
+        $sql = "SELECT relation_id FROM humo_relations_persons WHERE relation_type='child' AND tree_id='" . $trees['tree_id'] . "' GROUP BY relation_id HAVING COUNT(person_id) > 1";
+        $stmt = $dbh->query($sql);
+        while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+            $relationIds[] = $row['relation_id'];
+        }
+        foreach ($relationIds as $relationId) {
+            $order_changed = $orderChildren->order($dbh, $db_functions, $relationId);
+            // *** If needed print relations where order is changed ***
+            //if ($order_changed){
+            //    printf('<br>&gt; ' . __('Order changed for relation: %d'), $relationId);
+            //}
         }
     }
 
-    // *** Order families, added in november 2018 by Huub. ***
+    /**
+     * Order families
+     * Nov. 2018 Huub: Added order families.
+     * Oct. 2025 Huub: refactor for use with normalised database.
+     */
     // If there is a relation without dates, ordering doesn't work very good...
+    // TODO rewrite script (see order children).
     if ($humo_option["gedcom_read_order_by_fams"] == 'y') {
         $db_functions->set_tree_id($trees['tree_id']);
 
-        function date_string2($text)
-        {
-            $text = str_replace("JAN", "01", $text);
-            $text = str_replace("FEB", "02", $text);
-            $text = str_replace("MAR", "03", $text);
-            $text = str_replace("APR", "04", $text);
-            $text = str_replace("MAY", "05", $text);
-            $text = str_replace("JUN", "06", $text);
-            $text = str_replace("JUL", "07", $text);
-            $text = str_replace("AUG", "08", $text);
-            $text = str_replace("SEP", "09", $text);
-            $text = str_replace("OCT", "10", $text);
-            $text = str_replace("NOV", "11", $text);
-            $text = str_replace("DEC", "12", $text);
-            return substr($text, -4) . substr(substr($text, -7), 0, 2) . substr($text, 0, 2);
-            // Solve maybe later: date_string 2 mei is smaller then 10 may (2 marriages in 1 month is rare...).
-        }
-
         echo '<br>&gt;&gt;&gt; ' . __('Order families...');
 
-        // *** Find only persons with multiple relations ***
-        // TODO only get pers_id and pers_fams
-        $person = $dbh->query("SELECT * FROM humo_persons WHERE pers_tree_id='" . $trees['tree_id'] . "' AND pers_fams!='' AND (INSTR(pers_fams,';')>0) ");
-        while ($personDb = $person->fetch(PDO::FETCH_OBJ)) {
-            $fam_array = explode(";", $personDb->pers_fams);
-            $nr_fams = count($fam_array);
+        // Helper: build a sortable key from family events (priority like old code)
+        $__evStmt = $dbh->prepare("
+            SELECT event_kind, event_date, date_year, date_month, date_day
+            FROM humo_events
+            WHERE event_tree_id = :tree_id
+            AND relation_id = :relation_id
+            AND event_kind IN ('relation','marriage_notice','marriage','marriage_church_notice','marriage_church')
+            ORDER BY FIELD(event_kind,'relation','marriage_notice','marriage','marriage_church_notice','marriage_church')
+            LIMIT 1
+        ");
 
-            unset($families_array);
-            for ($i = 0; $i < $nr_fams; $i++) {
-                $famDb = $db_functions->get_family($fam_array[$i]);
-
-                $fam_array_nr = $fam_array[$i];
-                if ($famDb->fam_relation_date) {
-                    $families_array[$fam_array_nr] = date_string2($famDb->fam_relation_date);
-                } elseif ($famDb->fam_marr_notice_date) {
-                    $families_array[$fam_array_nr] = date_string2($famDb->fam_marr_notice_date);
-                } elseif ($famDb->fam_marr_date) {
-                    $families_array[$fam_array_nr] = date_string2($famDb->fam_marr_date);
-                } elseif ($famDb->fam_marr_church_notice_date) {
-                    $families_array[$fam_array_nr] = date_string2($famDb->fam_marr_church_notice_date);
-                } elseif ($famDb->fam_marr_church_date) {
-                    $families_array[$fam_array_nr] = date_string2($famDb->fam_marr_church_date);
-                } else {
-                    $families_array[$fam_array_nr] = '';
-                }
-
-                //echo $families_array[$fam_array_nr].' ';
+        $buildFamilyDateKey = function (int $relationId) use ($dbh, $trees, $__evStmt) {
+            $__evStmt->execute([
+                ':tree_id' => $trees['tree_id'],
+                ':relation_id' => $relationId
+            ]);
+            $ev = $__evStmt->fetch(PDO::FETCH_OBJ);
+            if (!$ev) {
+                return ''; // no date -> keep at start, like old behavior
             }
 
-            asort($families_array);
-
-            $families = '';
-            foreach ($families_array as $key => $val) {
-                if ($families != '') {
-                    $families .= ';';
-                }
-                $families .= $key;
+            // Prefer structured Y/M/D if present, else fall back to text parsing
+            if ($ev->date_year) {
+                $y = (int)$ev->date_year;
+                $m = str_pad((string)max(0, (int)$ev->date_month), 2, '0', STR_PAD_LEFT);
+                $d = str_pad((string)max(0, (int)$ev->date_day), 2, '0', STR_PAD_LEFT);
+                return sprintf('%04d%s%s', $y, $m, $d);
             }
 
-            if ($personDb->pers_fams != $families) {
-                $dbh->query("UPDATE humo_persons SET pers_fams='" . $families . "' WHERE pers_id='" . $personDb->pers_id . "'");
+            return '';
+        };
+
+        // Find persons who have multiple partner relations in this tree
+        $personsStmt = $dbh->prepare("
+            SELECT person_id
+            FROM humo_relations_persons
+            WHERE tree_id = :tree_id AND relation_type = 'partner'
+            GROUP BY person_id
+            HAVING COUNT(DISTINCT relation_id) > 1
+        ");
+        $personsStmt->execute([':tree_id' => $trees['tree_id']]);
+
+        $relationsStmt = $dbh->prepare("
+            SELECT DISTINCT relation_id
+            FROM humo_relations_persons
+            WHERE tree_id = :tree_id AND relation_type = 'partner' AND person_id = :person_id
+        ");
+
+        $updateStmt = $dbh->prepare("
+            UPDATE humo_relations_persons
+            SET relation_order = :relation_order
+            WHERE tree_id = :tree_id
+            AND relation_type = 'partner'
+            AND person_id = :person_id
+            AND relation_id = :relation_id
+        ");
+
+        // Optional batching
+        /*
+        $commit_counter = 0;
+        $commit_records = $humo_option["gedcom_read_commit_records"];
+        if ($commit_records > 1 && !$dbh->inTransaction()) {
+            $dbh->beginTransaction();
+        }
+        */
+        while ($p = $personsStmt->fetch(PDO::FETCH_ASSOC)) {
+            $personId = (int)$p['person_id'];
+
+            // Collect this person's partner families (relation_ids)
+            $relationsStmt->execute([
+                ':tree_id' => $trees['tree_id'],
+                ':person_id' => $personId
+            ]);
+
+            $families = []; // relation_id => dateKey
+            while ($row = $relationsStmt->fetch(PDO::FETCH_ASSOC)) {
+                $relId = (int)$row['relation_id'];
+                $families[$relId] = $buildFamilyDateKey($relId);
+            }
+
+            // Sort by date key (ascending). Empty key '' sorts first to mimic old behavior.
+            asort($families, SORT_STRING);
+
+            // Write back the order for this person only
+            $order = 1;
+            foreach ($families as $relationId => $key) {
+                //echo $personId.' '.$relationId.' '.$key.' => order '.$order.'<br>';
+                $updateStmt->execute([
+                    ':relation_order' => $order++,
+                    ':tree_id' => $trees['tree_id'],
+                    ':person_id' => $personId,
+                    ':relation_id' => $relationId
+                ]);
+
+                /*
+                if ($commit_records > 1) {
+                    $commit_counter++;
+                    if ($commit_counter > $humo_option["gedcom_read_commit_records"]) {
+                        $commit_counter = 0;
+                        if ($dbh->inTransaction()) {
+                            $dbh->commit();
+                        }
+                        $dbh->beginTransaction();
+                    }
+                }
+                */
             }
         }
+        /*
+        if ($commit_records > 1 && $dbh->inTransaction()) {
+            $dbh->commit();
+        }
+        */
     }
-
 
     // *** Process Aldfaer adoption children: remove unnecessary added relations ***
     // *** Aldfaer uses a fictive family number for adoption. The family number is removed, a person number is used ***
@@ -2097,39 +2195,24 @@ elseif ($trees['step'] == '4') {
             $fam = $famc_adoptiveDb->event_event;
 
             // *** Remove fams number from man and woman ***
-            $new_nr_qry = "SELECT * FROM humo_families WHERE fam_tree_id='" . $trees['tree_id'] . "' AND fam_gedcomnumber='" . $fam . "'";
-            $new_nr_result = $dbh->query($new_nr_qry);
-            $new_nr = $new_nr_result->fetch(PDO::FETCH_OBJ);
+            $new_nr = $db_functions->get_family($fam);
+            // TODO: use get_family_partners (needs ID instead of GEDCOM number).
+            //$new_nrDb = $db_functions->get_family_partners($fam);
 
             // *** Replace familynumber with person number ***
-            if ($new_nr->fam_man) {
-                $dbh->query("UPDATE humo_events SET event_event='" . $new_nr->fam_man . "' WHERE event_id='" . $famc_adoptiveDb->event_id . "'");
-                $personnr = $new_nr->fam_man;
+            if ($new_nr->partner1_gedcomnumber) {
+                $dbh->query("UPDATE humo_events SET event_event='" . $new_nr->partner1_id . "' WHERE event_id='" . $famc_adoptiveDb->event_id . "'");
+                $personnr = $new_nr->partner1_id;
             }
-            if ($new_nr->fam_woman) {
-                $dbh->query("UPDATE humo_events SET event_event='" . $new_nr->fam_woman . "' WHERE event_id='" . $famc_adoptiveDb->event_id . "'");
-                $personnr = $new_nr->fam_woman;
+            if ($new_nr->partner2_gedcomnumber) {
+                $dbh->query("UPDATE humo_events SET event_event='" . $new_nr->partner2_id . "' WHERE event_id='" . $famc_adoptiveDb->event_id . "'");
+                $personnr = $new_nr->partner2_id;
             }
 
-            if ($new_nr->fam_man || $new_nr->fam_woman) {
-                $person_qry = "SELECT pers_id, pers_gedcomnumber, pers_fams FROM humo_persons WHERE pers_tree_id='" . $trees['tree_id'] . "' AND pers_gedcomnumber='" . $personnr . "'";
-                $person_result = $dbh->query($person_qry);
-                $person_db = $person_result->fetch(PDO::FETCH_OBJ);
-                if ($person_db->pers_gedcomnumber) {
-                    unset($fams2);
-                    $fams = explode(";", $person_db->pers_fams);
-                    foreach ($fams as $key => $value) {
-                        if ($fams[$key] != $fam) {
-                            $fams2[] = $fams[$key];
-                        }
-                    }
-                    $fams3 = '';
-                    if (isset($fams2[0])) {
-                        $fams3 = implode(";", $fams2);
-                    }
-
-                    $dbh->query("UPDATE humo_persons SET pers_fams='" . $fams3 . "' WHERE pers_id='" . $person_db->pers_id . "'");
-                }
+            if ($new_nr->partner1_id || $new_nr->partner2_id) {
+                // Remove relation entry created for the fictive family number
+                $stmt = $dbh->prepare("DELETE FROM humo_relations WHERE tree_id = :tree_id AND relation_gedcomnumber = :fam");
+                $stmt->execute([':tree_id' => $trees['tree_id'], ':fam' => $fam]);
             }
 
             $dbh->query("DELETE FROM humo_families WHERE fam_tree_id='" . $trees['tree_id'] . "' AND fam_gedcomnumber='" . $fam . "'");

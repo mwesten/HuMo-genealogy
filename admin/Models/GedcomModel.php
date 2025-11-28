@@ -120,6 +120,82 @@ class GedcomModel
         return $removed_filenames;
     }
 
+    public function update_settings($db_functions)
+    {
+        $setting_value = 'n';
+        if (isset($_POST["add_source"])) {
+            $setting_value = 'y';
+        }
+        $db_functions->update_settings('gedcom_read_add_source', $setting_value);
+
+        $setting_value = 'n';
+        if (isset($_POST["reassign_gedcomnumbers"])) {
+            $setting_value = 'y';
+        }
+        $db_functions->update_settings('gedcom_read_reassign_gedcomnumbers', $setting_value);
+
+        $setting_value = 'n';
+        if (isset($_POST["order_by_date"])) {
+            $setting_value = 'y';
+        }
+        $db_functions->update_settings('gedcom_read_order_by_date', $setting_value);
+
+        $setting_value = 'n';
+        if (isset($_POST["order_by_fams"])) {
+            $setting_value = 'y';
+        }
+        $db_functions->update_settings('gedcom_read_order_by_fams', $setting_value);
+
+        /*
+        $setting_value = 'n';
+        if (isset($_POST["process_geo_location"])) {
+            $setting_value = 'y';
+        }
+        $db_functions->update_settings('gedcom_read_process_geo_location', $setting_value);
+        */
+
+        if (isset($_POST['gedcom_process_pict_path'])) {
+            $db_functions->update_settings('gedcom_process_pict_path', $_POST['gedcom_process_pict_path']);
+        }
+
+        if (isset($_POST['commit_records'])) {
+            $db_functions->update_settings('gedcom_read_commit_records', $_POST['commit_records']);
+        }
+
+        if (isset($_POST['time_out']) && is_numeric($_POST['time_out'])) {
+            $db_functions->update_settings('gedcom_read_time_out', $_POST['time_out']);
+        }
+    }
+
+    public function read_gedcom_file()
+    {
+        // *** Processing time ***
+        if ($_SESSION['save_starttime'] == 0) {
+            $_SESSION['save_starttime'] = time();
+        }
+        $_SESSION['save_start_timeout'] = time(); // *** Start controlled time-out ***
+
+    }
+
+    public function is_add_tree(): bool
+    {
+        $add_tree = false;
+        if ($_SESSION['add_tree'] == true) {
+            $add_tree = true;
+            unset($_SESSION['add_tree']); // we don't want the session variable to persist - can cause problems!
+        }
+        return $add_tree;
+    }
+
+    public function is_reassign($humo_option): bool
+    {
+        $reassign = false;
+        if ($humo_option["gedcom_read_reassign_gedcomnumbers"] == 'y') {
+            $reassign = true;
+        }
+        return $reassign;
+    }
+
     /*
     public function get_check_processed()
     {

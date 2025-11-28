@@ -122,7 +122,7 @@ while (isset($ancestor_array2[0])) {
                 $familyDb = $db_functions->get_family($marriage_gedcomnumber[$i]);
 
                 // *** Use privacy filter of woman ***
-                $person_womanDb = $db_functions->get_person($familyDb->fam_woman);
+                $person_womanDb = $db_functions->get_person_with_id($familyDb->partner2_id);
                 $privacy_woman = $personPrivacy->get_privacy($person_womanDb);
 
                 $marriage_cls = new \Genealogy\Include\MarriageCls($familyDb, $privacy_man, $privacy_woman);
@@ -212,23 +212,23 @@ while (isset($ancestor_array2[0])) {
             }
 
             // ==	Check for parents
-            if ($person_manDb->pers_famc && $listednr == '') {
-                $family_parentsDb = $db_functions->get_family($person_manDb->pers_famc);
-                if ($family_parentsDb->fam_man) {
-                    $ancestor_array2[] = $family_parentsDb->fam_man;
+            if ($person_manDb->parent_relation_gedcomnumber && $listednr == '') {
+                $family_parentsDb = $db_functions->get_family($person_manDb->parent_relation_gedcomnumber);
+                if ($family_parentsDb->partner1_gedcomnumber) {
+                    $ancestor_array2[] = $family_parentsDb->partner1_gedcomnumber;
                     $ancestor_number2[] = (2 * $ancestor_number[$i]);
-                    $marriage_gedcomnumber2[] = $person_manDb->pers_famc;
+                    $marriage_gedcomnumber2[] = $person_manDb->parent_relation_gedcomnumber;
                 }
 
-                if ($family_parentsDb->fam_woman) {
-                    $ancestor_array2[] = $family_parentsDb->fam_woman;
+                if ($family_parentsDb->partner2_gedcomnumber) {
+                    $ancestor_array2[] = $family_parentsDb->partner2_gedcomnumber;
                     $ancestor_number2[] = (2 * $ancestor_number[$i] + 1);
-                    $marriage_gedcomnumber2[] = $person_manDb->pers_famc;
+                    $marriage_gedcomnumber2[] = $person_manDb->parent_relation_gedcomnumber;
                 } else {
                     // *** N.N. name ***
                     $ancestor_array2[] = '0';
                     $ancestor_number2[] = (2 * $ancestor_number[$i] + 1);
-                    $marriage_gedcomnumber2[] = $person_manDb->pers_famc;
+                    $marriage_gedcomnumber2[] = $person_manDb->parent_relation_gedcomnumber;
                 }
             }
         } else {

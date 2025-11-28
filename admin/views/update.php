@@ -37,7 +37,7 @@
         if ((int)$humo_option["update_status"] > $check_number) {
             // *** Only show update status if update version > 14 (v5.9) ***
             if ($version_number > 14) {
-        ?>
+    ?>
                 <tr>
                     <td>HuMo-genealogy update <?= $version ?></td>
                     <td style="background-color:#00FF00">OK</td>
@@ -60,22 +60,25 @@
                     ?>
 
                     <div class="mt-2">
-                        <a 
-                            class="btn btn-warning" 
-                            href="index.php?page=update&proceed=1" 
+                        <a
+                            class="btn btn-warning"
+                            href="index.php?page=update&proceed=1"
                             id="reload-update-btn"
-                            onclick="this.disabled=true; this.innerText='<?= __('Processing...') ?>';"
-                        ><?= __('Reload for next update') ?></a>
+                            onclick="this.disabled=true; this.innerText='<?= __('Processing...') ?>';"><?= __('Reload for next update') ?></a>
                     </div>
 
                     <script>
-                        // Optionally, prevent double click by disabling the button after click
+                        // Prevent double click by disabling the button after click, also show spinner icon.
+                        function showSpinner(button) {
+                            button.innerHTML = '<div class="spinner-border spinner-border-sm text-light me-2" role="status"><span class="visually-hidden">Loading...</span></div><?= __('Processing...') ?>';
+                        }
+
+                        // Prevent double click by disabling the button after click
                         document.getElementById('reload-update-btn').addEventListener('click', function(e) {
                             this.disabled = true;
-                            this.innerText = '<?= __('Processing...') ?>';
+                            showSpinner(this);
                         });
                     </script>
-
                 </td>
             </tr>
 
@@ -149,7 +152,7 @@
         show_status($dbh, $humo_option, 'v6.7.9', 18);
         show_status($dbh, $humo_option, 'v6.7.9a', 19);
         show_status($dbh, $humo_option, 'v7.0', 20);
-        //show_status($dbh, $humo_option, 'v7.0.1', 21); // *** Future update ***
+        show_status($dbh, $humo_option, 'v7.0.3', 21);
 
         /**
          * Remarks for programmers:

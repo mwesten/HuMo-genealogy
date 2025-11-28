@@ -102,7 +102,6 @@ $pdf->Ln(4);
 $pdf->SetFont($pdf->pdf_font, '', 12);
 
 
-
 $path_form = $processLinks->get_link($uri_path, 'outline_report', $tree_id);
 
 $generation_number = 0;
@@ -133,35 +132,33 @@ function outline($outline_family_id, $outline_main_person, $generation_number, $
     $swap_parent1_parent2 = false;
 
     // *** Standard main_person is the father ***
-    if ($familyDb->fam_man) {
-        $parent1 = $familyDb->fam_man;
+    if ($familyDb->partner1_id) {
+        $parent1 = $familyDb->partner1_id;
     }
     // *** If mother is selected, mother will be main_person ***
-    if ($familyDb->fam_woman == $outline_main_person) {
-        $parent1 = $familyDb->fam_woman;
+    if ($familyDb->partner2_id == $outline_main_person) {
+        $parent1 = $familyDb->partner2_id;
         $swap_parent1_parent2 = true;
     }
 
     // *** Check family with parent1: N.N. ***
     if ($parent1) {
         // *** Save man's families in array ***
-        $personDb = $db_functions->get_person($parent1, 'famc-fams');
-        $marriage_array = explode(";", $personDb->pers_fams);
-        $nr_families = substr_count($personDb->pers_fams, ";");
-    } else {
-        $marriage_array[0] = $outline_family_id;
-        $nr_families = "0";
+        $relations = $db_functions->get_relations($parent1);
     }
+    // else {
+    //    $marriage_array[0] = $outline_family_id;
+    //}
 
     // *** Loop multiple marriages of main_person ***
-    for ($parent1_marr = 0; $parent1_marr <= $nr_families; $parent1_marr++) {
-        $familyDb = $db_functions->get_family($marriage_array[$parent1_marr]);
+    foreach ($relations as $relation) {
+        $familyDb = $db_functions->get_family_with_id($relation->relation_id);
 
         // *** Privacy filter man and woman ***
-        $person_manDb = $db_functions->get_person($familyDb->fam_man);
+        $person_manDb = $db_functions->get_person_with_id($familyDb->partner1_id);
         $privacy_man = $personPrivacy->get_privacy($person_manDb);
 
-        $person_womanDb = $db_functions->get_person($familyDb->fam_woman);
+        $person_womanDb = $db_functions->get_person_with_id($familyDb->partner2_id);
         $privacy_woman = $personPrivacy->get_privacy($person_womanDb);
 
         $marriage_cls = new \Genealogy\Include\MarriageCls($familyDb, $privacy_man, $privacy_woman);
@@ -271,11 +268,10 @@ function outline($outline_family_id, $outline_main_person, $generation_number, $
         /**
          * Show children
          */
-        if ($familyDb->fam_children) {
-            $childnr = 1;
-            $child_array = explode(";", $familyDb->fam_children);
-            foreach ($child_array as $i => $value) {
-                $childDb = $db_functions->get_person($child_array[$i]);
+        $children = $db_functions->get_children($familyDb->fam_id);
+        if ($children) {
+            foreach ($children as $child) {
+                $childDb = $db_functions->get_person_with_id($child->person_id);
 
                 // *** Totally hide children if setting is active ***
                 if ($totallyFilterPerson->isTotallyFiltered($user, $childDb)) {
@@ -289,10 +285,10 @@ function outline($outline_family_id, $outline_main_person, $generation_number, $
                 $child_privacy = $personPrivacy->get_privacy($childDb);
 
                 // *** Build descendant_report ***
-                if ($childDb->pers_fams) {
+                $first_relation = $db_functions->get_first_relation($childDb->pers_id);
+                if (isset($first_relation->relation_gedcomnumer)) {
                     // *** 1e family of child ***
-                    $child_family = explode(";", $childDb->pers_fams);
-                    $child1stfam = $child_family[0];
+                    $child1stfam = $first_relation->relation_gedcomnumer;
                     outline($child1stfam, $childDb->pers_gedcomnumber, $generation_number, $nr_generations);  // recursive
                 } else {
                     // Child without own family
@@ -316,11 +312,9 @@ function outline($outline_family_id, $outline_main_person, $generation_number, $
                         }
                     }
                 }
-                $childnr++;
             }
         }
     } // Show  multiple marriages
-
 }
 
 // ******* Start function here - recursive if started ******

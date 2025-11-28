@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Use Ajax to order children and media.
+ * Use Ajax to order children, media, sources, etc.
  */
 
 session_start();
@@ -10,8 +10,6 @@ session_start();
 //  exit;
 //}
 
-use Genealogy\Include\SafeTextDb;
-
 // *** Autoload composer classes ***
 require __DIR__ . '/../../vendor/autoload.php';
 
@@ -19,13 +17,26 @@ if (isset($_SESSION['admin_tree_id'])) {
     $ADMIN = TRUE; // *** Override "no database" message for admin ***
     include_once(__DIR__ . "/../../include/db_login.php"); // *** Database login ***
 
-    $safeTextDb = new SafeTextDb();
-
     $drag_kind = $_GET["drag_kind"];
 
-    if ($drag_kind == "children" && is_numeric($_GET["family_id"])) {
-        $stmt = $dbh->prepare("UPDATE humo_families SET fam_children = ? WHERE fam_id = ?");
-        $stmt->execute([$_GET['chldstring'], $_GET["family_id"]]);
+    if ($drag_kind == "relations") {
+        $relation_arr = explode(";", $_GET['relstring']);
+        $counter = count($relation_arr);
+        for ($x = 0; $x < $counter; $x++) {
+            if (is_numeric($relation_arr[$x])) {
+                $dbh->query("UPDATE humo_relations_persons SET relation_order='" . ($x + 1) . "' WHERE id='" . $relation_arr[$x] . "'");
+            }
+        }
+    }
+
+    if ($drag_kind == "children") {
+        $child_arr = explode(";", $_GET['chldstring']);
+        $counter = count($child_arr);
+        for ($x = 0; $x < $counter; $x++) {
+            if (is_numeric($child_arr[$x])) {
+                $dbh->query("UPDATE humo_relations_persons SET relation_order='" . ($x + 1) . "' WHERE id='" . $child_arr[$x] . "'");
+            }
+        }
     }
 
     if ($drag_kind == "media") {

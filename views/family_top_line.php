@@ -11,7 +11,8 @@ $treetext = $showTreeText->show_tree_text($selectedFamilyTree->tree_id, $selecte
 
     <td width="250" style="text-align:right;">
         <!-- Hide selections for bots, and second family screen (descendant report etc.) -->
-        <?php if (!$botDetector->isBot() && (isset($descendant_loop) && $descendant_loop == 0) && $parent1_marr == 0) { ?>
+        <?php //if (!$botDetector->isBot() && (isset($descendant_loop) && $descendant_loop == 0) && count($relations) == 0) { ?>
+        <?php if (!$botDetector->isBot() && (isset($descendant_loop) && $descendant_loop == 0)) { ?>
             <?php
             $vars['pers_family'] = $data["family_id"];
             $settings_url = $processLinks->get_link($uri_path, 'family', $tree_id, true, $vars);

@@ -34,14 +34,15 @@ class ShowSourcesFootnotes
                 if ($connectDb->connect_source_id) {
                     $sourceDb = $db_functions->get_source($connectDb->connect_source_id);
                     // *** Always show title of source, show link only after permission check ***
-                    $text .= '<a name="source_ref' . ($j + 1) . '"><b>' . ($j + 1) . ')</b></a>';
+                    $text .= '<a name="source_ref' . ($j + 1) . '"><b>[' . ($j + 1) . ']</b></a>';
                     if ($user['group_sources'] == 'j' && $sourceDb->source_title != '') {
                         if ($humo_option["url_rewrite"] == "j") {
                             $url = $uri_path . 'source/' . $tree_id . '/' . $sourceDb->source_gedcomnr;
                         } else {
                             $url = $uri_path . 'index.php?page=source&amp;tree_id=' . $tree_id . '&amp;id=' . $sourceDb->source_gedcomnr;
                         }
-                        $text .= ' <a href="' . $url . '">' . __('source') . ': ';
+                        //$text .= ' <a href="' . $url . '">' . __('source') . ': ';
+                        $text .= ' <a href="' . $url . '">';
                         if ($sourceDb->source_title) {
                             $text .= ' ' . trim($sourceDb->source_title);
                         } else {
@@ -49,8 +50,9 @@ class ShowSourcesFootnotes
                             $text .= ' ' . $sourceDb->source_text;
                         }
 
-                        //if ($sourceDb->source_text)
+                        //if ($sourceDb->source_text){
                         // $text .= ' ' . $processText->process_text($sourceDb->source_text);
+                        //}
                         $text .= '</a>';
                     } else {
                         if ($sourceDb->source_title) {
@@ -71,45 +73,6 @@ class ShowSourcesFootnotes
                             $text .= ', <b>' . __('own code') . '</b>: ' . $sourceDb->source_refn;
                         }
                     }
-
-                    // *** User group option to only show title of source ***
-                    if ($user['group_sources'] != 't') {
-                        if ($connectDb->connect_date || $connectDb->connect_place) {
-                            //if ($connectDb->source_title){
-                            // $text.=', ';
-                            //}
-                            $text .= " " . $datePlace->date_place($connectDb->connect_date, $connectDb->connect_place);
-                        }
-
-                        // *** Show extra source text ***
-                        if ($connectDb->connect_text) {
-                            $text .= ', <b>' . __('extra text') . ':</b> ' . nl2br($connectDb->connect_text);
-                        }
-                    }
-                }
-
-                //OLD CODE
-                //else{
-                // // *** No shared source connected ***
-                // $text.='<a name="source_ref'.($j+1).'">'.($j+1).')</a>';
-                // // *** Source extra text ***
-                // $text.=' '.nl2br($connectDb->connect_text);
-                //}
-
-                // *** Show rest of source items ***
-
-                // *** Source role ***
-                if ($connectDb->connect_role) {
-                    $text .= ', <b>' . __('role') . '</b>: ' . $connectDb->connect_role;
-                }
-
-                // *** Source page (connection table) ***
-                if ($connectDb->connect_page) {
-                    $text .= ', <b>' . __('page') . '</b>: ' . $connectDb->connect_page;
-                }
-                // *** Page by source ***
-                if (isset($sourceDb->source_repo_page) && $sourceDb->source_repo_page) {
-                    $text .= ', <b>' . __('page') . '</b>: ' . $sourceDb->source_repo_page;
                 }
 
                 // *** Show picture by source ***
@@ -117,7 +80,7 @@ class ShowSourcesFootnotes
                 $text .= $result[0];
 
                 $text .= "<br>\n";
-            } // *** End of loop source footnotes ***
+            }
         }
         return $text;
     }

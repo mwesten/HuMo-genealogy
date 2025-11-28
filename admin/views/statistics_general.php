@@ -274,7 +274,7 @@ function statistics_line($familyDb)
         // *** Check if family is still in the genealogy! ***
         $checkDb = $db_functions->get_family($familyDb->stat_gedcom_fam);
         $check = false;
-        if ($checkDb && $checkDb->fam_man == $familyDb->stat_gedcom_man && $checkDb->fam_woman == $familyDb->stat_gedcom_woman) {
+        if ($checkDb && $checkDb->partner1_gedcomnumber == $familyDb->stat_gedcom_man && $checkDb->partner2_gedcomnumber == $familyDb->stat_gedcom_woman) {
             $check = true;
         }
 

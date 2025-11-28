@@ -168,9 +168,9 @@ if (isset($note_tree_id)) {
                         if (substr($noteDb->note_connect_id, 0, 1) === 'F') {
                             // *** Editor note by family ***
                             $find_parent1Db = $db_functions->get_family($noteDb->note_connect_id);
-                            if ($find_parent1Db->fam_man != "") {
+                            if ($find_parent1Db->partner1_gedcomnumber != "") {
                         ?>
-                                <a href="index.php?page=editor&amp;tree_id=<?= $tree_id; ?>&amp;menu_tab=marriage&amp;person=<?= $find_parent1Db->fam_man; ?>&amp;marriage_nr=<?= $noteDb->note_connect_id; ?>">
+                                <a href="index.php?page=editor&amp;tree_id=<?= $tree_id; ?>&amp;menu_tab=marriage&amp;person=<?= $find_parent1Db->partner1_gedcomnumber; ?>&amp;marriage_nr=<?= $noteDb->note_connect_id; ?>">
                                     <b><?= $noteDb->note_connect_id; ?> <?= $noteDb->note_names; ?></b>
                                 </a><br>
                             <?php

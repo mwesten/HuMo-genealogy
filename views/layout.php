@@ -481,6 +481,11 @@ $menu_top = getActiveTopMenu($page);
             $menu_path_help = $processLinks->get_link($uri_path, 'help');
             $menu_path_register = $processLinks->get_link($uri_path, 'register');
             $menu_path_cms = $processLinks->get_link($uri_path, 'cms_pages');
+            if ($humo_option["url_rewrite"] == "j") {
+                $menu_path_chat = 'chat_genealogy';
+            } else {
+                $menu_path_chat = 'index.php?page=chat_genealogy';
+            }
             $menu_path_cookies = $processLinks->get_link($uri_path, 'cookies');
             $menu_path_persons = $processLinks->get_link($uri_path, 'list', $tree_id, true);
             $menu_path_persons .= 'reset=1';
@@ -530,8 +535,8 @@ $menu_top = getActiveTopMenu($page);
             <div class="collapse navbar-collapse" id="main_nav">
                 <ul class="navbar-nav me-auto mb-2 mb-lg-0">
 
-                    <li class="nav-item <?php if ($menu_top === 'home') echo 'genealogy_active'; ?>">
-                        <a class="nav-link <?php if ($menu_top === 'home') echo 'active'; ?>" href="<?= $menu_path_home; ?>"><?= __('Home'); ?></a>
+                    <li class="nav-item <?= $menu_top === 'home' ? 'genealogy_active' : ''; ?>">
+                        <a class="nav-link <?= $menu_top === 'home' ? 'active' : ''; ?>" href="<?= $menu_path_home; ?>"><?= __('Home'); ?></a>
                     </li>
 
                     <?php
@@ -541,32 +546,39 @@ $menu_top = getActiveTopMenu($page);
                         $cms_qry = $dbh->query("SELECT * FROM humo_cms_pages WHERE page_status!='' AND page_menu_id!='9999'");
                         if ($cms_qry->rowCount() > 0) {
                     ?>
-                            <li class="nav-item <?php if ($menu_top == 'information') echo 'genealogy_active'; ?>">
-                                <a class="nav-link <?php if ($menu_top == 'information') echo 'active'; ?>" href="<?= $menu_path_cms; ?>"><?= __('Information'); ?></a>
+                            <li class="nav-item <?= $menu_top === 'information' ? 'genealogy_active' : ''; ?>">
+                                <a class="nav-link <?= $menu_top === 'information' ? 'active' : ''; ?>" href="<?= $menu_path_cms; ?>"><?= __('Information'); ?></a>
                             </li>
                     <?php
                         }
                     }
                     ?>
 
+                    <!-- Menu: Chat -->
+                    <?php if ($user['group_menu_chat'] == 'y') { ?>
+                        <li class="nav-item <?= $menu_top == 'chat' ? 'genealogy_active' : ''; ?>">
+                            <a class="nav-link <?= $menu_top == 'chat' ? 'active' : ''; ?>" href="<?= $menu_path_chat; ?>"><?= __('Chat'); ?></a>
+                        </li>
+                    <?php } ?>
+
                     <?php if (!$botDetector->isBot()) { ?>
-                        <li class="nav-item dropdown active <?php if ($menu_top == 'tree_menu') echo 'genealogy_active'; ?>">
+                        <li class="nav-item dropdown active <?= $menu_top === 'tree_menu' ? 'genealogy_active' : ''; ?>">
                             <?php // TODO add active if dropdown item is selected ;
                             ?>
 
-                            <a class="nav-link dropdown-toggle <?php if ($menu_top == 'tree_menu') echo 'active'; ?>" href="<?= $menu_path_tree_index; ?>" data-bs-toggle="dropdown"><?= __('Family tree'); ?></a>
+                            <a class="nav-link dropdown-toggle <?= $menu_top === 'tree_menu' ? 'active' : ''; ?>" href="<?= $menu_path_tree_index; ?>" data-bs-toggle="dropdown"><?= __('Family tree'); ?></a>
 
                             <ul class="dropdown-menu genealogy_menu">
-                                <li><a class="dropdown-item <?php if ($page == 'tree_index') echo 'active'; ?>" href="<?= $menu_path_tree_index; ?>"><?= __('Family tree index'); ?></a></li>
+                                <li><a class="dropdown-item <?= $page === 'tree_index' ? 'active' : ''; ?>" href="<?= $menu_path_tree_index; ?>"><?= __('Family tree index'); ?></a></li>
 
                                 <!-- Persons -->
                                 <?php if ($user['group_menu_persons'] == "j") { ?>
-                                    <li><a class="dropdown-item <?php if ($page == 'persons' || $page == 'family' || $page == 'family_rtf' || $page == 'descendant' || $page == 'ancestor' || $page == 'ancestor_chart' || $page == 'ancestor_sheet' || $page == 'list') echo 'active'; ?>" href="<?= $menu_path_persons; ?>"><?= __('Persons'); ?></a></li>
+                                    <li><a class="dropdown-item <?= $page === 'persons' || $page === 'family' || $page === 'family_rtf' || $page === 'descendant' || $page === 'ancestor' || $page === 'ancestor_chart' || $page === 'ancestor_sheet' || $page === 'list' ? 'active' : ''; ?>" href="<?= $menu_path_persons; ?>"><?= __('Persons'); ?></a></li>
                                 <?php } ?>
 
                                 <!-- Names -->
                                 <?php if ($user['group_menu_names'] == "j") {; ?>
-                                    <li><a class="dropdown-item <?php if ($page == 'list_names') echo 'active'; ?>" href="<?= $menu_path_names; ?>"><?= __('Names'); ?></a></li>
+                                    <li><a class="dropdown-item <?= $page === 'list_names' ? 'active' : ''; ?>" href="<?= $menu_path_names; ?>"><?= __('Names'); ?></a></li>
                                 <?php } ?>
 
                                 <!-- Places -->
@@ -576,7 +588,7 @@ $menu_top = getActiveTopMenu($page);
                                 <?php } ?>
 
                                 <?php if ($user['group_photobook'] == 'j') {; ?>
-                                    <li><a class="dropdown-item <?php if ($page == 'photoalbum') echo 'active'; ?>" href="<?= $menu_path_photoalbum; ?>"><?= __('Photobook'); ?></a></li>
+                                    <li><a class="dropdown-item <?= $page === 'photoalbum' ? 'active' : ''; ?>" href="<?= $menu_path_photoalbum; ?>"><?= __('Photobook'); ?></a></li>
                                 <?php } ?>
 
                                 <?php
@@ -586,7 +598,7 @@ $menu_top = getActiveTopMenu($page);
                                     $sourceDb = $source_qry->rowCount();
                                     if ($sourceDb > 0) {
                                 ?>
-                                        <li><a class="dropdown-item <?php if ($page == 'sources') echo 'active'; ?>" href="<?= $menu_path_sources; ?>"><?= __('Sources'); ?></a></li>
+                                        <li><a class="dropdown-item <?= $page === 'sources' ? 'active' : ''; ?>" href="<?= $menu_path_sources; ?>"><?= __('Sources'); ?></a></li>
                                 <?php
                                     }
                                 }
@@ -599,7 +611,7 @@ $menu_top = getActiveTopMenu($page);
                                     $addressDb = $address_qry->rowCount();
                                     if ($addressDb > 0) {
                                 ?>
-                                        <li><a class="dropdown-item <?php if ($page == 'addresses') echo 'active'; ?>" href="<?= $menu_path_addresses; ?>"><?= __('Addresses'); ?></a></li>
+                                        <li><a class="dropdown-item <?= $page === 'addresses' ? 'active' : ''; ?>" href="<?= $menu_path_addresses; ?>"><?= __('Addresses'); ?></a></li>
                                 <?php
                                     }
                                 }
@@ -619,37 +631,37 @@ $menu_top = getActiveTopMenu($page);
                         ) {
                     ?>
 
-                            <li class="nav-item dropdown <?php if ($menu_top == 'tool_menu') echo 'genealogy_active'; ?>">
-                                <a class="nav-link dropdown-toggle <?php if ($menu_top == 'tool_menu') echo 'active'; ?>" href="<?= $menu_path_tree_index; ?>" data-bs-toggle="dropdown"><?= __('Tools'); ?></a>
+                            <li class="nav-item dropdown <?= $menu_top === 'tool_menu' ? 'genealogy_active' : ''; ?>">
+                                <a class="nav-link dropdown-toggle <?= $menu_top === 'tool_menu' ? 'active' : ''; ?>" href="<?= $menu_path_tree_index; ?>" data-bs-toggle="dropdown"><?= __('Tools'); ?></a>
 
                                 <ul class="dropdown-menu genealogy_menu">
                                     <?php if ($user["group_birthday_list"] == 'j') {; ?>
-                                        <li><a class="dropdown-item <?php if ($page == 'anniversary') echo 'active'; ?>" href="<?= $menu_path_anniversary; ?>"><?= __('Anniversary list'); ?></a></li>
+                                        <li><a class="dropdown-item <?= $page === 'anniversary' ? 'active' : ''; ?>" href="<?= $menu_path_anniversary; ?>"><?= __('Anniversary list'); ?></a></li>
                                     <?php } ?>
 
                                     <?php if ($user["group_showstatistics"] == 'j') {; ?>
-                                        <li><a class="dropdown-item <?php if ($page == 'statistics') echo 'active'; ?>" href="<?= $menu_path_statistics; ?>"><?= __('Statistics'); ?></a></li>
+                                        <li><a class="dropdown-item <?= $page === 'statistics' ? 'active' : ''; ?>" href="<?= $menu_path_statistics; ?>"><?= __('Statistics'); ?></a></li>
                                     <?php } ?>
 
                                     <?php if ($user["group_relcalc"] == 'j') {; ?>
-                                        <li><a class="dropdown-item <?php if ($page == 'relations') echo 'active'; ?>" href="<?= $menu_path_calculator; ?>"><?= __('Relationship calculator'); ?></a></li>
+                                        <li><a class="dropdown-item <?= $page === 'relations' ? 'active' : ''; ?>" href="<?= $menu_path_calculator; ?>"><?= __('Relationship calculator'); ?></a></li>
                                     <?php } ?>
 
                                     <?php if ($user["group_googlemaps"] == 'j') {; ?>
                                         <?php if (!$botDetector->isBot()) { ?>
-                                            <li><a class="dropdown-item <?php if ($page == 'maps') echo 'active'; ?>" href="<?= $menu_path_map; ?>"><?= __('World map'); ?></a></li>
+                                            <li><a class="dropdown-item <?= $page === 'maps' ? 'active' : ''; ?>" href="<?= $menu_path_map; ?>"><?= __('World map'); ?></a></li>
                                         <?php } ?>
                                     <?php } ?>
 
                                     <!-- Show link to contact form -->
                                     <?php if ($user["group_contact"] == 'j') {; ?>
                                         <?php if (isset($selectedFamilyTree->tree_email) && $selectedFamilyTree->tree_owner && $selectedFamilyTree->tree_email) { ?>
-                                            <li><a class="dropdown-item <?php if ($page == 'mailform') echo 'active'; ?>" href="<?= $menu_path_contact; ?>"><?= __('Contact'); ?></a></li>
+                                            <li><a class="dropdown-item <?= $page === 'mailform' ? 'active' : ''; ?>" href="<?= $menu_path_contact; ?>"><?= __('Contact'); ?></a></li>
                                         <?php } ?>
                                     <?php } ?>
 
                                     <?php if ($user["group_latestchanges"] == 'j') {; ?>
-                                        <li><a class="dropdown-item <?php if ($page == 'latest_changes') echo 'active'; ?>" href="<?= $menu_path_latest_changes; ?>"><?= __('Latest changes'); ?></a></li>
+                                        <li><a class="dropdown-item <?= $page === 'latest_changes' ? 'active' : ''; ?>" href="<?= $menu_path_latest_changes; ?>"><?= __('Latest changes'); ?></a></li>
                                     <?php } ?>
                                 </ul>
                             </li>
@@ -658,14 +670,14 @@ $menu_top = getActiveTopMenu($page);
 
                     <!-- Only show login/ register if user isn't logged in -->
                     <?php if ($user['group_menu_login'] == 'j' and !$user["user_name"]) { ?>
-                        <li class="nav-item dropdown <?php if ($menu_top == 'user_menu') echo 'genealogy_active'; ?>">
-                            <a class="nav-link dropdown-toggle <?php if ($menu_top == 'user_menu') echo 'active'; ?>" href="<?= $menu_path_tree_index; ?>" data-bs-toggle="dropdown"><?= __('Login'); ?></a>
+                        <li class="nav-item dropdown <?= $menu_top === 'user_menu' ? 'genealogy_active' : ''; ?>">
+                            <a class="nav-link dropdown-toggle <?= $menu_top === 'user_menu' ? 'active' : ''; ?>" href="<?= $menu_path_tree_index; ?>" data-bs-toggle="dropdown"><?= __('Login'); ?></a>
                             <ul class="dropdown-menu genealogy_menu">
-                                <li><a class="dropdown-item <?php if ($page == 'login') echo 'active'; ?>" href="<?= $menu_path_login; ?>"><?= __('Login'); ?></a></li>
+                                <li><a class="dropdown-item <?= $page === 'login' ? 'active' : ''; ?>" href="<?= $menu_path_login; ?>"><?= __('Login'); ?></a></li>
 
                                 <!-- Link to registration form -->
                                 <?php if (!$user["user_name"] and $humo_option["visitor_registration"] == 'y') { ?>
-                                    <li><a class="dropdown-item <?php if ($page == 'register') echo 'active'; ?>" href="<?= $menu_path_register; ?>"><?= __('Register'); ?></a></li>
+                                    <li><a class="dropdown-item <?= $page === 'register' ? 'active' : ''; ?>" href="<?= $menu_path_register; ?>"><?= __('Register'); ?></a></li>
                                 <?php } ?>
                             </ul>
                         </li>
@@ -673,10 +685,10 @@ $menu_top = getActiveTopMenu($page);
 
                     <!-- Menu: Control menu -->
                     <?php if (!$botDetector->isBot()) { ?>
-                        <li class="nav-item dropdown <?php if ($menu_top == 'setting_menu') echo 'genealogy_active'; ?>">
-                            <a class="nav-link dropdown-toggle <?php if ($menu_top == 'setting_menu') echo 'active'; ?>" href="<?= $menu_path_tree_index; ?>" data-bs-toggle="dropdown"><?= __('Control'); ?></a>
+                        <li class="nav-item dropdown <?= $menu_top === 'setting_menu' ? 'genealogy_active' : ''; ?>">
+                            <a class="nav-link dropdown-toggle <?= $menu_top === 'setting_menu' ? 'active' : ''; ?>" href="<?= $menu_path_tree_index; ?>" data-bs-toggle="dropdown"><?= __('Control'); ?></a>
                             <ul class="dropdown-menu genealogy_menu">
-                                <li><a class="dropdown-item <?php if ($page == 'settings') echo 'active'; ?>" href="<?= $menu_path_user_settings; ?>"><?= __('User settings'); ?></a></li>
+                                <li><a class="dropdown-item <?= $page === 'settings' ? 'active' : ''; ?>" href="<?= $menu_path_user_settings; ?>"><?= __('User settings'); ?></a></li>
 
                                 <!-- Admin pages -->
                                 <?php if ($user['group_edit_trees'] || $user['group_admin'] == 'j') {; ?>
@@ -822,6 +834,7 @@ $menu_top = getActiveTopMenu($page);
 
         <!-- Jan 2025: Bootstrap tooltip -->
         <script>
+            s
             const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]')
             const tooltipList = [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl))
         </script>

@@ -222,6 +222,18 @@ if ($index['page'] == 'address') {
 } elseif ($index['page'] == 'anniversary') {
     $controllerObj = new Genealogy\App\Controller\AnniversaryController();
     $data = $controllerObj->anniversary();
+} elseif ($index['page'] == 'chat_genealogy_api') {
+    //$controllerObj = new Genealogy\App\Controller\ChatGenealogyController($config);
+    //$chatData = $controllerObj->process();
+
+    //include_once(__DIR__ . "/views/chat_genealogy_api.php");
+    include_once(__DIR__ . "/include/chat_genealogy_api.php");
+
+    exit; // Skip layout.php
+
+} elseif ($index['page'] == 'chat_genealogy') {
+    //$controllerObj = new Genealogy\App\Controller\ChatGenealogyController($config);
+    //$chatData = $controllerObj->process();
 } elseif ($index['page'] == 'cms_pages') {
     $controllerObj = new Genealogy\App\Controller\CmsPagesController($config);
     $data = $controllerObj->list();

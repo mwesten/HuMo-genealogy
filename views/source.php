@@ -241,8 +241,8 @@ if (!isset($data["sourceDb"]->source_id)) {
                             echo __('Source for family:');
                             $familyDb = $db_functions->get_family_with_id($event_Db->relation_id);
 
-                            if ($familyDb->fam_man) {
-                                $personDb = $db_functions->get_person($familyDb->fam_man);
+                            if ($familyDb->partner1_id) {
+                                $personDb = $db_functions->get_person_with_id($familyDb->partner1_id);
                                 // *** Person url example (optional: "main_person=I23"): http://localhost/humo-genealogy/family/2/F10?main_person=I23/ ***
                                 $url = $personLink->get_person_link($personDb);
 
@@ -251,8 +251,8 @@ if (!isset($data["sourceDb"]->source_id)) {
                                 echo ' <a href="' . $url . '">' . $name["standard_name"] . '</a>';
                             }
 
-                            if ($familyDb->fam_woman) {
-                                $personDb = $db_functions->get_person($familyDb->fam_woman);
+                            if ($familyDb->partner2_id) {
+                                $personDb = $db_functions->get_person_with_id($familyDb->partner2_id);
                                 // *** Person url example (optional: "main_person=I23"): http://localhost/humo-genealogy/family/2/F10?main_person=I23/ ***
                                 $url = $personLink->get_person_link($personDb);
                                 $privacy = $personPrivacy->get_privacy($personDb);
@@ -276,8 +276,8 @@ if (!isset($data["sourceDb"]->source_id)) {
                         echo __('Source by address (family):');
                         $familyDb = $db_functions->get_family($addressDb->connect_connect_id);
 
-                        if ($familyDb->fam_man) {
-                            $personDb = $db_functions->get_person($familyDb->fam_man);
+                        if ($familyDb->partner1_id) {
+                            $personDb = $db_functions->get_person_with_id($familyDb->partner1_id);
                             // *** Person url example (optional: "main_person=I23"): http://localhost/humo-genealogy/family/2/F10?main_person=I23/ ***
                             $url = $personLink->get_person_link($personDb);
                             $privacy = $personPrivacy->get_privacy($personDb);
@@ -285,8 +285,8 @@ if (!isset($data["sourceDb"]->source_id)) {
                             echo ' <a href="' . $url . '">' . $name["standard_name"] . '</a>';
                         }
 
-                        if ($familyDb->fam_woman) {
-                            $personDb = $db_functions->get_person($familyDb->fam_woman);
+                        if ($familyDb->partner2_id) {
+                            $personDb = $db_functions->get_person_with_id($familyDb->partner2_id);
                             // *** Person url example (optional: "main_person=I23"): http://localhost/humo-genealogy/family/2/F10?main_person=I23/ ***
                             $url = $personLink->get_person_link($personDb);
                             $privacy = $personPrivacy->get_privacy($personDb);
@@ -296,8 +296,8 @@ if (!isset($data["sourceDb"]->source_id)) {
                     } else {
                         $familyDb = $db_functions->get_family($connectDb->connect_connect_id);
 
-                        if ($familyDb->fam_man) {
-                            $personDb = $db_functions->get_person($familyDb->fam_man);
+                        if ($familyDb->partner1_id) {
+                            $personDb = $db_functions->get_person_with_id($familyDb->partner1_id);
                             // *** Person url example (optional: "main_person=I23"): http://localhost/humo-genealogy/family/2/F10?main_person=I23/ ***
                             $url = $personLink->get_person_link($personDb);
                             $privacy = $personPrivacy->get_privacy($personDb);
@@ -305,8 +305,8 @@ if (!isset($data["sourceDb"]->source_id)) {
                             echo ' <a href="' . $url . '">' . $name["standard_name"] . '</a>';
                         }
 
-                        if ($familyDb->fam_woman) {
-                            $personDb = $db_functions->get_person($familyDb->fam_woman);
+                        if ($familyDb->partner2_id) {
+                            $personDb = $db_functions->get_person_with_id($familyDb->partner2_id);
                             // *** Person url example (optional: "main_person=I23"): http://localhost/humo-genealogy/family/2/F10?main_person=I23/ ***
                             $url = $personLink->get_person_link($personDb);
                             $privacy = $personPrivacy->get_privacy($personDb);

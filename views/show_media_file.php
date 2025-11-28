@@ -65,14 +65,13 @@ if (isset($_GET['page']) && $_GET['page'] == 'show_media_file' && isset($_GET['m
             $file_allowed = false;
         }
     } elseif ($media_qryDb && $media_qryDb->event_connect_kind === 'family') {
-        $qry2 = $db_functions->get_family_with_id($media_qryDb->relation_id);
-        $family_qry = $dbh->query($qry2);
-        $family_qryDb2 = $family_qry->fetch(PDO::FETCH_OBJ);
+        // TODO: only need partners from family table.
+        $family_qryDb2 = $db_functions->get_family_with_id($media_qryDb->relation_id);
 
-        $personmnDb = $db_functions->get_person($family_qryDb2->fam_man);
+        $personmnDb = $db_functions->get_person($family_qryDb2->partner1_gedcomnumber);
         $man_privacy = $personPrivacy->get_privacy($personmnDb);
 
-        $personwmnDb = $db_functions->get_person($family_qryDb2->fam_woman);
+        $personwmnDb = $db_functions->get_person($family_qryDb2->partner2_gedcomnumber);
         $woman_privacy = $personPrivacy->get_privacy($personwmnDb);
 
         // *** Only use this picture if both man and woman have disabled privacy options ***

@@ -997,15 +997,17 @@ class PersonData
             // *** Use a link for multiple marriages by parent2 ***
             // TODO improve extended view.
             if ($person_kind == 'parent2') {
-                $marriage_array = explode(";", $personDb->pers_fams);
-                if (isset($marriage_array[1])) {
-
+                $relations = $db_functions->get_relations($personDb->pers_id);
+                // *** Only show if there are multiple relations. If there is 1 relation, it's allready shown ***
+                if (isset($relations) && count($relations) > 1) {
                     // *** Show marriage line ar new line ***
                     $process_text .= "<br>\n";
 
-                    foreach ($marriage_array as $i => $value) {
+                    $i = -1;
+                    foreach ($relations as $relation) {
+                        $i++;
                         $marriagenr = $i + 1;
-                        $parent2_famDb = $db_functions->get_family($marriage_array[$i]);
+                        $parent2_famDb = $db_functions->get_family_with_id($relation->relation_id);
                         // *** Use a class for marriage ***
                         // Construct for marriage privacy filter is missing? Probably not needed here because no dates are shown.
                         $parent2_marr_cls = new MarriageCls;
@@ -1018,12 +1020,12 @@ class PersonData
                         }
 
                         if ($swap_parent1_parent2 == true) {
-                            $parent2Db = $db_functions->get_person($parent2_famDb->fam_woman);
+                            $parent2Db = $db_functions->get_person($parent2_famDb->partner2_gedcomnumber);
                         } else {
-                            $parent2Db = $db_functions->get_person($parent2_famDb->fam_man);
+                            $parent2Db = $db_functions->get_person($parent2_famDb->partner1_gedcomnumber);
                         }
 
-                        if ($id == $marriage_array[$i]) {
+                        if ($id == $relation->relation_gedcomnumber) {
                             //if ($process_text) $process_text .= ',';
                             if ($process_text and $marriagenr > 1) {
                                 $process_text .= ',';
@@ -1252,17 +1254,19 @@ class PersonData
         $personName = new PersonName();
 
         $child_marriage = '';
-        if (!$botDetector->isBot() && $person_kind == 'child' && $personDb->pers_fams) {
-            $marriage_array = explode(";", $personDb->pers_fams);
-            $nr_marriages = count($marriage_array);
-            for ($x = 0; $x <= $nr_marriages - 1; $x++) {
-                $fam_partnerDb = $db_functions->get_family($marriage_array[$x]);
+        $relations = $db_functions->get_relations($personDb->pers_id);
+        if (!$botDetector->isBot() && $person_kind == 'child' && isset($relations) && count($relations) > 0) {
+            $nr_marriages = count($relations);
+            $x = -1;
+            foreach ($relations as $relation) {
+                $x++;
+                $fam_partnerDb = $db_functions->get_family_with_id($relation->relation_id);
 
                 // *** This check is better then a check like: $personDb->pers_sexe=='F', because of unknown sexe or homosexual relations. ***
-                if ($personDb->pers_gedcomnumber == $fam_partnerDb->fam_man) {
-                    $partner_id = $fam_partnerDb->fam_woman;
+                if ($personDb->pers_gedcomnumber == $fam_partnerDb->partner1_gedcomnumber) {
+                    $partner_id = $fam_partnerDb->partner2_gedcomnumber;
                 } else {
-                    $partner_id = $fam_partnerDb->fam_man;
+                    $partner_id = $fam_partnerDb->partner1_gedcomnumber;
                 }
 
                 //$relation_short=__('&');

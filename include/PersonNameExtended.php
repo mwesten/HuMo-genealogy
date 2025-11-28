@@ -136,9 +136,9 @@ class PersonNameExtended
                 $person_kind = '';
             }
 
-            //if (($person_kind=='child' OR $person_kind=='outline') AND $personDb->pers_fams){
             // *** 02-08-2021: also add link to partner in family screen ***
-            if (($person_kind == 'child' || $person_kind == 'outline' || $person_kind == 'parent2') && $personDb->pers_fams && $screen_mode != "PDF") {
+            $relations = $db_functions->get_relations($personDb->pers_id);
+            if (($person_kind == 'child' || $person_kind == 'outline' || $person_kind == 'parent2') && isset($relations) && count($relations) > 0  && $screen_mode != "PDF") {
                 $templ_name["name_name"] = $standard_name;
 
                 // *** Person url example (optional: "main_person=I23"): http://localhost/humo-genealogy/family/2/F10?main_person=I23/ ***
@@ -199,7 +199,7 @@ class PersonNameExtended
             /**
              * Show: son of/ daughter of/ child of name-father & name-mother
              */
-            if (($person_kind == 'parent1' || $person_kind == 'parent2') && $personDb->pers_famc) {
+            if (($person_kind == 'parent1' || $person_kind == 'parent2') && $personDb->parent_relation_id) {
                 if ($personDb->pers_sexe == 'M') {
                     $text_parents .= __('son of') . ' ';
                 }
@@ -220,11 +220,11 @@ class PersonNameExtended
                 }
 
                 // *** Find parents ID ***
-                $parents_familyDb = $db_functions->get_family($personDb->pers_famc);
+                $parents_familyDb = $db_functions->get_family_with_id($personDb->parent_relation_id);
 
                 // *** Father ***
-                if ($parents_familyDb->fam_man) {
-                    $fatherDb = $db_functions->get_person($parents_familyDb->fam_man);
+                if ($parents_familyDb->partner1_gedcomnumber) {
+                    $fatherDb = $db_functions->get_person($parents_familyDb->partner1_gedcomnumber);
                     $privacy_father = $personPrivacy->get_privacy($fatherDb);
                     $name = $personName->get_person_name($fatherDb, $privacy_father);
                     $templ_name["name_parents"] .= $name["standard_name"];
@@ -253,8 +253,8 @@ class PersonNameExtended
                 $text .= ' ' . __('and') . ' ';
 
                 // *** Mother ***
-                if ($parents_familyDb->fam_woman) {
-                    $motherDb = $db_functions->get_person($parents_familyDb->fam_woman);
+                if ($parents_familyDb->partner2_id) {
+                    $motherDb = $db_functions->get_person_with_id($parents_familyDb->partner2_id);
                     $privacy_mother = $personPrivacy->get_privacy($motherDb);
                     $name = $personName->get_person_name($motherDb, $privacy_mother);
                     $templ_name["name_parents"] .= $name["standard_name"];
@@ -303,8 +303,8 @@ class PersonNameExtended
                     $parents_familyDb = $db_functions->get_family($famc_adoptiveDb->event_event);
 
                     //*** Father ***
-                    if (isset($parents_familyDb->fam_man) && $parents_familyDb->fam_man) {
-                        $fatherDb = $db_functions->get_person($parents_familyDb->fam_man);
+                    if (isset($parents_familyDb->partner1_gedcomnumber) && $parents_familyDb->partner1_gedcomnumber) {
+                        $fatherDb = $db_functions->get_person($parents_familyDb->partner1_gedcomnumber);
                         $privacy_father = $personPrivacy->get_privacy($fatherDb);
                         $name = $personName->get_person_name($fatherDb, $privacy_father);
 
@@ -324,8 +324,8 @@ class PersonNameExtended
                     $text .= ' ' . __('and') . ' ';
 
                     //*** Mother ***
-                    if (isset($parents_familyDb->fam_woman) && $parents_familyDb->fam_woman) {
-                        $motherDb = $db_functions->get_person($parents_familyDb->fam_woman);
+                    if (isset($parents_familyDb->partner2_gedcomnumber) && $parents_familyDb->partner2_gedcomnumber) {
+                        $motherDb = $db_functions->get_person($parents_familyDb->partner2_gedcomnumber);
                         $privacy_mother = $personPrivacy->get_privacy($motherDb);
                         $name = $personName->get_person_name($motherDb, $privacy_mother);
                         $templ_name["name_parents"] .= $name["standard_name"];
@@ -336,10 +336,10 @@ class PersonNameExtended
                     }
 
                     $url = '';
-                    if (isset($parents_familyDb->fam_man) && $parents_familyDb->fam_man) {
+                    if (isset($parents_familyDb->partner1_gedcomnumber) && $parents_familyDb->partner1_gedcomnumber) {
                         // *** Person url example (optional: "main_person=I23"): http://localhost/humo-genealogy/family/2/F10?main_person=I23/ ***
                         $url = $personLink->get_person_link($fatherDb);
-                    } elseif (isset($parents_familyDb->fam_woman) && $parents_familyDb->fam_woman) {
+                    } elseif (isset($parents_familyDb->partner2_gedcomnumber) && $parents_familyDb->partner2_gedcomnumber) {
                         // *** Person url example (optional: "main_person=I23"): http://localhost/humo-genealogy/family/2/F10?main_person=I23/ ***
                         $url = $personLink->get_person_link($motherDb);
                     }
@@ -390,8 +390,8 @@ class PersonNameExtended
                         $family_parents2Db = $db_functions->get_family($famc_adoptiveDb->event_event, 'man-woman');
 
                         //*** Father ***
-                        if ($family_parents2Db->fam_man) {
-                            $fatherDb = $db_functions->get_person($family_parents2Db->fam_man);
+                        if ($family_parents2Db->partner1_gedcomnumber) {
+                            $fatherDb = $db_functions->get_person($family_parents2Db->partner1_gedcomnumber);
                             $privacy_father = $personPrivacy->get_privacy($fatherDb);
                             $name = $personName->get_person_name($fatherDb, $privacy_father);
                             $templ_name["name_parents"] .= $name["standard_name"];
@@ -409,8 +409,8 @@ class PersonNameExtended
                         $text .= ' ' . __('and');
 
                         //*** Mother ***
-                        if ($family_parents2Db->fam_woman) {
-                            $motherDb = $db_functions->get_person($family_parents2Db->fam_woman);
+                        if ($family_parents2Db->partner2_gedcomnumber) {
+                            $motherDb = $db_functions->get_person($family_parents2Db->partner2_gedcomnumber);
                             $privacy_mother = $personPrivacy->get_privacy($motherDb);
                             $name = $personName->get_person_name($motherDb, $privacy_mother);
                             $templ_name["name_parents"] .= ' ' . $name["standard_name"];

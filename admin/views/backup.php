@@ -1,7 +1,8 @@
 <?php
 // *** Original script made by Yossi ***
-// *** feb. 2023: Rebuild this script by Huub. Multiple backups will be stored on server. ***
+// *** feb. 2023: rebuild this script by Huub. Multiple backups will be stored on server. ***
 // *** Jan. 2025: added tab's ***
+// *** Nov. 2025: improved restore function to first remove foreign key constraints ***
 
 // *** Safety line ***
 if (!defined('ADMIN_PAGE')) {
@@ -189,19 +190,21 @@ function backup_tables($dbh)
         $tables[] = $row[0];
     }
 
+    // *** SORT TABLES BY DEPENDENCY ORDER ***
+    $ordered_tables = order_tables_by_dependencies($tables, $dbh);
+
     // *** Count rows in all tables ***
     $total_rows = 0;
     foreach ($tables as $table) {
         // *** Skip tables names that contains a space in it ***
         if (strpos($table, ' ')) {
-            //
-        } else {
-            $result = $dbh->query('SELECT COUNT(*) as counter FROM ' . $table);
-            $resultDb = $result->fetch(PDO::FETCH_OBJ);
-            $count_text = $resultDb->counter;
-            if (isset($count_text) and is_numeric($count_text)) {
-                $total_rows += $count_text;
-            }
+            continue;
+        }
+        $result = $dbh->query('SELECT COUNT(*) as counter FROM ' . $table);
+        $resultDb = $result->fetch(PDO::FETCH_OBJ);
+        $count_text = $resultDb->counter;
+        if (isset($count_text) and is_numeric($count_text)) {
+            $total_rows += $count_text;
         }
     }
     $devider = floor($total_rows / 100);
@@ -224,13 +227,20 @@ function backup_tables($dbh)
     $name = 'backup_files/' . date('Y_m_d_H_i') . '_humo-genealogy_backup.sql';
     $handle = fopen($name, 'w+');
 
+
+    // *** ADD FOREIGN KEY DISABLE AT START ***
+    $return = "SET FOREIGN_KEY_CHECKS = 0;\n\n";
+
     // *** 22-10-2022: Needed for PHP 8.0 ***
-    $return = "\n\n" . 'SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";' . "\n\n";
+    $return .= 'SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";' . "\n\n";
     fwrite($handle, $return);
 
     $count_rows = 0;
     $perc = 0;
-    foreach ($tables as $table) {
+    //foreach ($tables as $table) {
+    // *** USE ORDERED TABLES ***
+    foreach ($ordered_tables as $table) {
+
         // *** Skip tables names that contains a space in it ***
         if (strpos($table, ' ')) {
             // *** Show progress ***
@@ -303,6 +313,10 @@ function backup_tables($dbh)
         }
     }
 
+    // *** RE-ENABLE FOREIGN KEY CHECKS AT END ***
+    $return = "\n\nSET FOREIGN_KEY_CHECKS = 1;\n";
+    fwrite($handle, $return);
+
     //fwrite($handle,$return);
     fclose($handle);
 
@@ -317,6 +331,43 @@ function backup_tables($dbh)
     ?>
     <div><?= __('A backup file was saved to the server. We strongly suggest you download a copy to your computer in case you might need it later.'); ?></div>
     <?php
+}
+
+function order_tables_by_dependencies($tables)
+{
+    // *** Define correct order based on foreign key dependencies ***
+    $ordered = [
+        'humo_trees',
+        'humo_users',
+        'humo_groups',
+        'humo_location',
+        'humo_persons',
+        'humo_families',
+        'humo_relations_table',
+        'humo_relations_persons',
+        'humo_events',
+        'humo_connections',
+        'humo_sources',
+        'humo_addresses',
+        'humo_repositories'
+    ];
+
+    // Add any remaining tables not in the predefined order
+    $result = [];
+    foreach ($ordered as $table) {
+        if (in_array($table, $tables)) {
+            $result[] = $table;
+        }
+    }
+
+    // Add any tables not in our predefined list
+    foreach ($tables as $table) {
+        if (!in_array($table, $result)) {
+            $result[] = $table;
+        }
+    }
+
+    return $result;
 }
 
 // *** Restore function ***
@@ -344,6 +395,23 @@ function restore_tables($filename, $dbh)
     // Read entire file
     if ($zip_success == 1 && is_file($filename) && substr($filename, -4) === ".sql") {
         // wipe contents of database. We don't do this until we know we've got a proper backup file to work with.
+
+        // *** Added nov. 2025: Remove foreign key constraints first ***
+        $constraints_result = $dbh->query("
+            SELECT CONSTRAINT_NAME, TABLE_NAME 
+            FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE 
+            WHERE REFERENCED_TABLE_SCHEMA = DATABASE() 
+            AND REFERENCED_TABLE_NAME IS NOT NULL
+        ");
+
+        while ($constraint = $constraints_result->fetch()) {
+            try {
+                $dbh->query("ALTER TABLE " . $constraint['TABLE_NAME'] . " DROP FOREIGN KEY " . $constraint['CONSTRAINT_NAME']);
+            } catch (PDOException $e) {
+                // Ignore errors if constraint doesn't exist
+            }
+        }
+
         $result = $dbh->query("show tables");
         while ($table = $result->fetch()) {
             $dbh->query("DROP TABLE " . $table[0]);

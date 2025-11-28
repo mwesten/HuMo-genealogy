@@ -96,13 +96,16 @@ foreach ($familytrees as $familytree) {
                 generateSitemap($loc, 'sitemap' . $filenumber . '.xml');
                 unset($loc);
             }
-
-            //}
         }
 
         // *** Get all single persons ***
-        $person_qry = $dbh->query("SELECT pers_tree_id, pers_famc, pers_fams, pers_gedcomnumber, pers_own_code FROM humo_persons
-            WHERE pers_tree_id='" . $familytree->tree_id . "' AND pers_famc='' AND pers_fams=''");
+        $person_qry = $dbh->query(
+            "SELECT p.pers_tree_id, p.pers_gedcomnumber, p.pers_own_code
+            FROM humo_persons p WHERE p.pers_tree_id = '" . $familytree->tree_id . "'
+            AND p.pers_id NOT IN (
+                SELECT person_id FROM humo_relations_persons WHERE tree_id = '" . $familytree->tree_id . "'
+            )"
+        );
         while ($personDb = $person_qry->fetch(PDO::FETCH_OBJ)) {
             //$privacy=$personPrivacy->get_privacy($personDb);
 
@@ -130,13 +133,6 @@ foreach ($familytrees as $familytree) {
 
                 // A single person doesn't have a famc or fams.
                 $pers_family = '';
-                //if ($personDb->pers_famc) {
-                //    $pers_family = $personDb->pers_famc;
-                //}
-                //if ($personDb->pers_fams) {
-                //    $pers_fams = explode(';', $personDb->pers_fams);
-                //    $pers_family = $pers_fams[0];
-                //}
 
                 if ($humo_option["url_rewrite"] == "j") {
                     $person_url = $uri_path . '/family/' . $familytree->tree_id . '/' . $pers_family . '?main_person=' . $personDb->pers_gedcomnumber;

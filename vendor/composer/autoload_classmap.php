@@ -31,6 +31,7 @@ return array(
     'Genealogy\\Include\\LanguagePersonName' => $baseDir . '/include/LanguagePersonName.php',
     'Genealogy\\Include\\MarriageCls' => $baseDir . '/include/MarriageCls.php',
     'Genealogy\\Include\\MediaPath' => $baseDir . '/include/MediaPath.php',
+    'Genealogy\\Include\\OrderChildren' => $baseDir . '/include/OrderChildren.php',
     'Genealogy\\Include\\ParseGedcomDate' => $baseDir . '/include/ParseGedcomDate.php',
     'Genealogy\\Include\\PersonData' => $baseDir . '/include/PersonData.php',
     'Genealogy\\Include\\PersonLink' => $baseDir . '/include/PersonLink.php',

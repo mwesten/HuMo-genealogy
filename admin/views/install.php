@@ -61,11 +61,6 @@ if (!isset($_POST['install_tables2'])) {
         $check_stat_country = ' checked';
     }
 
-    $check_location = '';
-    if (isset($_POST["table_location"]) || !$install['table_location']) {
-        $check_location = ' checked';
-    }
-
     $username_admin = 'admin';
     if (isset($_POST["username_admin"])) {
         $username_admin = $_POST["username_admin"];
@@ -167,11 +162,6 @@ if (!isset($_POST['install_tables2'])) {
             <label class="form-check-label"><?= __('(Re) create all family tree tables. <b>*** ALL EXISTING FAMILY TREES WILL BE REMOVED! ***</b>'); ?></label>
         </div>
 
-        <div class="form-check">
-            <input type="checkbox" class="form-check-input" name="table_location" <?= $check_location; ?> <?= !$install['table_location'] ? 'disabled' : ''; ?>>
-            <label class="form-check-label"><?= __('(Re) create location table. <b>This is the general table for all places.</b>'); ?></label>
-        </div>
-
         <?php if (isset($_POST['install_tables'])) { ?>
             <p><?= __('Install'); ?>
                 <input type="submit" name="install_tables2" value="<?= __('Yes'); ?>" class="btn btn-sm btn-danger">
@@ -219,7 +209,7 @@ if (isset($_POST['install_tables2'])) {
         // *** Other settings are saved in the table in file: settingsGlobal.php ***
 
         // *** Update status number. Number must be: update_status+1! ***
-        $dbh->query("INSERT INTO humo_settings (setting_variable,setting_value) values ('update_status','20')");
+        $dbh->query("INSERT INTO humo_settings (setting_variable,setting_value) values ('update_status','21')");
     }
 
     if (!$install['table_stat_date'] || isset($_POST["table_stat_date"])) {
@@ -508,23 +498,6 @@ if (isset($_POST['install_tables2'])) {
             ) DEFAULT CHARSET=utf8");
     }
 
-    if (!$install['table_location'] || isset($_POST["table_location"])) {
-        try {
-            $dbh->query("DROP TABLE humo_location");
-        } catch (Exception $e) {
-            //
-        }
-        printf(__('create table: %s.'), 'humo_location');
-        echo '<br>';
-        $dbh->query("CREATE TABLE humo_location (
-            location_id INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
-            location_location VARCHAR(120) CHARACTER SET utf8,
-            location_lat FLOAT(10,6),
-            location_lng FLOAT(10,6),
-            location_status TEXT
-            ) DEFAULT CHARSET=utf8");
-    }
-
     if (!$install['table_stat_country'] || isset($_POST["table_stat_country"])) {
         try {
             $dbh->query("DROP TABLE humo_stat_country");
@@ -580,6 +553,7 @@ if (isset($_POST['install_tables2'])) {
             tree_privacy=''";
         $dbh->query($sql);
 
+        // *** Texts ***
         try {
             $dbh->query("DROP TABLE humo_tree_texts");
         } catch (Exception $e) {
@@ -608,6 +582,101 @@ if (isset($_POST['install_tables2'])) {
         unset($_SESSION['admin_tree_prefix']);
         unset($_SESSION['admin_tree_id']);
 
+        // *** Events ***
+        try {
+            $dbh->query("DROP TABLE humo_events");
+        } catch (Exception $e) {
+            //
+        }
+        printf(__('create table: %s.'), 'humo_events');
+        echo '<br>';
+        $dbh->query("CREATE TABLE humo_events (
+            event_id INT(10) unsigned NOT NULL auto_increment,
+            event_tree_id smallint(5),
+            event_gedcomnr varchar(25) CHARACTER SET utf8,
+            event_order mediumint(6),
+            person_id INT UNSIGNED NULL,
+            relation_id INT UNSIGNED NULL,
+            event_connect_kind varchar(25) CHARACTER SET utf8,
+            event_connect_id varchar(25) DEFAULT NULL,
+            event_connect_kind2 varchar(25) CHARACTER SET utf8,
+            event_connect_id2 varchar(25) DEFAULT NULL,
+            event_pers_age varchar(15) CHARACTER SET utf8,
+            event_kind varchar(20) CHARACTER SET utf8,
+            event_event text CHARACTER SET utf8,
+            event_event_extra text CHARACTER SET utf8,
+            authority TEXT NULL,
+            stillborn VARCHAR(1) DEFAULT 'n',
+            cause VARCHAR(255) DEFAULT NULL,
+            cremation VARCHAR(1) DEFAULT NULL,
+            event_end_date VARCHAR(35) DEFAULT NULL,
+            event_gedcom varchar(20) CHARACTER SET utf8,
+            event_date varchar(40) CHARACTER SET utf8,
+            date_year INT NULL,
+            event_date_hebnight VARCHAR(10) CHARACTER SET utf8,
+            date_month TINYINT NULL,
+            date_day TINYINT NULL,
+            event_time VARCHAR(25) NULL,
+            place_id INT UNSIGNED NULL,
+            event_text text CHARACTER SET utf8,
+            event_quality varchar(1) CHARACTER SET utf8 DEFAULT '',
+            event_new_user_id smallint NULL DEFAULT NULL,
+            event_new_datetime datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            event_changed_user_id smallint NULL DEFAULT NULL,
+            event_changed_datetime datetime on update CURRENT_TIMESTAMP NULL DEFAULT NULL,
+            PRIMARY KEY (`event_id`),
+            KEY (event_tree_id),
+            KEY (event_connect_id),
+            KEY (event_connect_id2),
+            KEY (event_kind),
+            KEY (person_id),
+            KEY (relation_id),
+            KEY (place_id)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8");
+
+        // *** Create new relation_persons table ***
+        /*
+        Remark: partner 1 (father) and partner 2 (mother) could have different relation_order numbers if these persons have multiple relations.
+        In this schema, "relation_order" indicates the order of a child in a relationship, or the order of a relation connected to a person (partner).
+        Field "partner_order" is used for first (man) and second (woman) person in a relation.
+        Example:
+        relation_id - person_id - relation_type - relation_order - partner_order
+        1             1           partner         1                1 (man)
+        1             2           partner         1                2 (woman)
+        1             3           child           1                1
+        1             4           child           2                1
+        2             3           partner         1                1 (man)
+        2             2           partner         2                2 (woman)
+        2             5           child           1                1
+        */
+        try {
+            $dbh->query("DROP TABLE humo_relations_persons");
+        } catch (Exception $e) {
+            //
+        }
+        printf(__('create table: %s.'), 'humo_relations_persons');
+        echo '<br>';
+        $dbh->exec("
+            CREATE TABLE humo_relations_persons (
+                id INT UNSIGNED AUTO_INCREMENT,
+                relation_id INT UNSIGNED NOT NULL,
+                relation_gedcomnumber VARCHAR(30) DEFAULT NULL,
+                person_id INT UNSIGNED NOT NULL,
+                person_gedcomnumber VARCHAR(30) DEFAULT NULL,
+                person_age VARCHAR(15) CHARACTER SET utf8,
+                tree_id SMALLINT(5) NOT NULL,
+                relation_type VARCHAR(20) DEFAULT NULL,
+                relation_order TINYINT UNSIGNED DEFAULT NULL,
+                partner_order TINYINT UNSIGNED DEFAULT 1,
+                PRIMARY KEY (id),
+                INDEX idx_relation_id (relation_id),
+                INDEX idx_relation_gedcomnumber (relation_gedcomnumber),
+                INDEX idx_person_id (person_id),
+                INDEX idx_person_gedcomnumber (person_gedcomnumber),
+                INDEX idx_relation_type (relation_type)
+            );
+        ");
+
         // *** Persons ***
         try {
             $dbh->query("DROP TABLE humo_persons");
@@ -621,8 +690,6 @@ if (isset($_POST['install_tables2'])) {
             pers_gedcomnumber varchar(25) CHARACTER SET utf8,
             pers_tree_id mediumint(7),
             pers_tree_prefix varchar(10) CHARACTER SET utf8,
-            pers_famc varchar(50) CHARACTER SET utf8,
-            pers_fams varchar(150) CHARACTER SET utf8,
             pers_indexnr varchar(25) CHARACTER SET utf8,
             pers_firstname varchar(60) CHARACTER SET utf8,
             pers_prefix varchar(20) CHARACTER SET utf8,
@@ -659,11 +726,6 @@ if (isset($_POST['install_tables2'])) {
             fam_id INT(10) unsigned NOT NULL auto_increment,
             fam_tree_id mediumint(7),
             fam_gedcomnumber varchar(25) CHARACTER SET utf8,
-            fam_man varchar(25) CHARACTER SET utf8,
-            fam_man_age varchar(15) CHARACTER SET utf8,
-            fam_woman varchar(25) CHARACTER SET utf8,
-            fam_woman_age varchar(15) CHARACTER SET utf8,
-            fam_children text CHARACTER SET utf8,
             fam_kind varchar(50) CHARACTER SET utf8,
             fam_religion varchar(50) CHARACTER SET utf8,
             fam_text text CHARACTER SET utf8,
@@ -677,9 +739,7 @@ if (isset($_POST['install_tables2'])) {
             fam_changed_datetime datetime on update CURRENT_TIMESTAMP NULL DEFAULT NULL,
             PRIMARY KEY (`fam_id`),
             KEY (fam_tree_id),
-            KEY (fam_gedcomnumber),
-            KEY (fam_man),
-            KEY (fam_woman)
+            KEY (fam_gedcomnumber)
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8");
 
         // *** Unprocessed tags ***
@@ -874,68 +934,41 @@ if (isset($_POST['install_tables2'])) {
             KEY (address_gedcomnr)
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8");
 
-        // *** Events ***
+        // *** Location/ places ***
         try {
-            $dbh->query("DROP TABLE humo_events");
+            $dbh->query("DROP TABLE humo_location");
         } catch (Exception $e) {
             //
         }
-        printf(__('create table: %s.'), 'humo_events');
+        printf(__('create table: %s.'), 'humo_location');
         echo '<br>';
-        $dbh->query("CREATE TABLE humo_events (
-            event_id INT(10) unsigned NOT NULL auto_increment,
-            event_tree_id smallint(5),
-            event_gedcomnr varchar(25) CHARACTER SET utf8,
-            event_order mediumint(6),
-            person_id INT UNSIGNED NULL,
-            relation_id INT UNSIGNED NULL,
-            event_connect_kind varchar(25) CHARACTER SET utf8,
-            event_connect_id varchar(25) DEFAULT NULL,
-            event_connect_kind2 varchar(25) CHARACTER SET utf8,
-            event_connect_id2 varchar(25) DEFAULT NULL,
-            event_pers_age varchar(15) CHARACTER SET utf8,
-            event_kind varchar(20) CHARACTER SET utf8,
-            event_event text CHARACTER SET utf8,
-            event_event_extra text CHARACTER SET utf8,
-            authority TEXT NULL,
-            stillborn VARCHAR(1) DEFAULT 'n',
-            cause VARCHAR(255) DEFAULT NULL,
-            cremation VARCHAR(1) DEFAULT NULL,
-            event_end_date VARCHAR(35) DEFAULT NULL,
-            event_gedcom varchar(20) CHARACTER SET utf8,
-            event_date varchar(40) CHARACTER SET utf8,
-            date_year INT NULL,
-            event_date_hebnight VARCHAR(10) CHARACTER SET utf8,
-            date_month TINYINT NULL,
-            date_day TINYINT NULL,
-            event_time VARCHAR(25) NULL,
-            place_id INT UNSIGNED NULL,
-            event_text text CHARACTER SET utf8,
-            event_quality varchar(1) CHARACTER SET utf8 DEFAULT '',
-            event_new_user_id smallint NULL DEFAULT NULL,
-            event_new_datetime datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
-            event_changed_user_id smallint NULL DEFAULT NULL,
-            event_changed_datetime datetime on update CURRENT_TIMESTAMP NULL DEFAULT NULL,
-            PRIMARY KEY (`event_id`),
-            KEY (event_tree_id),
-            KEY (event_connect_id),
-            KEY (event_connect_id2),
-            KEY (event_kind),
-            KEY (person_id),
-            KEY (relation_id),
-            KEY (place_id)
-            ) ENGINE=InnoDB DEFAULT CHARSET=utf8");
+        $dbh->query("CREATE TABLE humo_location (
+            location_id INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+            location_location VARCHAR(120) CHARACTER SET utf8,
+            location_lat FLOAT(10,6),
+            location_lng FLOAT(10,6),
+            location_status TEXT
+            ) DEFAULT CHARSET=utf8");
+
 
         // *** Aug. 2025: add foreign key constraints ***
         $dbh->query("
-        ALTER TABLE humo_events
-        ADD CONSTRAINT fk_event_person
-            FOREIGN KEY (person_id) REFERENCES humo_persons(pers_id),
-        ADD CONSTRAINT fk_event_family
-            FOREIGN KEY (relation_id) REFERENCES humo_families(fam_id),
-        ADD CONSTRAINT fk_event_place
-            FOREIGN KEY (place_id) REFERENCES humo_location(location_id)
-        ");
+            ALTER TABLE humo_events
+            ADD CONSTRAINT fk_event_person
+                FOREIGN KEY (person_id) REFERENCES humo_persons(pers_id),
+            ADD CONSTRAINT fk_event_family
+                FOREIGN KEY (relation_id) REFERENCES humo_families(fam_id),
+            ADD CONSTRAINT fk_event_place
+                FOREIGN KEY (place_id) REFERENCES humo_location(location_id)
+            ");
+
+        // *** Add constraints ***
+        $dbh->exec("
+            ALTER TABLE humo_relations_persons
+            ADD CONSTRAINT fk_relation_person
+            FOREIGN KEY (person_id) REFERENCES humo_persons(pers_id)
+            ON DELETE CASCADE ON UPDATE CASCADE
+            ");
     }
     ?><br>
 

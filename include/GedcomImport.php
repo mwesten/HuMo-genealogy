@@ -10,6 +10,7 @@ namespace Genealogy\Include;
 
 use Genealogy\Include\EventManager;
 use PDO;
+use PDOException;
 
 class GedcomImport
 {
@@ -24,8 +25,16 @@ class GedcomImport
     private $event_nr, $event, $event_status;
     private $event_nr1, $event_nr2; // $event_nr1 = for 1st event level, $event_nr2 = for 2nd event level.
 
-    private $calculated_event_id, $calculated_connect_id;
+    //private $calculated_event_id;
+    // Nov 2025 REPLACED WITH:
+    private $calc_event_seq = 0;     // local counter per person/family scope
+    private $calc_to_real = [];      // [calcId => real event_id]
+
+    private $calculated_connect_id;
     //private $calculated_address_id;
+
+    private $relations_persons;
+    private $relations_persons_nr;
 
     private $eventManager;
 
@@ -45,6 +54,9 @@ class GedcomImport
         $this->event_nr1 = 0;
         $this->event_nr2 = 0;
 
+        unset($this->relations_persons);
+        $this->relations_persons_nr = 0;
+
         $this->eventManager = new EventManager($this->dbh);
 
         /**
@@ -54,9 +66,16 @@ class GedcomImport
          * And: LastInsertId() can't be used for 1 selected table (without insert).
          * May 2025: even AI suggested to do this.
          */
+
+        // Old method:
+        /*
         $dbh->query("INSERT INTO humo_events SET event_tree_id='" . $tree_id . "'");
         $this->calculated_event_id = $dbh->lastInsertId();
         $dbh->query("DELETE FROM humo_events WHERE event_id='" . $this->calculated_event_id . "'");
+        */
+        // New method:
+        $this->calc_event_seq = 0;
+        $this->calc_to_real = [];
 
         $dbh->query("INSERT INTO humo_connections SET connect_tree_id='" . $tree_id . "'");
         $this->calculated_connect_id = $dbh->lastInsertId();
@@ -102,8 +121,6 @@ class GedcomImport
         $pers_firstname = '';
         $pers_lastname = '';
         $pers_name_text = '';
-        $fams = '';
-        $pers_famc = '';
 
         $pers_birth_date = '';
         $pers_birth_time = '';
@@ -157,6 +174,7 @@ class GedcomImport
         //if ($this->gen_program=='HuMo-gen' OR $this->gen_program=='HuMo-genealogy'){
         //  $pers_alive='deceased';
         //}
+        $person["famc"] = '';
 
         $this->event_status = false;
 
@@ -304,28 +322,29 @@ class GedcomImport
             if ($this->level[1] == 'FAMC') {
                 // 1 FAMC @F1@
                 if ($this->buffer[8] === '1 FAMC @') {
-                    if ($pers_famc) {
+                    if ($person["famc"]) {
                         // *** Second famc, used for adoptive parents ***
                         $this->processed = true;
                         $famc = substr($this->buffer[0], 8, -1); // Needed for Aldfaer adoptive parents
                         if ($this->gen_program != 'ALDFAER') {
-                            $pers_famc2 = substr($this->buffer[0], 8, -1);
+                            $adoptive_relation_gedcomnumber = substr($this->buffer[0], 8, -1);
                             if ($this->add_tree == true || $this->reassign == true) {
-                                $pers_famc2 = $this->reassign_ged($pers_famc2, 'F');
+                                $adoptive_relation_gedcomnumber = $this->reassign_ged($adoptive_relation_gedcomnumber, 'F');
                             }
                             $this->event_nr++;
                             $this->event_nr1 = $this->event_nr;
-                            $this->calculated_event_id++;
+                            //$this->calculated_event_id++;
 
                             // *** Also save calculated_event_id in array, so it can be used to check event_id ***
-                            $this->event['calculated_event_id'][$this->event_nr1] = $this->calculated_event_id;
+                            //$this->event['calculated_event_id'][$this->event_nr1] = $this->calculated_event_id;
+                            $this->event['calculated_event_id'][$this->event_nr1] = (string)$this->allocCalcEventId();
                             $this->event['level'][$this->event_nr1] = '1';
                             $this->event['connect_kind'][$this->event_nr1] = 'person';
                             $this->event['connect_id'][$this->event_nr1] = $pers_gedcomnumber;
                             $this->event['connect_kind2'][$this->event_nr1] = '';
                             $this->event['connect_id2'][$this->event_nr1] = '';
                             $this->event['kind'][$this->event_nr1] = 'adoption';
-                            $this->event['event'][$this->event_nr1] = $pers_famc2;
+                            $this->event['event'][$this->event_nr1] = $adoptive_relation_gedcomnumber;
                             $this->event['event_extra'][$this->event_nr1] = '';
                             $this->event['gedcom'][$this->event_nr1] = 'FAMC';
                             $this->event['date'][$this->event_nr1] = '';
@@ -336,10 +355,18 @@ class GedcomImport
                         // *** Normal parents ***
                         $this->processed = true;
                         $famc = substr($this->buffer[0], 8, -1); // Needed for Aldfaer adoptive parents
-                        $pers_famc = substr($this->buffer[0], 8, -1);
+
+                        // *** At this moment only used for adoptive parents check ***
+                        $person["famc"] = substr($this->buffer[0], 8, -1);
                         if ($this->add_tree == true || $this->reassign == true) {
-                            $pers_famc = $this->reassign_ged($pers_famc, 'F');
+                            $person["famc"] = $this->reassign_ged($person["famc"], 'F');
                         }
+
+                        // TODO update preparations (maybe not needed to proces? Children should be in family part)
+                        //$this->relations_persons['person_gedcomnumber'][] = $pers_gedcomnumber;
+                        //$this->relations_persons['relation_type'][] = 'child';
+                        //$this->relations_persons['relation_gedcomnumber'] = $person["famc"];
+                        //$this->relations_persons['relation_type'][] = 'parent';
                     }
                 }
 
@@ -352,16 +379,18 @@ class GedcomImport
                 if ($this->buffer[7] === '2 PEDI ' && $this->buffer[0] !== '2 PEDI birth') {
                     // *** Adoption by person ***
                     $this->processed = true;
-                    $pers_famc2 = $famc;
+                    $adoptive_relation_gedcomnumber = $famc;
+
                     if ($this->add_tree == true || $this->reassign == true) {
-                        $pers_famc2 = $this->reassign_ged($famc, 'F');
+                        $adoptive_relation_gedcomnumber = $this->reassign_ged($famc, 'F');
                     }
                     $this->event_nr++;
                     $this->event_nr1 = $this->event_nr;
-                    $this->calculated_event_id++;
+                    //$this->calculated_event_id++;
 
                     // *** Also save calculated_event_id in array, so it can be used to check event_id ***
-                    $this->event['calculated_event_id'][$this->event_nr1] = $this->calculated_event_id;
+                    //$this->event['calculated_event_id'][$this->event_nr1] = $this->calculated_event_id;
+                    $this->event['calculated_event_id'][$this->event_nr1] = (string)$this->allocCalcEventId();
                     $this->event['level'][$this->event_nr1] = '1';
                     $this->event['connect_kind'][$this->event_nr1] = 'person';
                     $this->event['connect_id'][$this->event_nr1] = $pers_gedcomnumber;
@@ -369,20 +398,20 @@ class GedcomImport
                     $this->event['connect_id2'][$this->event_nr1] = '';
                     $this->event['kind'][$this->event_nr1] = 'adoption_by_person';
                     // *** BE AWARE: in gedcom_import.php step 4 further processing is done, famc is converted into a person number!!! ***
-                    $this->event['event'][$this->event_nr1] = $pers_famc2;
+                    $this->event['event'][$this->event_nr1] = $adoptive_relation_gedcomnumber;
                     $this->event['event_extra'][$this->event_nr1] = '';
                     $this->event['gedcom'][$this->event_nr1] = substr($this->buffer[0], 7); // *** adopted, steph, legal or foster. ***
                     $this->event['date'][$this->event_nr1] = '';
                     $this->event['text'][$this->event_nr1] = '';
                     $this->event['place'][$this->event_nr1] = '';
 
-                    if ($pers_famc == $famc) {
-                        $pers_famc = '';
-                    }
+                    //if ($person["famc"] == $famc) {
+                    //    $person["famc"] = '';
+                    //}
                 }
             }
 
-            // *** Own families ***
+            // *** Own relations ***
             // 1 FAMS @F5@
             // 1 FAMS @F11@
             if ($this->buffer[8] === '1 FAMS @') {
@@ -391,10 +420,11 @@ class GedcomImport
                 if ($this->add_tree == true || $this->reassign == true) {
                     $tempnr = $this->reassign_ged($tempnr, 'F');
                 }
-                $fams = $this->merge_texts($fams, ';', $tempnr);
-                // In GEDCOM file (FAMS is default, for own family):
-                // Aldfaer: first FAMC then FAMS
-                // Haza   : first FAMS then FAMC
+
+                // Only used to order relations (relation itself is processed using 1 HUSB and 1 WIFE).
+                $this->relations_persons_nr++;
+                $this->relations_persons['relation_gedcomnumber'][$this->relations_persons_nr] = $tempnr;
+                $this->relations_persons['relation_type'][$this->relations_persons_nr] = 'order';
             }
 
             // *** Name ***
@@ -488,10 +518,11 @@ class GedcomImport
                             $this->processed = true;
                             $this->event_nr++;
                             $this->event_nr1 = $this->event_nr;
-                            $this->calculated_event_id++;
+                            //$this->calculated_event_id++;
 
                             // *** Also save calculated_event_id in array, so it can be used to check event_id ***
-                            $this->event['calculated_event_id'][$this->event_nr1] = $this->calculated_event_id;
+                            //$this->event['calculated_event_id'][$this->event_nr1] = $this->calculated_event_id;
+                            $this->event['calculated_event_id'][$this->event_nr1] = (string)$this->allocCalcEventId();
                             $this->event['level'][$this->event_nr1] = '1';
                             $this->event['connect_kind'][$this->event_nr1] = 'person';
                             $this->event['connect_id'][$this->event_nr1] = $pers_gedcomnumber;
@@ -577,10 +608,11 @@ class GedcomImport
                     //$this->processed = true;
                     //$this->event_nr++;
                     //$this->event_nr1 = $this->event_nr;
-                    //$this->calculated_event_id++;
+                    ////$this->calculated_event_id++;
 
                     // *** Also save calculated_event_id in array, so it can be used to check event_id ***
-                    //$this->event['calculated_event_id'][$this->event_nr1] = $this->calculated_event_id;
+                    ////$this->event['calculated_event_id'][$this->event_nr1] = $this->calculated_event_id;
+                    //$this->event['calculated_event_id'][$this->event_nr1] = (string)$this->allocCalcEventId();
                     //$this->event['level'][$this->event_nr1] = '1'; 
                     //$this->event['connect_kind'][$this->event_nr1]='person';
                     //$this->event['connect_id'][$this->event_nr1]=$pers_gedcomnumber;
@@ -607,10 +639,11 @@ class GedcomImport
                     $this->processed = true;
                     $this->event_nr++;
                     $this->event_nr1 = $this->event_nr;
-                    $this->calculated_event_id++;
+                    //$this->calculated_event_id++;
 
                     // *** Also save calculated_event_id in array, so it can be used to check event_id ***
-                    $this->event['calculated_event_id'][$this->event_nr1] = $this->calculated_event_id;
+                    //$this->event['calculated_event_id'][$this->event_nr1] = $this->calculated_event_id;
+                    $this->event['calculated_event_id'][$this->event_nr1] = (string)$this->allocCalcEventId();
                     $this->event['level'][$this->event_nr1] = '1';
                     $this->event['connect_kind'][$this->event_nr1] = 'person';
                     $this->event['connect_id'][$this->event_nr1] = $pers_gedcomnumber;
@@ -630,10 +663,11 @@ class GedcomImport
                     $this->processed = true;
                     $this->event_nr++;
                     $this->event_nr1 = $this->event_nr;
-                    $this->calculated_event_id++;
+                    //$this->calculated_event_id++;
 
                     // *** Also save calculated_event_id in array, so it can be used to check event_id ***
-                    $this->event['calculated_event_id'][$this->event_nr1] = $this->calculated_event_id;
+                    //$this->event['calculated_event_id'][$this->event_nr1] = $this->calculated_event_id;
+                    $this->event['calculated_event_id'][$this->event_nr1] = (string)$this->allocCalcEventId();
                     $this->event['level'][$this->event_nr1] = '1';
                     $this->event['connect_kind'][$this->event_nr1] = 'person';
                     $this->event['connect_id'][$this->event_nr1] = $pers_gedcomnumber;
@@ -744,10 +778,11 @@ class GedcomImport
                     $this->processed = true;
                     $this->event_nr++;
                     $this->event_nr1 = $this->event_nr;
-                    $this->calculated_event_id++;
+                    //$this->calculated_event_id++;
 
                     // *** Also save calculated_event_id in array, so it can be used to check event_id ***
-                    $this->event['calculated_event_id'][$this->event_nr1] = $this->calculated_event_id;
+                    //$this->event['calculated_event_id'][$this->event_nr1] = $this->calculated_event_id;
+                    $this->event['calculated_event_id'][$this->event_nr1] = (string)$this->allocCalcEventId();
                     $this->event['level'][$this->event_nr1] = '1';
                     $this->event['connect_kind'][$this->event_nr1] = 'person';
                     $this->event['connect_id'][$this->event_nr1] = $pers_gedcomnumber;
@@ -846,10 +881,11 @@ class GedcomImport
                 $this->processed = true;
                 $this->event_nr++;
                 $this->event_nr1 = $this->event_nr;
-                $this->calculated_event_id++;
+                //$this->calculated_event_id++;
 
                 // *** Also save calculated_event_id in array, so it can be used to check event_id ***
-                $this->event['calculated_event_id'][$this->event_nr1] = $this->calculated_event_id;
+                //$this->event['calculated_event_id'][$this->event_nr1] = $this->calculated_event_id;
+                $this->event['calculated_event_id'][$this->event_nr1] = (string)$this->allocCalcEventId();
                 $this->event['level'][$this->event_nr1] = '1';
                 $this->event['connect_kind'][$this->event_nr1] = 'person';
                 $this->event['connect_id'][$this->event_nr1] = $pers_gedcomnumber;
@@ -1009,10 +1045,11 @@ class GedcomImport
                         $this->buffer[0] = trim($this->buffer[0]);
                         $this->event_nr++;
                         $this->event_nr1 = $this->event_nr;
-                        $this->calculated_event_id++;
+                        //$this->calculated_event_id++;
 
                         // *** Also save calculated_event_id in array, so it can be used to check event_id ***
-                        $this->event['calculated_event_id'][$this->event_nr1] = $this->calculated_event_id;
+                        //$this->event['calculated_event_id'][$this->event_nr1] = $this->calculated_event_id;
+                        $this->event['calculated_event_id'][$this->event_nr1] = (string)$this->allocCalcEventId();
                         $this->event['level'][$this->event_nr1] = '1';
                         //$this->event['connect_kind'][$this->event_nr1] = 'person';
                         $this->event['connect_kind'][$this->event_nr1] = 'birth_declaration';
@@ -1157,10 +1194,11 @@ class GedcomImport
                         $this->buffer[0] = trim($this->buffer[0]);
                         $this->event_nr++;
                         $this->event_nr1 = $this->event_nr;
-                        $this->calculated_event_id++;
+                        //$this->calculated_event_id++;
 
                         // *** Also save calculated_event_id in array, so it can be used to check event_id ***
-                        $this->event['calculated_event_id'][$this->event_nr1] = $this->calculated_event_id;
+                        //$this->event['calculated_event_id'][$this->event_nr1] = $this->calculated_event_id;
+                        $this->event['calculated_event_id'][$this->event_nr1] = (string)$this->allocCalcEventId();
                         $this->event['level'][$this->event_nr1] = '1';
                         //$this->event['connect_kind'][$this->event_nr1] = 'person';
                         $this->event['connect_kind'][$this->event_nr1] = 'CHR';
@@ -1333,10 +1371,11 @@ class GedcomImport
                         $this->buffer[0] = trim($this->buffer[0]);
                         $this->event_nr++;
                         $this->event_nr1 = $this->event_nr;
-                        $this->calculated_event_id++;
+                        //$this->calculated_event_id++;
 
                         // *** Also save calculated_event_id in array, so it can be used to check event_id ***
-                        $this->event['calculated_event_id'][$this->event_nr1] = $this->calculated_event_id;
+                        //$this->event['calculated_event_id'][$this->event_nr1] = $this->calculated_event_id;
+                        $this->event['calculated_event_id'][$this->event_nr1] = (string)$this->allocCalcEventId();
                         $this->event['level'][$this->event_nr1] = '1';
                         //$this->event['connect_kind'][$this->event_nr1] = 'person';
                         $this->event['connect_kind'][$this->event_nr1] = 'death_declaration';
@@ -1487,10 +1526,11 @@ class GedcomImport
                         $this->buffer[0] = trim($this->buffer[0]);
                         $this->event_nr++;
                         $this->event_nr1 = $this->event_nr;
-                        $this->calculated_event_id++;
+                        //$this->calculated_event_id++;
 
                         // *** Also save calculated_event_id in array, so it can be used to check event_id ***
-                        $this->event['calculated_event_id'][$this->event_nr1] = $this->calculated_event_id;
+                        //$this->event['calculated_event_id'][$this->event_nr1] = $this->calculated_event_id;
+                        $this->event['calculated_event_id'][$this->event_nr1] = (string)$this->allocCalcEventId();
                         $this->event['level'][$this->event_nr1] = '1';
                         //$this->event['connect_kind'][$this->event_nr1] = 'person';
                         $this->event['connect_kind'][$this->event_nr1] = 'BURI';
@@ -1617,10 +1657,11 @@ class GedcomImport
                     $this->processed = true;
                     $this->event_nr++;
                     $this->event_nr1 = $this->event_nr;
-                    $this->calculated_event_id++;
+                    //$this->calculated_event_id++;
 
                     // *** Also save calculated_event_id in array, so it can be used to check event_id ***
-                    $this->event['calculated_event_id'][$this->event_nr1] = $this->calculated_event_id;
+                    //$this->event['calculated_event_id'][$this->event_nr1] = $this->calculated_event_id;
+                    $this->event['calculated_event_id'][$this->event_nr1] = (string)$this->allocCalcEventId();
                     $this->event['level'][$this->event_nr1] = '1';
 
                     // 1 ASSO only used in Aldfaer GEDCOM 5.x?
@@ -1720,10 +1761,11 @@ class GedcomImport
                     $this->processed = true;
                     $this->event_nr++;
                     $this->event_nr1 = $this->event_nr;
-                    $this->calculated_event_id++;
+                    //$this->calculated_event_id++;
 
                     // *** Also save calculated_event_id in array, so it can be used to check event_id ***
-                    $this->event['calculated_event_id'][$this->event_nr1] = $this->calculated_event_id;
+                    //$this->event['calculated_event_id'][$this->event_nr1] = $this->calculated_event_id;
+                    $this->event['calculated_event_id'][$this->event_nr1] = (string)$this->allocCalcEventId();
                     $this->event['level'][$this->event_nr1] = '1';
                     $this->event['connect_kind'][$this->event_nr1] = 'person';
                     $this->event['connect_id'][$this->event_nr1] = $pers_gedcomnumber;
@@ -1794,10 +1836,11 @@ class GedcomImport
                     $this->processed = true;
                     $this->event_nr++;
                     $this->event_nr1 = $this->event_nr;
-                    $this->calculated_event_id++;
+                    //$this->calculated_event_id++;
 
                     // *** Also save calculated_event_id in array, so it can be used to check event_id ***
-                    $this->event['calculated_event_id'][$this->event_nr1] = $this->calculated_event_id;
+                    //$this->event['calculated_event_id'][$this->event_nr1] = $this->calculated_event_id;
+                    $this->event['calculated_event_id'][$this->event_nr1] = (string)$this->allocCalcEventId();
                     $this->event['level'][$this->event_nr1] = '1';
                     $this->event['connect_kind'][$this->event_nr1] = 'person';
                     $this->event['connect_id'][$this->event_nr1] = $pers_gedcomnumber;
@@ -1880,10 +1923,11 @@ class GedcomImport
 
                     $this->event_nr++;
                     $this->event_nr1 = $this->event_nr;
-                    $this->calculated_event_id++;
+                    //$this->calculated_event_id++;
 
                     // *** Also save calculated_event_id in array, so it can be used to check event_id ***
-                    $this->event['calculated_event_id'][$this->event_nr1] = $this->calculated_event_id;
+                    //$this->event['calculated_event_id'][$this->event_nr1] = $this->calculated_event_id;
+                    $this->event['calculated_event_id'][$this->event_nr1] = (string)$this->allocCalcEventId();
                     $this->event['level'][$this->event_nr1] = '1';
                     $this->event['connect_kind'][$this->event_nr1] = 'person';
                     $this->event['connect_id'][$this->event_nr1] = $pers_gedcomnumber;
@@ -1926,10 +1970,11 @@ class GedcomImport
                 $this->processed = true;
                 $this->event_nr++;
                 $this->event_nr1 = $this->event_nr;
-                $this->calculated_event_id++;
+                //$this->calculated_event_id++;
 
                 // *** Also save calculated_event_id in array, so it can be used to check event_id ***
-                $this->event['calculated_event_id'][$this->event_nr1] = $this->calculated_event_id;
+                //$this->event['calculated_event_id'][$this->event_nr1] = $this->calculated_event_id;
+                $this->event['calculated_event_id'][$this->event_nr1] = (string)$this->allocCalcEventId();
                 $this->event['level'][$this->event_nr1] = '1';
                 $this->event['connect_kind'][$this->event_nr1] = 'person';
                 $this->event['connect_id'][$this->event_nr1] = $pers_gedcomnumber;
@@ -2175,10 +2220,11 @@ class GedcomImport
                     $event_start = '';
                     $this->event_nr++;
                     $this->event_nr1 = $this->event_nr;
-                    $this->calculated_event_id++;
+                    //$this->calculated_event_id++;
 
                     // *** Also save calculated_event_id in array, so it can be used to check event_id ***
-                    $this->event['calculated_event_id'][$this->event_nr1] = $this->calculated_event_id;
+                    //$this->event['calculated_event_id'][$this->event_nr1] = $this->calculated_event_id;
+                    $this->event['calculated_event_id'][$this->event_nr1] = (string)$this->allocCalcEventId();
                     $this->event['level'][$this->event_nr1] = '1';
                     $this->event['connect_kind'][$this->event_nr1] = 'person';
                     $this->event['connect_id'][$this->event_nr1] = $pers_gedcomnumber;
@@ -2450,8 +2496,6 @@ class GedcomImport
             pers_gedcomnumber = :pers_gedcomnumber,
             pers_tree_id = :pers_tree_id,
             pers_tree_prefix = :pers_tree_prefix,
-            pers_fams = :pers_fams,
-            pers_famc = :pers_famc,
             pers_firstname = :pers_firstname,
             pers_lastname = :pers_lastname,
             pers_name_text = :pers_name_text,
@@ -2474,8 +2518,6 @@ class GedcomImport
             ':pers_gedcomnumber' => $pers_gedcomnumber,
             ':pers_tree_id' => $this->tree_id,
             ':pers_tree_prefix' => $this->tree_prefix,
-            ':pers_fams' => $fams,
-            ':pers_famc' => $pers_famc,
             ':pers_firstname' => $pers_firstname,
             ':pers_lastname' => $pers_lastname,
             ':pers_name_text' => $pers_name_text,
@@ -2501,6 +2543,37 @@ class GedcomImport
         }
 
         $pers_id = $this->dbh->lastInsertId();
+
+        // *** Save relations persons order for this person (1 FAMS) ***
+        // Relations are processed in family part (1 HUSB and 1 WIFE). Get order from persons part (1 FAMS).
+        // In step 4: read these lines, and set ORDER in relations_persons table.
+        $count_relations = $this->relations_persons_nr;
+        // Only needed to process order if there are multiple relations connected to this person. So $count_relations >1
+        if ($count_relations > 1) {
+            $sql = "INSERT IGNORE INTO humo_temp_relations_persons SET
+                tree_id = :tree_id,
+                relation_gedcomnumber = :relation_gedcomnumber,
+                person_id = :person_id,
+                person_gedcomnumber = :person_gedcomnumber,
+                relation_type = :relation_type,
+                relation_order = :relation_order";
+            $stmt = $this->dbh->prepare($sql);
+
+            for ($i = 1; $i <= $count_relations; $i++) {
+                if ($this->relations_persons['relation_type'][$i] === 'order') {
+                    $stmt->execute([
+                        ':tree_id' => $this->tree_id,
+                        ':relation_gedcomnumber' => $this->relations_persons['relation_gedcomnumber'][$i],
+                        ':person_id' => $pers_id,
+                        ':person_gedcomnumber' => $pers_gedcomnumber,
+                        ':relation_type' => $this->relations_persons['relation_type'][$i],
+                        ':relation_order' => $i
+                    ]);
+                }
+            }
+        }
+        unset($this->relations_persons);
+        $this->relations_persons_nr = 0;
 
         // *** Save unprocessed items ***
         if ($person["pers_unprocessed_tags"]) {
@@ -2632,6 +2705,9 @@ class GedcomImport
             for ($i = 1; $i <= $this->event_nr; $i++) {
                 $event_order++;
 
+                // BEFORE insert/update: fix picture_event_{calc} to picture_event_{real} if known
+                $this->resolvePictureEventKindForIndex($i);
+
                 // *** Level 2 event (picture or association) ***
                 if ($this->event['level'][$i] == '1') {
                     if ($check_event_kind != $this->event['kind'][$i]) {
@@ -2647,9 +2723,8 @@ class GedcomImport
                 }
 
 
-                // TODO check variable name. Should be general events?
                 //'event_date_hebnight' => isset($_POST["pers_birth_date_hebnight"]) ? $_POST["pers_birth_date_hebnight"] : ''
-                $birth_event = [
+                $general_event = [
                     'tree_id' => $this->tree_id,
                     'event_order' => $event_order,
                     'person_id' => $pers_id,
@@ -2663,16 +2738,22 @@ class GedcomImport
                     'event_text' => $this->event['text'][$i],
                 ];
                 if (isset($this->event['event'][$i])) {
-                    $birth_event['event_event'] = $this->event['event'][$i];
+                    $general_event['event_event'] = $this->event['event'][$i];
                 }
 
                 if (isset($this->event['connect_id2'][$i])) {
-                    $birth_event['event_connect_kind2'] = $this->event['connect_kind2'][$i];
-                    $birth_event['event_connect_id2'] = $this->event['connect_id2'][$i];
+                    $general_event['event_connect_kind2'] = $this->event['connect_kind2'][$i];
+                    $general_event['event_connect_id2'] = $this->event['connect_id2'][$i];
                 }
 
-                $this->eventManager->update_event($birth_event);
+                /// INSERT and capture real id
+                $realId = (int)$this->eventManager->update_event($general_event);
 
+                // Build calc → real mapping when this slot had a calc id
+                if (isset($this->event['calculated_event_id'][$i])) {
+                    $calc = (string)$this->event['calculated_event_id'][$i];
+                    $this->calc_to_real[$calc] = $realId;
+                }
 
                 //TEST LINES to check calculated_event_id.
                 //echo $this->event['calculated_event_id'][$i] . ' ';
@@ -2686,6 +2767,8 @@ class GedcomImport
             //echo ' '.memory_get_usage().'@ ';
         }
 
+        // After events are saved, remap pending event-id references in connections
+        $this->remapEventIdsInConnects();
 
         // *** Update of birth, baptise etc. is done after update of events table. Otherwise $this->event_nr will be wrong ***
         $update_birth = false;
@@ -2907,6 +2990,8 @@ class GedcomImport
 
     /**
      * Process families
+     * 
+     * Same couple ($second_marr): second marriage in BK program (in 1 @FAM part)
      */
     function process_family($family_array, $first_marr, $second_marr): void
     {
@@ -2944,8 +3029,7 @@ class GedcomImport
         $family["fam_relation_place_long"] = '';
         $family["fam_relation_text"] = '';
         $family["fam_relation_end_date"] = '';
-        $family["fam_man_age"] = '';
-        $family["fam_woman_age"] = '';
+        $family["check_partner1"] = false;
 
         $family["fam_marr_notice_date"] = '';
         $family["fam_marr_notice_place"] = '';
@@ -2983,10 +3067,7 @@ class GedcomImport
         $family["fam_marr_notice_date_hebnight"] = '';
         $family["fam_marr_church_date_hebnight"] = '';
         $family["fam_marr_church_notice_date_hebnight"] = '';
-        $heb_flag = '';
-        $fam_children = '';
-        $fam_man = 0;
-        $fam_woman = 0;
+        //$heb_flag = '';
 
         $this->event_status = false;
         $this->event_nr = 0;
@@ -3002,9 +3083,11 @@ class GedcomImport
         $this->buffer[0] = $line2[0];
         $gedcomnumber = substr($this->buffer[0], 3, -5);
 
+        // TODO check this
+        // create unique nr. if 1st is F23, then 2nd will be F23U1
         if ($second_marr > 0) {
             $gedcomnumber .= "U1";
-        }  // create unique nr. if 1st is F23, then 2nd will be F23U1
+        }
 
         if ($this->add_tree == true || $this->reassign == true) {
             $gedcomnumber = $this->reassign_ged($gedcomnumber, 'F');
@@ -3138,10 +3221,11 @@ class GedcomImport
                 $this->buffer[0] = trim($this->buffer[0]);
                 $this->event_nr++;
                 $this->event_nr1 = $this->event_nr;
-                $this->calculated_event_id++;
+                //$this->calculated_event_id++;
 
                 // *** Also save calculated_event_id in array, so it can be used to check event_id ***
-                $this->event['calculated_event_id'][$this->event_nr] = $this->calculated_event_id;
+                //$this->event['calculated_event_id'][$this->event_nr] = $this->calculated_event_id;
+                $this->event['calculated_event_id'][$this->event_nr] = (string)$this->allocCalcEventId();
                 $this->event['level'][$this->event_nr] = '1';
                 //$this->event['connect_kind'][$this->event_nr] = 'family';
                 $this->event['connect_kind'][$this->event_nr] = 'MARR';
@@ -3176,29 +3260,50 @@ class GedcomImport
 
             // *** Gedcomnumber man: 1 HUSB @I14@ ***
             if ($this->buffer[8] === '1 HUSB @') {
+                $family["check_partner1"] = true;
+
                 $this->processed = true;
-                $fam_man = substr($this->buffer[0], 8, -1);
+                $partner_gedcomnumber = substr($this->buffer[0], 8, -1);
                 if ($this->add_tree == true || $this->reassign == true) {
-                    $fam_man = $this->reassign_ged($fam_man, 'I');
+                    $partner_gedcomnumber = $this->reassign_ged($partner_gedcomnumber, 'I');
                 }
+
+                $this->relations_persons_nr++;
+                $partner1_index = $this->relations_persons_nr;
+                $this->relations_persons['person_gedcomnumber'][$this->relations_persons_nr] = $partner_gedcomnumber;
+                $this->relations_persons['person_age'][$this->relations_persons_nr] = '';
+                $this->relations_persons['relation_type'][$this->relations_persons_nr] = 'partner';
+                $this->relations_persons['partner_order'][$this->relations_persons_nr] = 1;
+
+                // Same couple ($second_marr): second marriage in BK program (in 1 @FAM part)
                 if ($second_marr > 0) {
-                    $this->dbh->query("UPDATE humo_persons SET pers_fams = CONCAT(pers_fams,';','" . $gedcomnumber . "')
-                        WHERE pers_tree_id='" . $this->tree_id . "' AND pers_gedcomnumber = '" . $fam_man . "'");
+                    //$this->dbh->query("UPDATE humo_persons SET pers_fams = CONCAT(pers_fams,';','" . $gedcomnumber . "')
+                    //    WHERE pers_tree_id='" . $this->tree_id . "' AND pers_gedcomnumber = '" . $partner_gedcomnumber . "'");
                 }
             }
 
             // *** Gedcomnumber woman: 1 WIFE @I14@ ***
             if ($this->buffer[8] === '1 WIFE @') {
                 $this->processed = true;
-                $fam_woman = substr($this->buffer[0], 8, -1);
+                $partner_gedcomnumber = substr($this->buffer[0], 8, -1);
                 if ($this->add_tree == true || $this->reassign == true) {
-                    $fam_woman = $this->reassign_ged($fam_woman, 'I');
+                    $partner_gedcomnumber = $this->reassign_ged($partner_gedcomnumber, 'I');
                 }
+
+                $this->relations_persons_nr++;
+                $partner2_index = $this->relations_persons_nr;
+                $this->relations_persons['person_gedcomnumber'][$this->relations_persons_nr] = $partner_gedcomnumber;
+                $this->relations_persons['person_age'][$this->relations_persons_nr] = '';
+                $this->relations_persons['relation_type'][$this->relations_persons_nr] = 'partner';
+                $this->relations_persons['partner_order'][$this->relations_persons_nr] = 2;
+
+                // Same couple ($second_marr): second marriage in BK program (in 1 @FAM part)
                 if ($second_marr > 0) {
-                    $this->dbh->query("UPDATE humo_persons SET pers_fams = CONCAT(pers_fams,';','" . $gedcomnumber . "')
-                        WHERE pers_tree_id='" . $this->tree_id . "' AND pers_gedcomnumber = '" . $fam_woman . "'");
+                    //$this->dbh->query("UPDATE humo_persons SET pers_fams = CONCAT(pers_fams,';','" . $gedcomnumber . "')
+                    //    WHERE pers_tree_id='" . $this->tree_id . "' AND pers_gedcomnumber = '" . $partner_gedcomnumber . "'");
                 }
             }
+
             // *** Gedcomnumbers children ***
             // 1 CHIL @I13@
             // 1 CHIL @I14@
@@ -3210,41 +3315,18 @@ class GedcomImport
                     if ($this->add_tree == true || $this->reassign == true) {
                         $tempnum = $this->reassign_ged($tempnum, 'I');
                     }
-                    $fam_children = $this->merge_texts($fam_children, ';', $tempnum);
+                    $this->relations_persons_nr++;
+                    $this->relations_persons['person_gedcomnumber'][$this->relations_persons_nr] = $tempnum;
+                    $this->relations_persons['relation_type'][$this->relations_persons_nr] = 'child';
                 }
 
+                // Oct. 2025: not sure if this code is still needed.
                 // *** Adoption by person, used in Legacy and RootsMagic ***
                 // 2 _FREL Adopted ===>>> Adopted by father.
                 // 2 _MREL Adopted ===>>> Adopted by mother.
                 /*
                 if ($this->buffer[7]=='2 _FREL' OR $this->buffer[7]=='2 _MREL'){
-                    $this->processed = true;
-                    $child_array=explode(";",$fam_children);
-                    $count_children=count($child_array);
-
-                    $this->event_nr++;
-                    $this->event_nr1 = $this->event_nr;
-                    $this->calculated_event_id++;
-
-                    // *** Also save calculated_event_id in array, so it can be used to check event_id ***
-                    $this->event['calculated_event_id'][$this->event_nr] = $this->calculated_event_id;
-                    $this->event['level'][$this->event_nr] = '1';
-                    $this->event['connect_kind'][$this->event_nr]='person';
-                    $this->event['connect_id'][$this->event_nr]=$child_array[$count_children-1];
-                    $this->event['connect_kind2'][$this->event_nr] = '';
-                    $this->event['connect_id2'][$this->event_nr] = '';
-                    $this->event['kind'][$this->event_nr]='adoption_by_person';
-                    $this->event['event'][$this->event_nr]=$gedcomnumber;
-                    $this->event['event_extra'][$this->event_nr]='';
-                    $this->event['gedcom'][$this->event_nr]=substr($this->buffer[0],8); // *** adopted, steph, legal or foster. ***
-                    $this->event['date'][$this->event_nr]='';
-                    //$this->event['source'][$this->event_nr]='';
-                    $this->event['text'][$this->event_nr]='';
-                    $this->event['place'][$this->event_nr]='';
-
-                    // *** Child is adopted child, so remove child from children array *** 
-                    //array_pop($child_array); // *** Remove last item from array ***
-                    //$fam_children=implode(";", $child_array);
+                    //
                 }
                 */
             }
@@ -3381,6 +3463,7 @@ class GedcomImport
                 }
 
                 // *** SAME CODE IS USED FOR AGE BY MARRIAGE_NOTICE AND MARRIAGE! ***
+                // Not tested: but these values will be overwritten is age by marriage is used.
                 // *** Man age ***
                 // 2 HUSB
                 // 3 AGE 42y
@@ -3390,7 +3473,7 @@ class GedcomImport
                     }
                     if ($this->buffer[5] === '3 AGE') {
                         $this->processed = true;
-                        $family["fam_man_age"] = substr($this->buffer[0], 6);
+                        $this->relations_persons['person_age'][$partner1_index] = substr($this->buffer[0], 6);
                     }
                 }
                 // *** Woman age ***
@@ -3402,7 +3485,7 @@ class GedcomImport
                     }
                     if ($this->buffer[5] === '3 AGE') {
                         $this->processed = true;
-                        $family["fam_woman_age"] = substr($this->buffer[0], 6);
+                        $this->relations_persons['person_age'][$partner2_index] = substr($this->buffer[0], 6);
                     }
                 }
             }
@@ -3496,10 +3579,11 @@ class GedcomImport
                     $this->processed = true;
                     $this->event_nr++;
                     $this->event_nr1 = $this->event_nr;
-                    $this->calculated_event_id++;
+                    //$this->calculated_event_id++;
 
                     // *** Also save calculated_event_id in array, so it can be used to check event_id ***
-                    $this->event['calculated_event_id'][$this->event_nr] = $this->calculated_event_id;
+                    //$this->event['calculated_event_id'][$this->event_nr] = $this->calculated_event_id;
+                    $this->event['calculated_event_id'][$this->event_nr] = (string)$this->allocCalcEventId();
                     $this->event['level'][$this->event_nr] = '1';
                     //$this->event['connect_kind'][$this->event_nr] = 'family';
                     $this->event['connect_kind'][$this->event_nr] = 'MARR';
@@ -3667,7 +3751,7 @@ class GedcomImport
                     }
                     if ($this->buffer[5] === '3 AGE') {
                         $this->processed = true;
-                        $family["fam_man_age"] = substr($this->buffer[0], 6);
+                        $this->relations_persons['person_age'][$partner1_index] = substr($this->buffer[0], 6);
                     }
                 }
                 // *** Woman age ***
@@ -3679,7 +3763,7 @@ class GedcomImport
                     }
                     if ($this->buffer[5] === '3 AGE') {
                         $this->processed = true;
-                        $family["fam_woman_age"] = substr($this->buffer[0], 6);
+                        $this->relations_persons['person_age'][$partner2_index] = substr($this->buffer[0], 6);
                     }
                 }
             }
@@ -4088,10 +4172,11 @@ class GedcomImport
                     $event_start = '';
                     $this->event_nr++;
                     $this->event_nr1 = $this->event_nr;
-                    $this->calculated_event_id++;
+                    //$this->calculated_event_id++;
 
                     // *** Also save calculated_event_id in array, so it can be used to check event_id ***
-                    $this->event['calculated_event_id'][$this->event_nr] = $this->calculated_event_id;
+                    //$this->event['calculated_event_id'][$this->event_nr] = $this->calculated_event_id;
+                    $this->event['calculated_event_id'][$this->event_nr] = (string)$this->allocCalcEventId();
                     $this->event['level'][$this->event_nr] = '1';
                     $this->event['connect_kind'][$this->event_nr] = 'family';
                     $this->event['connect_id'][$this->event_nr] = $gedcomnumber;
@@ -4211,7 +4296,7 @@ class GedcomImport
 
         // SAVE
         // Pro-gen: special treatment for woman without a man... :-)
-        if ($this->gen_program == 'PRO-GEN' && !$fam_man) {
+        if ($this->gen_program == 'PRO-GEN' && !$family["check_partner1"]) {
             $family["fam_kind"] = "PRO-GEN";
         }
 
@@ -4274,11 +4359,6 @@ class GedcomImport
         $sql = "INSERT IGNORE INTO humo_families SET
             fam_tree_id = :fam_tree_id,
             fam_gedcomnumber = :fam_gedcomnumber,
-            fam_man = :fam_man,
-            fam_man_age = :fam_man_age,
-            fam_woman = :fam_woman,
-            fam_woman_age = :fam_woman_age,
-            fam_children = :fam_children,
             fam_religion = :fam_religion,
             fam_kind = :fam_kind,
             fam_text = :fam_text,
@@ -4291,11 +4371,6 @@ class GedcomImport
         $stmt->execute([
             ':fam_tree_id' => $this->tree_id,
             ':fam_gedcomnumber' => $gedcomnumber,
-            ':fam_man' => $fam_man,
-            ':fam_man_age' => $family["fam_man_age"],
-            ':fam_woman' => $fam_woman,
-            ':fam_woman_age' => $family["fam_woman_age"],
-            ':fam_children' => $fam_children,
             ':fam_religion' => $family["fam_religion"],
             ':fam_kind' => $family["fam_kind"],
             ':fam_text' => $family["fam_text"],
@@ -4306,6 +4381,71 @@ class GedcomImport
         ]);
 
         $fam_id = $this->dbh->lastInsertId();
+
+
+        // Save relations_persons into temp_relations_persons table
+        // Remark: person_id is unknown at this moment and will be processed in Step 4. Yes, that's the reason for this temp. table.
+        $relation_order = 0;
+        $partner_order = 0;
+        $person_gedcomnumber = 0;
+        $person_age = '';
+        $sql = "INSERT IGNORE INTO humo_temp_relations_persons SET
+            tree_id = :tree_id,
+            relation_id = :relation_id,
+            relation_gedcomnumber = :relation_gedcomnumber,
+            person_gedcomnumber = :person_gedcomnumber,
+            person_age = :person_age,
+            relation_type = :relation_type,
+            relation_order = :relation_order,
+            partner_order = :partner_order";
+        $stmt = $this->dbh->prepare($sql);
+        if ($this->relations_persons_nr > 0) {
+            for ($i = 1; $i <= $this->relations_persons_nr; $i++) {
+                // *** Relation order ***
+                if (isset($this->relations_persons['relation_order'][$i])) {
+                    $relation_order = $this->relations_persons['relation_order'][$i];
+                }
+
+                // *** Child order ***
+                if ($this->relations_persons['relation_type'][$i] == 'child') {
+                    $relation_order++;
+                    $partner_order = 0;
+                }
+
+                // *** Partner order (man/ woman) ***
+                if (isset($this->relations_persons['partner_order'][$i])) {
+                    $partner_order = $this->relations_persons['partner_order'][$i];
+                }
+
+                // *** Person gedcomnumber ***
+                if (isset($this->relations_persons['person_gedcomnumber'][$i])) {
+                    $person_gedcomnumber = $this->relations_persons['person_gedcomnumber'][$i];
+                }
+
+                if (isset($this->relations_persons['person_age'][$i])) {
+                    $person_age = $this->relations_persons['person_age'][$i];
+                }
+
+                try {
+                    $stmt->execute([
+                        ':tree_id' => $this->tree_id,
+                        ':relation_id' => $fam_id,
+                        ':relation_gedcomnumber' => $gedcomnumber,
+                        ':person_gedcomnumber' => $person_gedcomnumber,
+                        ':person_age' => $person_age,
+                        ':relation_type' => $this->relations_persons['relation_type'][$i],
+                        ':relation_order' => $relation_order,
+                        ':partner_order' => $partner_order
+                    ]);
+                } catch (PDOException $e) {
+                    echo 'Error save relation_persons: ' . $e->getMessage().'<br>';
+                }
+            }
+
+            unset($this->relations_persons);
+            $this->relations_persons_nr = 0;
+        }
+
 
         // *** Save unprocessed items ***
         if ($family["fam_unprocessed_tags"]) {
@@ -4425,6 +4565,8 @@ class GedcomImport
                     $this->event['text'][$i] = $this->reassign_ged($this->event['text'][$i], 'N');
                 }
 
+                // BEFORE insert: fix picture_event_{calc}
+                $this->resolvePictureEventKindForIndex($i);
 
                 // TODO TEST $relation_event.
                 //'event_date_hebnight' => isset($_POST["pers_birth_date_hebnight"]) ? $_POST["pers_birth_date_hebnight"] : ''
@@ -4448,7 +4590,12 @@ class GedcomImport
                     $relation_event['event_connect_id2'] = $this->event['connect_id2'][$i];
                 }
 
-                $this->eventManager->update_event($relation_event);
+                $realId = (int)$this->eventManager->update_event($relation_event);
+
+                if (isset($this->event['calculated_event_id'][$i])) {
+                    $calc = (string)$this->event['calculated_event_id'][$i];
+                    $this->calc_to_real[$calc] = $realId;
+                }
             }
 
             // *** Reset array to free memory ***
@@ -4459,6 +4606,8 @@ class GedcomImport
             //echo ' '.memory_get_usage().'@ ';
         }
 
+        // After events are saved, remap pending event-id references in connections
+        $this->remapEventIdsInConnects();
 
         // *** These events are saved seperately after events table update. Otherwise $this->event_nr will be wrong ***
         if (
@@ -5067,7 +5216,8 @@ class GedcomImport
             }
 
             //if ($this->buffer[6] == '1 DATE') {
-            if (substr($this->buffer[0], 2, 4) === 'DATE') {
+            //if (substr($this->buffer[0], 2, 4) === 'DATE') {
+            if ($this->level[1] === 'DATA' && substr($this->buffer[0], 2, 4) === 'DATE') {
                 $this->processed = true;
                 $source["source_date"] = substr($this->buffer[0], 7);
             }
@@ -5171,10 +5321,11 @@ class GedcomImport
 
                     $this->event_nr++;
                     $this->event_nr1 = $this->event_nr;
-                    $this->calculated_event_id++;
+                    //$this->calculated_event_id++;
 
                     // *** Also save calculated_event_id in array, so it can be used to check event_id ***
-                    $this->event['calculated_event_id'][$this->event_nr] = $this->calculated_event_id;
+                    //$this->event['calculated_event_id'][$this->event_nr] = $this->calculated_event_id;
+                    $this->event['calculated_event_id'][$this->event_nr] = (string)$this->allocCalcEventId();
                     $this->event['level'][$this->event_nr] = '1';
                     $this->event['connect_kind'][$this->event_nr] = 'source';
                     $this->event['connect_id'][$this->event_nr] = $source["id"];
@@ -7154,7 +7305,7 @@ class GedcomImport
      */
     public function process_picture($connect_kind, $connect_id, $picture): void
     {
-        $event_picture = false;
+        $picture_by_event = false;
         // *** Just for sure: set default values ***
         $test_number1 = '1';
         $test_number2 = '2';
@@ -7191,7 +7342,7 @@ class GedcomImport
         }
         // *** Picture by event ***
         elseif (substr($picture, 0, 13) === 'picture_event') {
-            $event_picture = true;
+            $picture_by_event = true;
             $test_number1 = '2';
             $test_number2 = '3';
         }
@@ -7254,14 +7405,15 @@ class GedcomImport
         // *** Skip link to object with reference: 1 OBJE @O3@ ***
         if ($this->buffer[6] === $test_number1 . ' OBJE' && substr($this->buffer[0], 7, 1) !== '@') {
             $this->processed = true;
-            if ($event_picture == true) {
+            if ($picture_by_event == true) {
                 // *** Process picture by event ***
                 $this->event_nr++;
                 $this->event_nr2 = $this->event_nr;
-                $this->calculated_event_id++;
+                //$this->calculated_event_id++;
 
                 // *** Also save calculated_event_id in array, so it can be used to check event_id ***
-                $this->event['calculated_event_id'][$this->event_nr2] = $this->calculated_event_id;
+                //$this->event['calculated_event_id'][$this->event_nr2] = $this->calculated_event_id;
+                $this->event['calculated_event_id'][$this->event_nr2] = (string)$this->allocCalcEventId();
                 $this->event['level2'][$this->event_nr2] = '2';
                 $this->event['connect_kind'][$this->event_nr2] = $connect_kind;
                 $this->event['connect_id'][$this->event_nr2] = $connect_id;
@@ -7275,10 +7427,11 @@ class GedcomImport
             } else {
                 $this->event_nr++;
                 $this->event_nr1 = $this->event_nr;
-                $this->calculated_event_id++;
+                //$this->calculated_event_id++;
 
                 // *** Also save calculated_event_id in array, so it can be used to check event_id ***
-                $this->event['calculated_event_id'][$this->event_nr] = $this->calculated_event_id;
+                //$this->event['calculated_event_id'][$this->event_nr] = $this->calculated_event_id;
+                $this->event['calculated_event_id'][$this->event_nr] = (string)$this->allocCalcEventId();
                 $this->event['level'][$this->event_nr] = '1';
                 $this->event['connect_kind'][$this->event_nr] = $connect_kind;
                 $this->event['connect_id'][$this->event_nr] = $connect_id;
@@ -7296,7 +7449,7 @@ class GedcomImport
                 $this->processed = true;
                 $photo = substr($this->buffer[0], 7);
                 $photo = $this->humo_basename($photo);
-                if ($event_picture == true) {
+                if ($picture_by_event == true) {
                     $this->event['event'][$this->event_nr2] = $photo;
                 } else {
                     $this->event['event'][$this->event_nr] = $photo;
@@ -7311,7 +7464,7 @@ class GedcomImport
         // 2 FILE http://homepages.rootsweb.com/~pmcbride/gedcom/55gctoc.htm
         if (substr($this->buffer[0], 0, 10) === $test_number2 . ' FORM URL') {
             $this->processed = true;
-            if ($event_picture == true) {
+            if ($picture_by_event == true) {
                 $this->event['kind'][$this->event_nr2] = 'URL';
             } else {
                 $this->event['kind'][$this->event_nr] = 'URL';
@@ -7323,7 +7476,7 @@ class GedcomImport
             $photo = substr($this->buffer[0], 7);
             // *** Aldfaer sometimes uses: 2 FILE \bestand.jpg ***
             $photo = $this->humo_basename($photo);
-            if ($event_picture == true) {
+            if ($picture_by_event == true) {
                 $this->event['event'][$this->event_nr2] = $photo;
             } else {
                 $this->event['event'][$this->event_nr] = $photo;
@@ -7336,7 +7489,7 @@ class GedcomImport
         //if ($this->level[2]=='TITL'){
         if ($this->level[$test_number2] == 'TITL') {
             $this->processed = true;
-            if ($event_picture == true) {
+            if ($picture_by_event == true) {
                 $this->event['text'][$this->event_nr2] = $this->process_texts($this->event['text'][$this->event_nr2], $test_number2);
             } else {
                 $this->event['text'][$this->event_nr] = $this->process_texts($this->event['text'][$this->event_nr], $test_number2);
@@ -7347,7 +7500,7 @@ class GedcomImport
         //if ($this->level[2]=='FORM'){
         if ($this->level[$test_number2] == 'FORM') {
             $this->processed = true;
-            if ($event_picture == true) {
+            if ($picture_by_event == true) {
                 $this->event['event_extra'][$this->event_nr2] = substr($this->buffer[0], 7);
             } else {
                 $this->event['event_extra'][$this->event_nr] = substr($this->buffer[0], 7);
@@ -7356,7 +7509,7 @@ class GedcomImport
 
         // *** Text by photo Haza-21 ***
         if ($this->level[2] == 'NOTE') {
-            if ($event_picture == true) {
+            if ($picture_by_event == true) {
                 $this->event['text'][$this->event_nr2] = $this->process_texts($this->event['text'][$this->event_nr2], $test_number2);
             } else {
                 $this->event['text'][$this->event_nr] = $this->process_texts($this->event['text'][$this->event_nr], $test_number2);
@@ -7365,7 +7518,7 @@ class GedcomImport
 
         if ($this->buffer[6] === $test_number2 . ' DATE') {
             $this->processed = true;
-            if ($event_picture == true) {
+            if ($picture_by_event == true) {
                 $this->event['date'][$this->event_nr2] = substr($this->buffer[0], 7);
             } else {
                 $this->event['date'][$this->event_nr] = substr($this->buffer[0], 7);
@@ -7373,13 +7526,18 @@ class GedcomImport
         }
 
         // *** Source by pictures ***
-        if ($event_picture == true) {
+        if ($picture_by_event == true) {
             // no source by picture by event at this moment...
         } elseif ($this->level[2] == 'SOUR' && $this->level[3] != 'OBJE') {
             //if ($this->level[2]=='SOUR'){
             // *** Don't process a source by a object by a source. The script will stop with error ***
             $event_id = $this->event['calculated_event_id'][$this->event_nr];
+            //process_sources($connect_kind2, $connect_sub_kind2, $connect_connect_id2, $number)
             $this->process_sources('person', 'pers_event_source', $event_id, $test_number2);
+
+
+            // TEST
+            //echo $this->calculated_event_id . ' ' . $event_id . '!<br>';
         }
     }
 
@@ -7464,10 +7622,11 @@ class GedcomImport
             if ($this->level[1] == 'EVEN') {
                 $this->event_nr++;
                 $this->event_nr2 = $this->event_nr;
-                $this->calculated_event_id++;
+                //$this->calculated_event_id++;
 
                 // *** Also save calculated_event_id in array, so it can be used to check event_id ***
-                $this->event['calculated_event_id'][$this->event_nr2] = $this->calculated_event_id;
+                //$this->event['calculated_event_id'][$this->event_nr2] = $this->calculated_event_id;
+                $this->event['calculated_event_id'][$this->event_nr2] = (string)$this->allocCalcEventId();
                 $this->event['level'][$this->event_nr2] = '2';
                 $this->event['connect_kind'][$this->event_nr2] = '';
                 if ($this->event['kind'][$this->event_nr1] == 'birth_declaration') {
@@ -7489,10 +7648,11 @@ class GedcomImport
             } else {
                 $this->event_nr++;
                 $this->event_nr1 = $this->event_nr;
-                $this->calculated_event_id++;
+                //$this->calculated_event_id++;
 
                 // *** Also save calculated_event_id in array, so it can be used to check event_id ***
-                $this->event['calculated_event_id'][$this->event_nr] = $this->calculated_event_id;
+                //$this->event['calculated_event_id'][$this->event_nr] = $this->calculated_event_id;
+                $this->event['calculated_event_id'][$this->event_nr] = (string)$this->allocCalcEventId();
                 $this->event['level'][$this->event_nr] = '1';
                 $this->event['connect_kind'][$this->event_nr] = $connect_kind;
                 $this->event['connect_id'][$this->event_nr] = $gedcomnumber;
@@ -7582,5 +7742,46 @@ class GedcomImport
         $this->buffer[6] = substr($this->buffer[0], 0, 6);
         $this->buffer[7] = substr($this->buffer[0], 0, 7);
         $this->buffer[8] = substr($this->buffer[0], 0, 8);
+    }
+
+
+
+    // Allocate a local calc-id for a new event
+    private function allocCalcEventId(): int
+    {
+        return ++$this->calc_event_seq;
+    }
+
+    // Before inserting an event row, fix picture_event_{calc} using known mappings
+    private function resolvePictureEventKindForIndex(int $i): void
+    {
+        if (!isset($this->event['kind'][$i])) return;
+        $kind = (string)$this->event['kind'][$i];
+        if (strpos($kind, 'picture_event_') === 0) {
+            $suffix = substr($kind, 15); // after 'picture_event_'
+            if (isset($this->calc_to_real[$suffix])) {
+                $this->event['kind'][$i] = 'picture_event_' . $this->calc_to_real[$suffix];
+            }
+        }
+    }
+
+    // After all events are inserted, remap event references in connections
+    private function remapEventIdsInConnects(): void
+    {
+        if (empty($this->connect_nr) || empty($this->calc_to_real)) return;
+
+        for ($i = 1; $i <= $this->connect_nr; $i++) {
+            if (!isset($this->connect['sub_kind'][$i], $this->connect['connect_id'][$i])) continue;
+
+            $sub = $this->connect['sub_kind'][$i];
+
+            // Event-source connections that store event_id in connect_connect_id
+            if ($sub === 'pers_event_source' || $sub === 'fam_event_source') {
+                $calc = (string)$this->connect['connect_id'][$i];
+                if (isset($this->calc_to_real[$calc])) {
+                    $this->connect['connect_id'][$i] = (string)$this->calc_to_real[$calc];
+                }
+            }
+        }
     }
 }

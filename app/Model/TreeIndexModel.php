@@ -359,7 +359,7 @@ class TreeIndexModel extends BaseModel
         $baseperc = $this->last_names_array($maxnames);   // displays the table and sets the $baseperc (= the name with highest frequency that will be 100%)
 
         $path = $this->humo_option["url_rewrite"] == "j" ? 'statistics' : 'index.php?page=statistics';
-        $text .= '<tr><td colspan="' . ($maxcols * 2) . '" class="table-active"><a href="' . $path . '">' . __('More statistics') . '</a></td></tr>';
+        $text .= '<tr><td colspan="' . ($maxcols * 2) . '" class="table-active"><a href="' . $path . '">' . __('Show more statistics') . '</a></td></tr>';
         $text .= '</table>';
 
         // Show gray bar in name box. Graphical indication of number of names.
@@ -701,10 +701,10 @@ class TreeIndexModel extends BaseModel
                 } elseif ($pic_conn_kind == 'family') {
                     $picqryDb2 = $this->db_functions->get_family_with_id($picqryDb->relation_id);
 
-                    $personmnDb2 = $this->db_functions->get_person($picqryDb2->fam_man);
+                    $personmnDb2 = $this->db_functions->get_person($picqryDb2->partner1_gedcomnumber);
                     $man_privacy = $personPrivacy->get_privacy($personmnDb2);
 
-                    $personmnDb3 = $this->db_functions->get_person($picqryDb2->fam_woman);
+                    $personmnDb3 = $this->db_functions->get_person($picqryDb2->partner2_gedcomnumber);
                     $woman_privacy = $personPrivacy->get_privacy($personmnDb3);
 
                     // *** Only use this picture if both man and woman have disabled privacy options ***

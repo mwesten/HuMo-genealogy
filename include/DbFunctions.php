@@ -35,7 +35,7 @@
  *      $db_functions->set_tree_id($tree_id);
  *
  * EXAMPLE get single item from database:
- *      $person_manDb = $db_functions->get_person($familyDb->fam_man);
+ *      $person_manDb = $db_functions->get_person($person_gedcomnumber);
  *      if ($person_manDb==false){ }
  *
  * EXAMPLE get multiple items from database:
@@ -282,7 +282,6 @@ class DbFunctions
         }
     }
 
-
     private function get_person_base_qry()
     {
         // MAX is used to get the latest event information (in case there are multiple rows).
@@ -314,6 +313,8 @@ class DbFunctions
         // Query without MAX (there is only a single event for each item):
         return "SELECT
             p.*,
+            parent_rel.relation_id AS parent_relation_id,
+            parent_rel.relation_gedcomnumber AS parent_relation_gedcomnumber,
 
             COALESCE(birth.event_date, '') AS pers_birth_date,
             birth.event_time AS pers_birth_time,
@@ -322,12 +323,18 @@ class DbFunctions
             birth.event_id AS pers_birth_event_id,
             birth.stillborn AS pers_stillborn,
             birth.event_date_hebnight AS pers_birth_date_hebnight,
+            birth.date_year AS pers_birth_year,
+            birth.date_month AS pers_birth_month,
+            birth.date_day AS pers_birth_day,
 
             COALESCE(bapt.event_date, '')    AS pers_bapt_date,
             baptpl.location_location AS pers_bapt_place,
             bapt.event_text    AS pers_bapt_text,
             bapt.event_id      AS pers_bapt_event_id,
             bapt.event_date_hebnight AS pers_bapt_date_hebnight,
+            bapt.date_year AS pers_bapt_year,
+            bapt.date_month AS pers_bapt_month,
+            bapt.date_day AS pers_bapt_day,
 
             death.event_date   AS pers_death_date,
             death.event_time   AS pers_death_time,
@@ -353,23 +360,26 @@ class DbFunctions
         LEFT JOIN humo_events death ON death.person_id = p.pers_id AND death.event_kind = 'death'
         LEFT JOIN humo_location deathpl ON death.place_id = deathpl.location_id
         LEFT JOIN humo_events burial ON burial.person_id = p.pers_id AND burial.event_kind = 'burial'
-        LEFT JOIN humo_location burialpl ON burial.place_id = burialpl.location_id";
+        LEFT JOIN humo_location burialpl ON burial.place_id = burialpl.location_id
+        LEFT JOIN humo_relations_persons parent_rel ON parent_rel.person_id = p.pers_id AND parent_rel.relation_type = 'child'";
     }
-
 
     /**
      * FUNCTION     : Get a single person from database.
-     * QUERY 1      : SELECT * FROM humo_persons WHERE pers_tree_id=:pers_tree_id AND pers_gedcomnumber=:pers_gedcomnumber
-     * QUERY 2      : SELECT pers_famc, pers_fams FROM humo_persons WHERE pers_tree_id=:pers_tree_id AND pers_gedcomnumber=:pers_gedcomnumber
+     * QUERY .      : SELECT * FROM humo_persons WHERE pers_tree_id=:pers_tree_id AND pers_gedcomnumber=:pers_gedcomnumber
      * RETURNS      : a single person.
      */
     public function get_person(string|null $pers_gedcomnumber, string $item = '')
     {
+        $person = null;
         try {
-            if ($item === 'famc-fams') {
-                $sql = "SELECT pers_famc, pers_fams FROM humo_persons
-                    WHERE pers_tree_id=:pers_tree_id 
-                    AND pers_gedcomnumber=:pers_gedcomnumber";
+            if ($item === 'parentrelation') {
+                // TODO WILL BE REMOVED. Replace with function: get_parents_relation.
+                $sql = "SELECT r.relation_id AS parent_relation_id,
+                    r.relation_gedcomnumber AS parent_relation_gedcomnumber
+                    FROM humo_persons p
+                    LEFT JOIN humo_relations_persons r ON r.person_id = p.pers_id AND r.relation_type = 'child'
+                    WHERE p.pers_tree_id=:pers_tree_id AND p.pers_gedcomnumber=:pers_gedcomnumber";
             } else {
                 $sql = $this->get_person_base_qry();
                 $sql .= " WHERE p.pers_tree_id=:pers_tree_id 
@@ -392,15 +402,38 @@ class DbFunctions
      * QUERY        : SELECT * FROM humo_persons WHERE pers_id=:pers_tree_id
      * RETURNS      : a single person.
      */
-    public function get_person_with_id(int $pers_id)
+    public function get_person_with_id(int|null $pers_id)
     {
+        $person = null;
         try {
             $sql = $this->get_person_base_qry();
             $sql .= " WHERE p.pers_id=:pers_id";
-
             $stmt = $this->dbh->prepare($sql);
             $stmt->execute([
                 ':pers_id' => $pers_id
+            ]);
+            $person = $stmt->fetch(PDO::FETCH_OBJ);
+        } catch (PDOException $e) {
+            echo $e->getMessage() . "<br/>";
+        }
+        return $person;
+    }
+
+    // *** New function oct. 2025 ***
+    public function get_parents_relation(string|null $person_id)
+    {
+        $person = null;
+        try {
+            // TODO: replace with general query.
+            $sql = "SELECT r.relation_id AS parent_relation_id,
+                r.relation_gedcomnumber AS parent_relation_gedcomnumber
+                FROM humo_persons p
+                LEFT JOIN humo_relations_persons r ON r.person_id = p.pers_id AND r.relation_type = 'child'
+                WHERE p.pers_id=:pers_id";
+            $stmt = $this->dbh->prepare($sql);
+            $stmt->execute([
+                ':pers_tree_id' => $this->tree_id,
+                ':pers_id' => $person_id
             ]);
             $person = $stmt->fetch(PDO::FETCH_OBJ);
         } catch (PDOException $e) {
@@ -527,6 +560,12 @@ class DbFunctions
     {
         return "SELECT
         f.*,
+        man_rel.person_id AS partner1_id,
+        man_rel.person_gedcomnumber AS partner1_gedcomnumber,
+        man_rel.person_age AS partner1_age,
+        woman_rel.person_id AS partner2_id,
+        woman_rel.person_gedcomnumber AS partner2_gedcomnumber,
+        woman_rel.person_age AS partner2_age,
         marriage.event_date AS fam_marr_date,
         marriage.event_date_hebnight AS fam_marr_date_hebnight,
         marriagepl.location_location AS fam_marr_place,
@@ -588,23 +627,39 @@ class DbFunctions
         LEFT JOIN humo_location marrchurchnoticepl ON marrchurchnotice.place_id = marrchurchnoticepl.location_id
 
         LEFT JOIN humo_events marrnotice ON marrnotice.relation_id = f.fam_id AND marrnotice.event_kind = 'marriage_notice'
-        LEFT JOIN humo_location marrnoticepl ON marrnotice.place_id = marrnoticepl.location_id";
+        LEFT JOIN humo_location marrnoticepl ON marrnotice.place_id = marrnoticepl.location_id
+
+        LEFT JOIN humo_relations_persons man_rel ON man_rel.relation_id = f.fam_id AND man_rel.relation_type = 'partner' AND man_rel.partner_order = 1
+        LEFT JOIN humo_relations_persons woman_rel ON woman_rel.relation_id = f.fam_id AND woman_rel.relation_type = 'partner' AND woman_rel.partner_order = 2";
     }
 
     /**
      * FUNCTION     : Get a single family from database.
-     * QUERY 1      : SELECT fam_man, fam_woman FROM humo_families WHERE fam_tree_id=:fam_tree_id AND fam_gedcomnumber=:fam_gedcomnumber";
-     * QUERY 2      : SELECT * FROM humo_families WHERE fam_tree_id=:fam_tree_id AND fam_gedcomnumber=:fam_gedcomnumber";
      * USE          : get_family($fam_number,'man-woman') to get man and woman id.
      * RETURNS      : a single family.
      */
     public function get_family(string|null $fam_gedcomnumber, string $item = '')
     {
+        $family = null;
         try {
+            // TODO: maybe not needed anymore, just use the base query with joins?
             if ($item == 'man-woman') {
-                $sql = "SELECT fam_man, fam_woman, fam_children FROM humo_families
-                    WHERE fam_tree_id=:fam_tree_id 
-                    AND fam_gedcomnumber=:fam_gedcomnumber";
+                // TODO Will be removed (replace with function get_family_partners)
+                $sql = "SELECT 
+                        f.fam_id, 
+                        man_rel.person_id AS partner1_id,
+                        man_rel.person_gedcomnumber AS partner1_gedcomnumber,
+                        man_rel.person_age AS partner1_age,
+                        woman_rel.person_id AS partner2_id,
+                        woman_rel.person_gedcomnumber AS partner2_gedcomnumber,
+                        woman_rel.person_age AS partner2_age
+                    FROM humo_families f
+                    LEFT JOIN humo_relations_persons man_rel 
+                        ON man_rel.relation_id = f.fam_id AND man_rel.relation_type = 'partner' AND man_rel.partner_order = 1
+                    LEFT JOIN humo_relations_persons woman_rel 
+                        ON woman_rel.relation_id = f.fam_id AND woman_rel.relation_type = 'partner' AND woman_rel.partner_order = 2
+                    WHERE f.fam_tree_id=:fam_tree_id 
+                    AND f.fam_gedcomnumber=:fam_gedcomnumber";
             } else {
                 // TODO add event_date_hebnight
                 $sql = $this->get_family_base_qry();
@@ -620,6 +675,7 @@ class DbFunctions
         } catch (PDOException $e) {
             echo $e->getMessage() . "<br/>";
         }
+
         return $family;
     }
 
@@ -630,10 +686,37 @@ class DbFunctions
      */
     public function get_family_with_id(int $fam_id)
     {
+        $family = null;
         try {
             $sql = $this->get_family_base_qry();
             $sql .= " WHERE f.fam_id=:fam_id";
+            $stmt = $this->dbh->prepare($sql);
+            $stmt->execute([
+                ':fam_id' => $fam_id
+            ]);
+            $family = $stmt->fetch(PDO::FETCH_OBJ);
+        } catch (PDOException $e) {
+            echo $e->getMessage() . "<br/>";
+        }
+        return $family;
+    }
 
+    // *** Added oct. 2025 ***
+    public function get_family_partners(int $fam_id)
+    {
+        try {
+            $sql = "SELECT
+                    f.fam_id, 
+                    man_rel.person_id AS partner1_id,
+                    man_rel.person_gedcomnumber AS partner1_gedcomnumber,
+                    woman_rel.person_id AS partner2_id,
+                    woman_rel.person_gedcomnumber AS partner2_gedcomnumber
+                FROM humo_families f
+                LEFT JOIN humo_relations_persons man_rel 
+                    ON man_rel.relation_id = f.fam_id  AND man_rel.relation_type = 'partner' AND man_rel.partner_order = 1
+                LEFT JOIN humo_relations_persons woman_rel 
+                    ON woman_rel.relation_id = f.fam_id AND woman_rel.relation_type = 'partner' AND woman_rel.partner_order = 2
+                WHERE f.fam_id=:fam_id";
             $stmt = $this->dbh->prepare($sql);
             $stmt->execute([
                 ':fam_id' => $fam_id
@@ -664,6 +747,63 @@ class DbFunctions
             echo $e->getMessage() . "<br/>";
         }
         return $count;
+    }
+
+    /**
+     * Get children id's from humo_relations_persons table for this family
+     * $db_functions->($tree_id,$fam_db);
+     * Returns arrays with id's, person id's, and GEDCOM numbers.
+     */
+    public function get_children($relation_id)
+    {
+        $child_qry = "SELECT id, person_id, person_gedcomnumber, relation_order FROM humo_relations_persons
+            WHERE relation_id = :relation_id AND relation_type = 'child' ORDER BY relation_order";
+        $stmt = $this->dbh->prepare($child_qry);
+        $stmt->execute([
+            ':relation_id' => $relation_id
+        ]);
+        return $stmt->fetchAll(PDO::FETCH_OBJ);
+    }
+
+    // *** Get first relation of a person ***
+    public function get_first_relation($person_id)
+    {
+        $relations = array();
+        try {
+            // *** Only get first relation of person ***
+            $sql = "SELECT * FROM humo_relations_persons WHERE person_id = :person_id AND relation_type = 'partner' ORDER BY relation_order LIMIT 0,1";
+            $stmt = $this->dbh->prepare($sql);
+            $stmt->execute([
+                ':person_id' => $person_id
+            ]);
+            // *** Get 1 result ***
+            $relations = $stmt->fetch(PDO::FETCH_OBJ);
+        } catch (PDOException $e) {
+            //echo $e->getMessage() . "<br/>";
+        }
+        return $relations;
+    }
+
+    /**
+     * Get relations for this person from humo_relations_persons table
+     * $db_functions->get_relations($person_id);
+     * Returns arrays with id's, family IDs, and relation types.
+     */
+    public function get_relations($person_id)
+    {
+        $relations = array();
+        try {
+            // TODO If needed also order by partner_order (for man/ woman).
+            $sql = "SELECT * FROM humo_relations_persons WHERE person_id = :person_id AND relation_type = 'partner' ORDER BY relation_order";
+            $stmt = $this->dbh->prepare($sql);
+            $stmt->execute([
+                ':person_id' => $person_id
+            ]);
+            $relations = $stmt->fetchAll(PDO::FETCH_OBJ);
+        } catch (PDOException $e) {
+            //echo $e->getMessage() . "<br/>";
+        }
+        return $relations;
     }
 
     /**
@@ -744,7 +884,7 @@ class DbFunctions
      *                AND event_connect_id=:event_connect_id AND event_kind=:event_kind ORDER BY event_order
      * RETURNS      : all selected events by a person.
      */
-    public function get_events_connect(string $event_connect_kind, string $event_connect_id, string $event_kind)
+    public function get_events_connect(string $event_connect_kind, string|null $event_connect_id, string $event_kind)
     {
         try {
             if ($event_kind === 'all') {
@@ -874,7 +1014,39 @@ class DbFunctions
     public function get_connections(string $connect_sub_kind, string $connect_item_id)
     {
         try {
-            $sql = "SELECT * FROM humo_connections WHERE connect_tree_id=:connect_tree_id AND connect_sub_kind=:connect_sub_kind AND connect_item_id=:connect_item_id";
+            //$sql = "SELECT * FROM humo_connections WHERE connect_tree_id=:connect_tree_id AND connect_sub_kind=:connect_sub_kind AND connect_item_id=:connect_item_id";
+
+            // If order is needed (probably better to add date_year/ date_month/ date_day fields in this table):
+            $sql = "SELECT *, 
+                -- Extract year from various GEDCOM formats
+                CAST(
+                    CASE 
+                        WHEN connect_date REGEXP '[0-9]{4}' THEN REGEXP_SUBSTR(connect_date, '[0-9]{4}')
+                        ELSE '0'
+                    END 
+                AS UNSIGNED) AS sort_year,
+                -- Map month names to numbers
+                CASE 
+                    WHEN connect_date LIKE '%JAN%' THEN 1
+                    WHEN connect_date LIKE '%FEB%' THEN 2
+                    WHEN connect_date LIKE '%MAR%' THEN 3
+                    WHEN connect_date LIKE '%APR%' THEN 4
+                    WHEN connect_date LIKE '%MAY%' THEN 5
+                    WHEN connect_date LIKE '%JUN%' THEN 6
+                    WHEN connect_date LIKE '%JUL%' THEN 7
+                    WHEN connect_date LIKE '%AUG%' THEN 8
+                    WHEN connect_date LIKE '%SEP%' THEN 9
+                    WHEN connect_date LIKE '%OCT%' THEN 10
+                    WHEN connect_date LIKE '%NOV%' THEN 11
+                    WHEN connect_date LIKE '%DEC%' THEN 12
+                    ELSE 0
+                END AS sort_month
+            FROM humo_connections 
+            WHERE connect_tree_id=:connect_tree_id 
+            AND connect_sub_kind=:connect_sub_kind 
+            AND connect_item_id=:connect_item_id 
+            ORDER BY sort_year, sort_month, connect_order";
+
             $stmt = $this->dbh->prepare($sql);
             $stmt->execute([
                 ':connect_tree_id' => $this->tree_id,
@@ -896,7 +1068,7 @@ class DbFunctions
      * RETURNS      : multiple connections.
      * EXAMPLE      : $connect_sql = $db_functions->get_connections_connect_id('person','pers_object',$event_connect_id);
      */
-    public function get_connections_connect_id(string $connect_kind, string $connect_sub_kind, string $connect_connect_id)
+    public function get_connections_connect_id(string $connect_kind, string $connect_sub_kind, string|null $connect_connect_id)
     {
         try {
             $sql = "SELECT * FROM humo_connections 

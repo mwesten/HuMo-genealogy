@@ -18,16 +18,24 @@ class StatsTreeModel extends BaseModel
 
         // *** Most children in family ***
         $statistics['nr_children'] = 0; // *** minimum of 0 children ***
-        $res = $this->dbh->query("SELECT fam_gedcomnumber, fam_man, fam_woman, fam_children FROM humo_families WHERE fam_tree_id='" . $this->tree_id . "' AND fam_children != ''");
-        while ($record = $res->fetch(PDO::FETCH_OBJ)) {
-            $count_children = substr_count($record->fam_children, ';');
-            $count_children += 1;
-            if ($count_children > $statistics['nr_children']) {
-                $statistics['nr_children'] = $count_children;
-                $man_gedcomnumber = $record->fam_man;
-                $woman_gedcomnumber = $record->fam_woman;
-                $fam_gedcomnumber = $record->fam_gedcomnumber;
-            }
+
+        // *** Get family_id from humo_relations_persons table that has most children ***
+        $query = "
+            SELECT relation_id, COUNT(*) AS child_count
+            FROM humo_relations_persons
+            WHERE tree_id = :tree_id AND relation_type = 'child'
+            GROUP BY relation_id
+            ORDER BY child_count DESC
+            LIMIT 1
+        ";
+        $stmt = $this->dbh->prepare($query);
+        $stmt->execute([':tree_id' => $this->tree_id]);
+        $family_with_most_children = $stmt->fetch(PDO::FETCH_ASSOC);
+        if ($family_with_most_children) {
+            $statistics['nr_children'] = $family_with_most_children['child_count'];
+            $family = $this->db_functions->get_family_with_id($family_with_most_children['relation_id']);
+            $man_gedcomnumber = $family->partner1_gedcomnumber;
+            $woman_gedcomnumber = $family->partner2_gedcomnumber;
         }
 
         if ($statistics['nr_children'] != "0") {

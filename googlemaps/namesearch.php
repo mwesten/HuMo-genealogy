@@ -178,13 +178,12 @@ function mapbirthplace($place)
                 $name = $personName->get_person_name($maplistDb, $privacy_man);
                 if ($name["show_name"] == true) {
                     $pers_family = '';
-                    if ($maplistDb->pers_famc) {
-                        $pers_family = $maplistDb->pers_famc;
+                    if ($maplistDb->parent_relation_gedcomnumber) {
+                        $pers_family = $maplistDb->parent_relation_gedcomnumber;
                     }
-                    if ($maplistDb->pers_fams) {
-                        $pers_fams = explode(';', $maplistDb->pers_fams);
-                        $pers_family = $pers_fams[0];
-                    }
+                    $relations = $db_functions->get_first_relation($maplistDb->pers_id);
+                    $pers_family = $relations->gedcomnumber;
+
                     $vars['pers_family'] = $pers_family;
                     $link = $processLinks->get_link('', 'family', $maplistDb->pers_tree_id, true, $vars);
                     $link .= "main_person=" . $maplistDb->pers_gedcomnumber;
