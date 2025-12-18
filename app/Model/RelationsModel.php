@@ -1360,7 +1360,8 @@ class RelationsModel extends BaseModel
 
         if ($pers == 1) {
             if ($this->relation['spouse'] == 1) {
-                $child = $child == __('son') ? __('son-in-law') : __('daughter-in-law');
+                // *** Remark: this should be switched. Otherwise some languages can't show proper texts ***
+                $child = $child == __('son') ? __('daughter-in-law') : __('son-in-law');
                 $this->relation['special_spouseX'] = 1;
 
                 // *** Greek***
@@ -3450,14 +3451,21 @@ class RelationsModel extends BaseModel
                 if ($this->relation['foundX_match'] !== '') {
                     $this->relation['famspouseX'] = $relation->relation_gedcomnumber;
 
-                    // TODO doesn't work for son-in-law.
-                    //$this->relation['sexe1'] = $this->relation['sexe1'] == 'M' ? "F" : "M"; // we have to switch sex since the spouse is the relative!
+                    // Needed to calculate relation text.
+                    $this->relation['sexe1'] = $this->relation['sexe1'] == 'M' ? "F" : "M"; // we have to switch sex since the spouse is the relative!
                     $this->calculate_rel();
 
                     $spouseidDb = $this->db_functions->get_person($thespouse);
                     $privacy = $privacy->get_privacy($spouseidDb);
                     $name = $personName->get_person_name($spouseidDb, $privacy);
                     $this->relation['spousenameX'] = $name["name"];
+
+                    // Added dec. 2025 to show proper sexe colour for person 1.
+                    $this->relation['sexe1'] = $spouseidDb->pers_sexe;
+
+                    // Added dec. 2025 to show proper sexe colour for person 2.
+                    $person2 = $this->db_functions->get_person($familyDb->partner1_gedcomnumber == $thespouse ? $familyDb->partner2_gedcomnumber : $familyDb->partner1_gedcomnumber);
+                    $this->relation['sexe2'] = $person2->pers_sexe;
 
                     break;
                 }
