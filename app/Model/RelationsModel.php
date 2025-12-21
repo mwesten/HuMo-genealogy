@@ -224,7 +224,7 @@ class RelationsModel extends BaseModel
 
             $first_relation = $this->db_functions->get_first_relation($searchDb->pers_id);
             if (isset($first_relation)) {
-                $this->relation['family_id1'] = $first_relation->person_gedcomnumber;
+                $this->relation['family_id1'] = $first_relation->relation_gedcomnumber;
             } else {
                 $this->relation['family_id1'] = $searchDb->parent_relation_gedcomnumber;
             }
@@ -244,7 +244,7 @@ class RelationsModel extends BaseModel
 
             $first_relation = $this->db_functions->get_first_relation($searchDb2->pers_id);
             if ($first_relation) {
-                $this->relation['family_id2'] = $first_relation->person_gedcomnumber;
+                $this->relation['family_id2'] = $first_relation->relation_gedcomnumber;
             } else {
                 $this->relation['family_id2'] = $searchDb2->parent_relation_gedcomnumber;
             }

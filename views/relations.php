@@ -127,8 +127,7 @@ $limit = 500; // *** Limit results ***
                             )
                             GROUP BY pers_id, event_event, event_kind, event_id
                             ORDER BY pers_lastname, pers_firstname, CAST(SUBSTRING(pers_gedcomnumber, 2) AS UNSIGNED)
-                            LIMIT 0, $limit
-                        ";
+                            LIMIT 0, $limit";
                         $stmt = $dbh->prepare($search_qry);
                         $stmt->bindValue(':tree_id', $tree_id, PDO::PARAM_STR);
                         $stmt->bindValue(':search_name1', $search_name1, PDO::PARAM_STR);
@@ -159,7 +158,7 @@ $limit = 500; // *** Limit results ***
 
                             <select size="1" name="person1" aria-label="<?= __('Select person 1'); ?>" class="form-select form-select-sm">
                                 <?php
-                                $db_functions -> set_tree_id($tree_id);
+                                $db_functions->set_tree_id($tree_id);
                                 while ($search2Db = $search_result->fetch(PDO::FETCH_OBJ)) {
                                     // *** Also get pers_bapt_date and pers_birth_date for showing in list ***
                                     $searchDb = $db_functions->get_person_with_id($search2Db->pers_id);
@@ -287,7 +286,7 @@ $limit = 500; // *** Limit results ***
 
                             <select size="1" name="person2" aria-label="<?= __('Select person 2'); ?>" class="form-select form-select-sm">
                                 <?php
-                                $db_functions -> set_tree_id($tree_id);
+                                $db_functions->set_tree_id($tree_id);
                                 while ($search2Db2 = $search_result2->fetch(PDO::FETCH_OBJ)) {
                                     // *** Also get pers_bapt_date and pers_birth_date for showing in list ***
                                     $searchDb2 = $db_functions->get_person_with_id($search2Db2->pers_id);
@@ -815,7 +814,7 @@ function ext_calc_display_result($result, $db_functions, $relation)
             if ($yval > $maxy) {
                 $maxy = $yval;
             }
-            if ($map[$x - 1][3] === "chd") {
+            if ($x > 0 && isset($map[$x - 1][3]) && $map[$x - 1][3] === "chd") {
                 $xval++;
             }
             $map[$x][0] = $xval;
@@ -825,7 +824,9 @@ function ext_calc_display_result($result, $db_functions, $relation)
     if ($miny < 1) {
         for ($x = 0; $x < count($map); $x++) {
             $map[$x][1] += (1 + abs($miny));
-            if ($map[$x][1] > $maxy)    $maxy = $map[$x][1];
+            if ($map[$x][1] > $maxy) {
+                $maxy = $map[$x][1];
+            }
         }
         if (isset($marrsign)) {
             foreach ($marrsign as $key => $value) {
@@ -852,7 +853,6 @@ function ext_calc_display_result($result, $db_functions, $relation)
                     for ($x = 0; $x < count($map); $x++) {
                         if ($map[$x][0] == $b && $map[$x][1] == $a) {
                             $ancDb = $db_functions->get_person($map[$x][4]);
-
                             $border = "border:1px solid #777777;";
                             // person A and B (first and last) get thicker border
                             if ($map[$x][4] == $relation["person1"] || $map[$x][4] == $relation["person2"]) {
@@ -1027,13 +1027,14 @@ function display_table($relation)
                 <?php
                 $count = $relation['foundY_nr'];
                 while ($count != 0) {
+                    // TODO: this code is used multiple times in this script. Needs refactoring.
                     $persidDb = $db_functions->get_person($relation['rel_arrayY'][$count][0]);
                     $privacy = $personPrivacy->get_privacy($persidDb);
                     $name = $personName->get_person_name($persidDb, $privacy);
 
                     $first_relation = $db_functions->get_first_relation($persidDb->pers_id);
-                    if (isset($first_relation->person_gedcomnumber)) {
-                        $fam = $first_relation->person_gedcomnumber;
+                    if (isset($first_relation->relation_gedcomnumber)) {
+                        $fam = $first_relation->relation_gedcomnumber;
                     } else {
                         $fam = $persidDb->parent_relation_gedcomnumber;
                     }
@@ -1120,8 +1121,8 @@ function display_table($relation)
         $name = $personName->get_person_name($persidDb, $privacy);
 
         $first_relation = $db_functions->get_first_relation($persidDb->pers_id);
-        if (isset($first_relation->person_gedcomnumber)) {
-            $fam = $first_relation->person_gedcomnumber;
+        if (isset($first_relation->relation_gedcomnumber)) {
+            $fam = $first_relation->relation_gedcomnumber;
         } else {
             $fam = $persidDb->parent_relation_gedcomnumber;
         }
@@ -1137,6 +1138,7 @@ function display_table($relation)
                     <td style="border:0px;">&nbsp;</td>
                 <?php } ?>
 
+                <!-- Show common grandparent at top (first line in table) -->
                 <td class="<?= $persidDb->pers_sexe == "M" ? "extended_man" : "extended_woman"; ?>" style="width:200px;text-align:center;padding:2px;<?= $border; ?>" colspan="<?= $colspan; ?>">
                     <a href="<?= $link; ?>main_person=<?= $persidDb->pers_gedcomnumber; ?>"><?= $name["name"]; ?></a>
                 </td>
@@ -1147,6 +1149,7 @@ function display_table($relation)
                 <?php } ?>
             </tr>
 
+            <!-- Second line: show arrows -->
             <tr>
                 <?php if ($relation['spouse'] == 1 || $relation['spouse'] == 3) { ?>
                     <td style="border:0px;">&nbsp;</td>
@@ -1161,23 +1164,24 @@ function display_table($relation)
                 <?php } ?>
             </tr>
 
+            <!-- Following lines: show all persons in the relation -->
             <?php for ($e = 1; $e <= $rowcount; $e++) { ?>
                 <tr>
                     <?php
                     if ($countX != 0) {
-                        $persidDb = $db_functions->get_person($relation['rel_arrayX'][$countX][0]);
-                        $privacy = $personPrivacy->get_privacy($persidDb);
-                        $name = $personName->get_person_name($persidDb, $privacy);
-
                         if ($relation['spouse'] == 1 || $relation['spouse'] == 3) {
                     ?>
                             <td style="border:0px;">&nbsp;</td>
                             <td style="border:0px;">&nbsp;</td>
                         <?php
                         }
+                        $persidDb = $db_functions->get_person($relation['rel_arrayX'][$countX][0]);
+                        $privacy = $personPrivacy->get_privacy($persidDb);
+                        $name = $personName->get_person_name($persidDb, $privacy);
+
                         $first_relation = $db_functions->get_first_relation($persidDb->pers_id);
-                        if (isset($first_relation->person_gedcomnumber)) {
-                            $fam = $first_relation->person_gedcomnumber;
+                        if (isset($first_relation->relation_gedcomnumber)) {
+                            $fam = $first_relation->relation_gedcomnumber;
                         } else {
                             $fam = $persidDb->parent_relation_gedcomnumber;
                         }
@@ -1197,8 +1201,8 @@ function display_table($relation)
                             $name = $personName->get_person_name($persidDb, $privacy);
 
                             $first_relation = $db_functions->get_first_relation($persidDb->pers_id);
-                            if (isset($first_relation->person_gedcomnumber)) {
-                                $fam = $first_relation->person_gedcomnumber;
+                            if (isset($first_relation->relation_gedcomnumber)) {
+                                $fam = $first_relation->relation_gedcomnumber;
                             } else {
                                 $fam = $persidDb->parent_relation_gedcomnumber;
                             }
@@ -1238,8 +1242,8 @@ function display_table($relation)
                         $name = $personName->get_person_name($persidDb, $privacy);
 
                         $first_relation = $db_functions->get_first_relation($persidDb->pers_id);
-                        if (isset($first_relation->person_gedcomnumber)) {
-                            $fam = $first_relation->person_gedcomnumber;
+                        if (isset($first_relation->relation_gedcomnumber)) {
+                            $fam = $first_relation->relation_gedcomnumber;
                         } else {
                             $fam = $persidDb->parent_relation_gedcomnumber;
                         }
@@ -1265,8 +1269,8 @@ function display_table($relation)
                             $name = $personName->get_person_name($persidDb, $privacy);
 
                             $first_relation = $db_functions->get_first_relation($persidDb->pers_id);
-                            if (isset($first_relation->person_gedcomnumber)) {
-                                $fam = $first_relation->person_gedcomnumber;
+                            if (isset($first_relation->relation_gedcomnumber)) {
+                                $fam = $first_relation->relation_gedcomnumber;
                             } else {
                                 $fam = $persidDb->parent_relation_gedcomnumber;
                             }
@@ -1307,6 +1311,7 @@ function display_table($relation)
                     ?>
                 </tr>
 
+                <!-- Show arrow line -->
                 <tr>
                     <?php if ($relation['spouse'] == 1 || $relation['spouse'] == 3) { ?>
                         <td style="border:0px;">&nbsp;</td>
