@@ -147,6 +147,67 @@ $menu_top = getActiveTopMenu($page);
 //if ($menu_top === 'tool_menu'){
 //  echo 'active';
 //}
+
+// *** Use your own favicon.ico in media folder ***
+if (file_exists('media/favicon.ico')) {
+    $faviconLink = $mediaPath->give_media_path("media/", "favicon.ico");
+} else {
+    $faviconLink = 'favicon.ico';
+}
+
+// Show menu
+$menu = true;
+// *** Hide menu in descendant chart shown in iframe in fanchart ***
+if (isset($_GET['menu']) && $_GET['menu'] == "1") {
+    $menu = false;
+}
+if ($menu) {
+    // *** LTR or RTL ***
+    $rtlmark = 'ltr';
+    if ($language["dir"] == "rtl") {
+        $rtlmark = 'rtl';
+    }
+
+    // *** Show logo or name of website ***
+    $logo = $humo_option["database_name"];
+    if (is_file('media/logo.png')) {
+        $logo = '<img src="' . $mediaPath->give_media_path('media/', 'logo.png') . '">';
+    } elseif (is_file('media/logo.jpg')) {
+        $logo = '<img src="' . $mediaPath->give_media_path('media/', 'logo.jpg') . '">';
+    }
+}
+
+/**
+ * Canonical link, to prevent indexing of all seperate links.
+ * 
+ * Link in sitemap: 
+ * http://127.0.0.1/humo-genealogy/index.php?page=family&tree_id=3&id=F1
+ *
+ * Standard familypage, man is main person (not needed to index):
+ * http://127.0.0.1/humo-genealogy/index.php?page=family&tree_id=3&id=F1&main_person=I1
+ *
+ * Standard familypage, woman is main person (not needed to index):
+ * http://127.0.0.1/humo-genealogy/index.php?page=family&tree_id=3&id=F1&main_person=I2
+ *
+ * Canonical link is the same link as generated in sitemap (this link should be indexed):
+ * http://127.0.0.1/humo-genealogy/index.php?page=family&tree_id=3&id=F1
+ */
+if ($page == 'family') {
+    if ($humo_option["url_rewrite"] == "j") {
+        $canonical_path = $base_href . 'family/' . $tree_id . '/' . $data["family_id"];
+    } else {
+        // TODO refactor. Same code as in sitemap.php
+        // *** First part of url (strip sitemap.php from path) ***
+        $position = strrpos($_SERVER['PHP_SELF'], '/');
+        // *** April 2022: Using full path: http://localhost/humo-genealogy/sitemap.php ***
+        if (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] != 'off') {
+            $canonical_path = 'https://' . $_SERVER['SERVER_NAME'] . substr($_SERVER['PHP_SELF'], 0, $position);
+        } else {
+            $canonical_path = 'http://' . $_SERVER['SERVER_NAME'] . substr($_SERVER['PHP_SELF'], 0, $position);
+        }
+        $canonical_path = $canonical_path . '/index.php?page=family&amp;tree_id=' . $tree_id . '&amp;id=' . $data["family_id"];
+    }
+}
 ?>
 
 <!DOCTYPE html>
@@ -159,9 +220,7 @@ $menu_top = getActiveTopMenu($page);
     <!-- Bootstrap: rescale standard HuMo-genealogy pages for mobile devices -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <?php
-    // Remark: title is changed using javascript in family.php
-    ?>
+    <!-- Remark: title is changed using javascript in family.php -->
     <title><?= $index['main_admin']; ?></title>
 
     <?php if ($humo_option["searchengine"] == "j") { ?>
@@ -182,14 +241,9 @@ $menu_top = getActiveTopMenu($page);
     <!-- TODO check print version -->
     <link href="css/print.css" rel="stylesheet" type="text/css" media="print">
 
-    <?php
-    // *** Use your own favicon.ico in media folder ***
-    if (file_exists('media/favicon.ico')) {
-        echo '<link href="' . $mediaPath->give_media_path("media/", "favicon.ico") . '" rel="shortcut icon" type="image/x-icon">';
-    } else {
-        echo '<link rel="shortcut icon" href="favicon.ico" type="image/x-icon">';
-    }
+    <link rel="icon" href="<?= $faviconLink; ?>" type="image/x-icon">
 
+    <?php
     /**
      * Use these lines to show a background picture for EACH FAMILY TREE
      */
@@ -240,51 +294,16 @@ $menu_top = getActiveTopMenu($page);
     // TODO replace with bootstrap carousel.
     // *** Always load script, because of "Random photo" at homepage (also used in other pages showing pictures) ***
     // *** Photo lightbox effect using GLightbox ***
+    // *** Remark: there is also a script in footer script, otherwise GLightbox doesn't work ***
     ?>
     <link rel="stylesheet" href="include/glightbox/css/glightbox.css">
     <script src="include/glightbox/js/glightbox.min.js"></script>
-    <?php
-    // TODO: could be done here using "defer". But bootstrap will be tried first.
-    // *** Remark: there is also a script in footer script, otherwise GLightbox doesn't work ***
 
-    // *** CSS changes for mobile devices ***
-    ?>
+    <!-- CSS changes for mobile devices -->
     <link rel="stylesheet" media="(max-width: 640px)" href="css/gedcom_mobile.css">
 
-    <?php
-    /**
-     * Canonical link, to prevent indexing of all seperate links.
-     * 
-     * Link in sitemap: 
-     * http://127.0.0.1/humo-genealogy/index.php?page=family&tree_id=3&id=F1
-     *
-     * Standard familypage, man is main person (not needed to index):
-     * http://127.0.0.1/humo-genealogy/index.php?page=family&tree_id=3&id=F1&main_person=I1
-     *
-     * Standard familypage, woman is main person (not needed to index):
-     * http://127.0.0.1/humo-genealogy/index.php?page=family&tree_id=3&id=F1&main_person=I2
-     *
-     * Canonical link is the same link as generated in sitemap (this link should be indexed):
-     * http://127.0.0.1/humo-genealogy/index.php?page=family&tree_id=3&id=F1
-     */
-    ?>
     <?php if ($page == 'family') { ?>
-        <?php if ($humo_option["url_rewrite"] == "j") { ?>
-            <link rel="canonical" href="<?= $base_href . 'family/' . $tree_id . '/' . $data["family_id"]; ?>">
-        <?php } else { ?>
-            <?php
-            // TODO refactor. Same code as in sitemap.php
-            // *** First part of url (strip sitemap.php from path) ***
-            $position = strrpos($_SERVER['PHP_SELF'], '/');
-            // *** April 2022: Using full path: http://localhost/humo-genealogy/sitemap.php ***
-            if (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] != 'off') {
-                $canonical_path = 'https://' . $_SERVER['SERVER_NAME'] . substr($_SERVER['PHP_SELF'], 0, $position);
-            } else {
-                $canonical_path = 'http://' . $_SERVER['SERVER_NAME'] . substr($_SERVER['PHP_SELF'], 0, $position);
-            }
-            ?>
-            <link rel="canonical" href="<?= $canonical_path . '/index.php?page=family&amp;tree_id=' . $tree_id . '&amp;id=' . $data["family_id"]; ?>">
-        <?php } ?>
+        <link rel="canonical" href="<?= $canonical_path; ?>">
     <?php } ?>
 
     <!-- Extra items in header added by admin -->
@@ -294,29 +313,7 @@ $menu_top = getActiveTopMenu($page);
 </head>
 
 <body>
-    <?php
-    // Show menu
-    $menu = true;
-    // *** Hide menu in descendant chart shown in iframe in fanchart ***
-    if (isset($_GET['menu']) && $_GET['menu'] == "1") {
-        $menu = false;
-    }
-    if ($menu) {
-        // *** LTR or RTL ***
-        $rtlmark = 'ltr';
-        if ($language["dir"] == "rtl") {
-            $rtlmark = 'rtl';
-        }
-
-        // *** Show logo or name of website ***
-        $logo = $humo_option["database_name"];
-        if (is_file('media/logo.png')) {
-            $logo = '<img src="' . $mediaPath->give_media_path('media/', 'logo.png') . '">';
-        } elseif (is_file('media/logo.jpg')) {
-            $logo = '<img src="' . $mediaPath->give_media_path('media/', 'logo.jpg') . '">';
-        }
-    ?>
-
+    <?php if ($menu) { ?>
         <div id="top_menu" class="d-print-none">
             <div id="top" class="pt-3 pe-2" style="direction:<?= $rtlmark; ?>">
 
@@ -414,10 +411,6 @@ $menu_top = getActiveTopMenu($page);
                             $menu_path .= 'adv_search=1&amp;index_list=search';
                             ?>
 
-                            <!--
-                                <a href="<?= $menu_path; ?>"><img src="images/advanced-search.jpg" width="17" alt="<?= __('Advanced search'); ?>"></a>
-                                -->
-
                             <form method="post" action="<?= $menu_path; ?>">
                                 <button type="submit" class="btn btn-light btn-sm"><img src="images/advanced-search.jpg" width="17" alt="<?= __('Advanced search'); ?>"></button>
                             </form>
@@ -436,7 +429,9 @@ $menu_top = getActiveTopMenu($page);
                         <div class="col-md-2">
 
                             <form method="POST" action="<?= $link; ?>" style="display : inline;">
-                                <!-- <img src="images/favorite_blue.png" alt="<?= __('Favourites'); ?>"> -->
+                                <?php /*
+                                <img src="images/favorite_blue.png" alt="<?= __('Favourites'); ?>">
+                                */ ?>
                                 <select size=1 name="humo_favorite_id" onChange="this.form.submit();" class="form-select form-select-sm">
                                     <option value=""><?= __('Favourites list:'); ?></option>
                                     <?php
@@ -834,7 +829,6 @@ $menu_top = getActiveTopMenu($page);
 
         <!-- Jan 2025: Bootstrap tooltip -->
         <script>
-            s
             const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]')
             const tooltipList = [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl))
         </script>
