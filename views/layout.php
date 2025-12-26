@@ -294,10 +294,10 @@ if ($page == 'family') {
     // TODO replace with bootstrap carousel.
     // *** Always load script, because of "Random photo" at homepage (also used in other pages showing pictures) ***
     // *** Photo lightbox effect using GLightbox ***
-    // *** Remark: there is also a script in footer script, otherwise GLightbox doesn't work ***
+    // *** Remark: there is also a glightbox script footer of this layout.php script, otherwise GLightbox doesn't work ***
     ?>
-    <link rel="stylesheet" href="include/glightbox/css/glightbox.css">
-    <script src="include/glightbox/js/glightbox.min.js"></script>
+    <link rel="stylesheet" href="assets/glightbox/css/glightbox.min.css">
+    <script src="assets/glightbox/js/glightbox.min.js"></script>
 
     <!-- CSS changes for mobile devices -->
     <link rel="stylesheet" media="(max-width: 640px)" href="css/gedcom_mobile.css">
@@ -819,7 +819,15 @@ if ($page == 'family') {
         ?>
 
         <br>
-        <script src="include/glightbox/glightbox_footer.js"></script>
+
+        <!-- GLightbox initialization - must be after DOM is loaded -->
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                const lightbox = GLightbox({
+                    selector: '[data-glightbox]'
+                });
+            });
+        </script>
 
         <!-- July 2024: Bootstrap popover -->
         <script>
