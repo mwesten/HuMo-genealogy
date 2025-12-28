@@ -169,7 +169,7 @@ class ShowMedia
                     $event_event = strtolower($event_event);
                 }
                 // *** Show photo using the lightbox effect ***
-                if (in_array(strtolower(pathinfo($event_event, PATHINFO_EXTENSION)), array('jpeg', 'jpg', 'png', 'gif', 'bmp', 'tif'))) {
+                if (in_array(strtolower(pathinfo($event_event, PATHINFO_EXTENSION)), array('jpeg', 'jpg', 'png', 'gif', 'bmp', 'tif', 'avif'))) {
 
                     $line_pos = 0;
                     if ($media_event_text[$i]) {

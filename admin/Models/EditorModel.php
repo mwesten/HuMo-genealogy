@@ -1566,7 +1566,7 @@ class EditorModel extends AdminBaseModel
             $stmt->bindValue(':relation_id', $relation_id, PDO::PARAM_INT);
             $stmt->bindValue(':relation_gedcomnumber', $fam_gedcomnumber, PDO::PARAM_STR);
             $stmt->bindValue(':person_id', $woman_id, PDO::PARAM_INT);
-            $stmt->bindValue(':person_gedcomnumber', $man_gedcomnumber, PDO::PARAM_STR);
+            $stmt->bindValue(':person_gedcomnumber', $woman_gedcomnumber, PDO::PARAM_STR);
             $stmt->execute();
 
             // *** Add special name ***

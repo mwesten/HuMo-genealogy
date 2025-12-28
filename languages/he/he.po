@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: HuMo-genealogy\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-11-20 14:35+0100\n"
-"PO-Revision-Date: 2025-11-20 14:35+0100\n"
+"POT-Creation-Date: 2025-12-12 08:43+0100\n"
+"PO-Revision-Date: 2025-12-12 08:44+0100\n"
 "Last-Translator: Yossi Beck <yosbeck@gmail.com>, 2016-2025\n"
 "Language-Team: Hebrew (http://app.transifex.com/humo-gen/humo-gen/language/"
 "he/)\n"
@@ -71,7 +71,7 @@ msgstr "יוצר טבלת קישורים..."
 #: admin/Migrations/Migration21.php:177
 #, php-format
 msgid "Minor problem: constraint %s failed."
-msgstr ""
+msgstr "בעיה קטנה: הגדרה %s נכשל."
 
 #: admin/Migrations/Migration3.php:24
 msgid "creating humo_cms_menu..."
@@ -180,7 +180,7 @@ msgstr "מספר מקון לא תקין"
 #: views/list_names.php:68 views/list_names.php:71 views/mailform.php:48
 #: views/mailform.php:50 views/maps.php:245 views/maps.php:349
 #: views/register.php:58 views/relations.php:86 views/relations.php:88
-#: views/relations.php:216
+#: views/relations.php:215
 msgid "Name"
 msgstr "שם"
 
@@ -243,7 +243,7 @@ msgstr "אדם"
 #: admin/Models/AdminSourcesModel.php:159
 #: admin/Models/AdminSourcesModel.php:165 admin/views/edit_address.php:54
 #: admin/views/edit_repository.php:139 admin/views/gedcom_export.php:286
-#: admin/views/partial/editor_addresses.php:298
+#: admin/views/partial/editor_addresses.php:279
 #: app/Controller/AddressController.php:29
 #: app/Controller/AddressesController.php:39
 #: app/Controller/CmsPagesController.php:31 include/TreeMerge.php:638
@@ -254,7 +254,7 @@ msgstr "כתובת"
 #: admin/Models/AdminSourcesModel.php:111 admin/views/editor_relation.php:491
 #: admin/views/editor_relation.php:732 include/MarriageCls.php:65
 #: include/MarriageCls.php:171 include/MarriageCls.php:173
-#: include/MarriageCls.php:175 include/PersonData.php:1283
+#: include/MarriageCls.php:175 include/PersonData.php:1284
 msgid "Living together"
 msgstr "גרים יחד"
 
@@ -280,8 +280,8 @@ msgid "Divorce"
 msgstr "גירושין"
 
 #: admin/Models/AdminSourcesModel.php:147 admin/views/editor.php:1233
-#: admin/views/editor_sources.php:293 admin/views/gedcom_import.php:1287
-#: admin/views/notes.php:236 admin/views/partial/editor_addresses.php:122
+#: admin/views/editor_sources.php:293 admin/views/gedcom_import.php:1286
+#: admin/views/notes.php:236 admin/views/partial/editor_addresses.php:139
 #: include/EditorEvent.php:124
 msgid "text"
 msgstr "טקסט"
@@ -301,10 +301,8 @@ msgid "Event"
 msgstr "ארוע"
 
 #: admin/Models/EditorModel.php:369
-#, fuzzy
-#| msgid "Person disconnected from parents."
 msgid "Person disconnected from relations."
-msgstr "האדם נותק מההורים"
+msgstr "האדם נותק מקשרי המשפחה."
 
 #: admin/Models/EditorModel.php:372
 msgid "Person disconnected from parents."
@@ -409,7 +407,7 @@ msgid "Descendants"
 msgstr "צאצאים"
 
 #: admin/Models/EditorModel.php:3008 admin/views/gedcom_export.php:232
-#: app/Model/AncestorModel.php:140 include/EditorEvent.php:866
+#: app/Model/AncestorModel.php:141 include/EditorEvent.php:866
 #: include/PersonPopup.php:94 views/hourglass.php:143
 msgid "Ancestors"
 msgstr "אבות"
@@ -438,7 +436,7 @@ msgstr "שפה"
 #: admin/Models/TreeCheckChangesModel.php:77 admin/views/editor.php:118
 #: admin/views/editor.php:379 admin/views/tree_check_consistency.php:287
 #: admin/views/tree_merge_manual.php:113 admin/views/tree_merge_manual.php:197
-#: views/family.php:1209 views/relations.php:84 views/relations.php:212
+#: views/family.php:1209 views/relations.php:84 views/relations.php:211
 msgid "Person"
 msgstr "אדם"
 
@@ -493,7 +491,7 @@ msgstr "קיים עדכון"
 msgid "Beta version available"
 msgstr "קיימת גירסת בטא"
 
-#: admin/include/index_check_update.php:311 admin/update/install_update.php:585
+#: admin/include/index_check_update.php:311 admin/update/install_update.php:586
 msgid "Online version check unavailable."
 msgstr "לא ניתן לבצע בדיקת גרסה מקוונת"
 
@@ -755,12 +753,12 @@ msgstr "קיים גרסת בטא של %s"
 msgid "No beta version available."
 msgstr "לא קיימת גירסת בטא."
 
-#: admin/update/install_update.php:82 admin/update/install_update.php:619
+#: admin/update/install_update.php:82 admin/update/install_update.php:620
 #, php-format
 msgid "Enable/ disable %s update check."
 msgstr "אפשר / בטל בדיקה אם יש גירסאות %s חדשות"
 
-#: admin/update/install_update.php:86 admin/update/install_update.php:624
+#: admin/update/install_update.php:86 admin/update/install_update.php:625
 #, php-format
 msgid "Check regularly for %s updates."
 msgstr "בדוק באופן תדיר אם יש גרסאות %s חדשות."
@@ -862,78 +860,87 @@ msgstr "הקובץ עודכן."
 msgid "Install files!"
 msgstr "התקן את הקבצים!"
 
-#: admin/update/install_update.php:545
-msgid "Update completed and installation files removed!"
+#: admin/update/install_update.php:546
+#, fuzzy, php-format
+#| msgid "Update completed and installation files removed!"
+msgid ""
+"Update completed and installation files removed! Click %s to return to the "
+"main menu."
 msgstr "העדכון הושלם וקבצי ההתקנה הזמניים הוסרו!"
 
-#: admin/update/install_update.php:552
+#: admin/update/install_update.php:546 admin/views/install.php:976
+#: admin/views/menu.php:51 admin/views/update.php:218
+msgid "Main menu"
+msgstr "תפריט ראשי"
+
+#: admin/update/install_update.php:553
 #, php-format
 msgid "Current %s version:"
 msgstr "גרסת %s נוכחית:"
 
-#: admin/update/install_update.php:555
+#: admin/update/install_update.php:556
 #, php-format
 msgid "Available %s version:"
 msgstr "גרסת %s חדש:"
 
-#: admin/update/install_update.php:559
+#: admin/update/install_update.php:560
 msgid "There are 2 update methods: automatic and manually."
 msgstr "ישנן שתי שיטות עדכון: אוטומטית וידנית"
 
-#: admin/update/install_update.php:562
+#: admin/update/install_update.php:563
 #, php-format
 msgid "1) Automatic update of %s"
 msgstr "1) שדרוג אוטומטי של %s"
 
-#: admin/update/install_update.php:564 admin/update/install_update.php:570
+#: admin/update/install_update.php:565 admin/update/install_update.php:571
 msgid "a) [Optional, but highly recommended] Do a database backup first"
 msgstr "א) אופציונלי, אבל מומלץ מאד: בצע קודם גיבוי של בסיס הנתונים"
 
-#: admin/update/install_update.php:564 admin/update/install_update.php:570
+#: admin/update/install_update.php:565 admin/update/install_update.php:571
 msgid "backup page"
 msgstr "עמוד גיבוי"
 
-#: admin/update/install_update.php:565
+#: admin/update/install_update.php:566
 msgid "b)"
 msgstr "ב)"
 
-#: admin/update/install_update.php:565
+#: admin/update/install_update.php:566
 msgid "Start automatic update"
 msgstr "התחל את העדכון האוטומטי"
 
-#: admin/update/install_update.php:568
+#: admin/update/install_update.php:569
 #, php-format
 msgid "1) Manual update of %s"
 msgstr "1) עדכון ידני של %s"
 
-#: admin/update/install_update.php:572
+#: admin/update/install_update.php:573
 msgid "b) Download the new version: "
 msgstr "ב) הורד את הגירסה החדשה: "
 
-#: admin/update/install_update.php:573
+#: admin/update/install_update.php:574
 #, php-format
 msgid "%s version:"
 msgstr "גרסת %s"
 
-#: admin/update/install_update.php:576
+#: admin/update/install_update.php:577
 #, php-format
 msgid "c) Unzip the file and replace the old %s files by the new %s files."
 msgstr "ג) פתח את הקובץ המכווץ והחלף את קבצי %s הישנים בקבצי %s החדשים."
 
-#: admin/update/install_update.php:578
+#: admin/update/install_update.php:579
 msgid "Full installation and update instructions can be found at:"
 msgstr "הנחיות מלאות להתקנה ולעדכון ניתן למצוא ב:"
 
-#: admin/update/install_update.php:579
+#: admin/update/install_update.php:580
 #, php-format
 msgid "%s manual"
 msgstr "מדריך %s"
 
-#: admin/update/install_update.php:586
+#: admin/update/install_update.php:587
 msgid "Semi-automatic update"
 msgstr "שדרוג חצי-אוטומטי"
 
-#: admin/update/install_update.php:587
+#: admin/update/install_update.php:588
 msgid ""
 "In some cases the automatic update doesn't work. Then use this semi-"
 "automatic update method."
@@ -941,48 +948,48 @@ msgstr ""
 "במקרים מסוימים השדרוג האוטומטי אינו עובד. אם זה קורה, השתמשו בשדרוג החצי-"
 "אוטומטי."
 
-#: admin/update/install_update.php:588
+#: admin/update/install_update.php:589
 #, php-format
 msgid "1. Download a new version of %s."
 msgstr "1. הורידו גרסה חדשה של %s"
 
-#: admin/update/install_update.php:589
+#: admin/update/install_update.php:590
 msgid "2. Rename the zip file into: humo-gen_update.zip"
 msgstr "2. שנו את שם קובץ ה-zip ל: humo-gen_update.zip "
 
-#: admin/update/install_update.php:598
+#: admin/update/install_update.php:599
 msgid "Upload failed, check folder rights"
 msgstr "ההעלאה נכשלה, בדקו את ההרשאות לתיקיה"
 
-#: admin/update/install_update.php:604
+#: admin/update/install_update.php:605
 msgid "3. Upload humo-gen_update.zip:"
 msgstr "3. העלה את הקובץ humo-gen_update.zip."
 
-#: admin/update/install_update.php:605 admin/views/backup.php:131
+#: admin/update/install_update.php:606 admin/views/backup.php:131
 #: admin/views/gedcom_import.php:65 admin/views/settings.php:102
 #: admin/views/settings.php:657 include/EditorEvent.php:1269
 msgid "Upload"
 msgstr "האלעת קובץ"
 
-#: admin/update/install_update.php:607
+#: admin/update/install_update.php:608
 msgid "OR: manually upload the file to folder: admin/update/"
 msgstr "או: העלה את הקובץ ידנית לתיקיה: admin/update/"
 
-#: admin/update/install_update.php:610
+#: admin/update/install_update.php:611
 msgid "4. Then click:"
 msgstr "4. אחר כך הקלק: "
 
-#: admin/update/install_update.php:612
+#: admin/update/install_update.php:613
 #, php-format
 msgid "start update of %s."
 msgstr "התחל את השדרוג של %s."
 
-#: admin/update/install_update.php:616
+#: admin/update/install_update.php:617
 #, php-format
 msgid "%s version history"
 msgstr " היסטוריה של גרסאות %s"
 
-#: admin/update/install_update.php:617 admin/views/index_admin.php:22
+#: admin/update/install_update.php:618 admin/views/index_admin.php:22
 #, php-format
 msgid "%s version"
 msgstr "גרסת %s"
@@ -1383,13 +1390,13 @@ msgstr "מספר גדקום (ID)"
 #: views/addresses.php:29 views/latest_changes.php:25 views/layout.php:404
 #: views/list.php:108 views/list.php:169 views/list.php:453
 #: views/list_places_families.php:95 views/photoalbum.php:105
-#: views/relations.php:89 views/relations.php:97 views/relations.php:214
-#: views/relations.php:217 views/relations.php:225 views/sources.php:30
+#: views/relations.php:89 views/relations.php:97 views/relations.php:213
+#: views/relations.php:216 views/relations.php:224 views/sources.php:30
 msgid "Search"
 msgstr "חיפוש"
 
 #: admin/views/edit_address.php:64 admin/views/edit_address.php:68
-#: admin/views/edit_address.php:69 admin/views/partial/editor_addresses.php:302
+#: admin/views/edit_address.php:69 admin/views/partial/editor_addresses.php:283
 msgid "Select address"
 msgstr "בחר כתובת"
 
@@ -1433,7 +1440,7 @@ msgstr "מספר זיהוי כתובות לא תקין"
 #: admin/views/editor_relation.php:1438 admin/views/editor_relation.php:1457
 #: admin/views/editor_relation.php:1476 admin/views/editor_sources.php:150
 #: admin/views/editor_sources.php:243
-#: admin/views/partial/editor_addresses.php:172 include/EditorEvent.php:1128
+#: admin/views/partial/editor_addresses.php:168 include/EditorEvent.php:1128
 #: include/ShowSourcePDF.php:82 views/address.php:27 views/list.php:264
 #: views/list.php:284 views/list.php:366 views/list.php:373 views/list.php:708
 #: views/list.php:746 views/source.php:55 views/source.php:125
@@ -1453,27 +1460,25 @@ msgstr "מקום:‏"
 #: admin/views/editor_relation.php:996 admin/views/editor_relation.php:1408
 #: admin/views/editor_relation.php:1441 admin/views/editor_relation.php:1460
 #: admin/views/editor_relation.php:1479 admin/views/editor_sources.php:152
-#: admin/views/partial/editor_addresses.php:175 include/EditorEvent.php:1131
+#: admin/views/partial/editor_addresses.php:171 include/EditorEvent.php:1131
 #: views/list.php:105 views/list_places_families.php:92
-#, fuzzy
-#| msgid "Started adding to data base."
 msgid "Start typing to search for a place."
-msgstr "הוחל בהליך ההוספה לטבלת המקומות."
+msgstr "התחל להקליד כדי לחפש מיקום."
 
 #: admin/views/edit_address.php:152
-#: admin/views/partial/editor_addresses.php:201 views/address.php:17
+#: admin/views/partial/editor_addresses.php:197 views/address.php:17
 #: views/addresses.php:26 views/addresses.php:42
 msgid "Street"
 msgstr "רחוב"
 
 #: admin/views/edit_address.php:162 admin/views/edit_repository.php:149
-#: admin/views/partial/editor_addresses.php:209 views/address.php:22
+#: admin/views/partial/editor_addresses.php:205 views/address.php:22
 #: views/list.php:379 views/list.php:386 views/source.php:116
 msgid "Zip code"
 msgstr "מיקוד: ‏"
 
 #: admin/views/edit_address.php:172 admin/views/edit_repository.php:179
-#: admin/views/partial/editor_addresses.php:217 views/address.php:32
+#: admin/views/partial/editor_addresses.php:213 views/address.php:32
 msgid "Phone"
 msgstr "טלפון: ‏"
 
@@ -1491,7 +1496,7 @@ msgstr "טלפון: ‏"
 #: admin/views/editor_relation.php:1034 admin/views/editor_relation.php:1074
 #: admin/views/editor_relation.php:1097 admin/views/editor_sources.php:35
 #: admin/views/editor_sources.php:100 admin/views/editor_sources.php:128
-#: admin/views/partial/editor_addresses.php:270
+#: admin/views/partial/editor_addresses.php:255
 #: app/Controller/SourceController.php:26 include/EditorEvent.php:1158
 #: views/address.php:51 views/source.php:20
 msgid "Source"
@@ -1514,7 +1519,7 @@ msgstr "סגור"
 #: admin/views/editor_relation.php:837 admin/views/editor_relation.php:912
 #: admin/views/editor_relation.php:1026 admin/views/editor_relation.php:1066
 #: admin/views/editor_sources.php:164 admin/views/groups.php:579
-#: admin/views/groups.php:596 admin/views/partial/editor_addresses.php:225
+#: admin/views/groups.php:596 admin/views/partial/editor_addresses.php:221
 #: admin/views/settings_homepage.php:99 admin/views/settings_homepage.php:149
 #: admin/views/settings_homepage.php:234 include/EditorEvent.php:1146
 #: include/ProcessText.php:143 views/addresses.php:43 views/family.php:1232
@@ -1531,7 +1536,7 @@ msgstr "טקסט"
 #: admin/views/editor_person.php:1683 admin/views/editor_person.php:1878
 #: admin/views/editor_sources.php:355 admin/views/log.php:111
 #: admin/views/partial/editor_addresses.php:13
-#: admin/views/partial/editor_addresses.php:326
+#: admin/views/partial/editor_addresses.php:307
 #: admin/views/partial/editor_notes.php:26
 #: admin/views/settings_homepage.php:244 admin/views/settings_homepage.php:327
 #: admin/views/users.php:191 include/EditorEvent.php:339
@@ -1610,7 +1615,7 @@ msgstr "הסר דף"
 #: admin/views/edit_cms_pages.php:82 admin/views/edit_cms_pages.php:207
 #: admin/views/editor_relation.php:164 admin/views/editor_relation.php:1241
 #: admin/views/editor_sources.php:57
-#: admin/views/partial/editor_addresses.php:77
+#: admin/views/partial/editor_addresses.php:123
 #: admin/views/settings_homepage.php:80 admin/views/tree_admin.php:50
 #: include/EditorEvent.php:520
 msgid "Drag to change order (saves automatically)"
@@ -1619,7 +1624,7 @@ msgstr "גרור על מנת לערוך את הסדר (נשמר אוטומטית
 #: admin/views/edit_cms_pages.php:82 admin/views/edit_cms_pages.php:207
 #: admin/views/editor_relation.php:164 admin/views/editor_relation.php:1222
 #: admin/views/editor_relation.php:1241 admin/views/editor_sources.php:57
-#: admin/views/partial/editor_addresses.php:77
+#: admin/views/partial/editor_addresses.php:123
 #: admin/views/settings_homepage.php:80 admin/views/tree_admin.php:50
 #: include/EditorEvent.php:520
 msgid "Drag to change order"
@@ -1642,10 +1647,8 @@ msgid "This page can be accessed using this link: "
 msgstr "אפשר להתג דף זה באמצעות הקישור הבא: "
 
 #: admin/views/edit_cms_pages.php:134
-#, fuzzy
-#| msgid "Select media"
 msgid "Select menu"
-msgstr "בחרו מדיה"
+msgstr "בחרו תפריט"
 
 #: admin/views/edit_cms_pages.php:150
 msgid "Published"
@@ -1730,10 +1733,8 @@ msgid "Use for all languages"
 msgstr "לשימוש בכל השפות"
 
 #: admin/views/edit_cms_pages.php:368 admin/views/edit_cms_pages.php:409
-#, fuzzy
-#| msgid "Select adoption parents"
 msgid "Select main page"
-msgstr "בחרו הורים מאמצים"
+msgstr "בחרו עמוד ראשי"
 
 #: admin/views/edit_cms_pages.php:369 admin/views/edit_cms_pages.php:410
 msgid "Standard main index"
@@ -1803,7 +1804,7 @@ msgstr "תואר"
 #: admin/views/editor_relation.php:1399 admin/views/editor_relation.php:1432
 #: admin/views/editor_relation.php:1451 admin/views/editor_relation.php:1470
 #: admin/views/editor_sources.php:143 admin/views/editor_sources.php:236
-#: admin/views/partial/editor_addresses.php:232
+#: admin/views/partial/editor_addresses.php:228
 #: app/Model/TreeIndexModel.php:1025 include/EditorEvent.php:1106
 #: include/ShowSourcePDF.php:47 views/list.php:251 views/list.php:271
 #: views/list.php:689 views/list.php:727 views/source.php:42
@@ -1819,7 +1820,7 @@ msgstr "כתובת דואר אלקטרוני"
 
 #: admin/views/edit_repository.php:209 admin/views/editor_person.php:1749
 #: admin/views/editor_relation.php:1128 include/EditorEvent.php:72
-#: include/MarriageCls.php:781 include/PersonData.php:1108
+#: include/MarriageCls.php:781 include/PersonData.php:1109
 msgid "URL/ Internet link"
 msgstr "URL / קישור אינטרנט"
 
@@ -1967,8 +1968,8 @@ msgid "GEDCOM number (ID)"
 msgstr "מספר ג'דקום (ID)"
 
 #: admin/views/editor.php:267 admin/views/tree_merge_manual.php:174
-#: admin/views/tree_merge_manual.php:257 views/relations.php:200
-#: views/relations.php:201 views/relations.php:326 views/relations.php:327
+#: admin/views/tree_merge_manual.php:257 views/relations.php:199
+#: views/relations.php:200 views/relations.php:325 views/relations.php:326
 msgid "Person not found"
 msgstr "אדם לא נמצא"
 
@@ -2030,8 +2031,8 @@ msgstr "הורים"
 #: admin/views/statistics_families.php:76
 #: admin/views/statistics_families.php:88 include/EditorEvent.php:743
 #: include/EditorEvent.php:752 include/Editor_cls.php:310
-#: include/PersonData.php:1042 include/PersonData.php:1062
-#: include/PersonData.php:1079 include/PersonData.php:1330
+#: include/PersonData.php:1043 include/PersonData.php:1063
+#: include/PersonData.php:1080 include/PersonData.php:1331
 #: include/PersonName.php:503 include/PersonName.php:505
 #: include/PersonName.php:506 include/PersonName.php:507
 #: include/PersonName.php:508 include/PersonNameExtended.php:59
@@ -2058,7 +2059,7 @@ msgstr "לא ידוע"
 #: include/LanguageDate.php:134 include/PersonNameExtended.php:252
 #: include/PersonNameExtended.php:253 include/PersonNameExtended.php:323
 #: include/PersonNameExtended.php:324 include/PersonNameExtended.php:408
-#: include/PersonNameExtended.php:409 views/relations.php:555
+#: include/PersonNameExtended.php:409 views/relations.php:554
 #: views/stats_tree.php:39
 msgid "and"
 msgstr "ו"
@@ -2109,7 +2110,7 @@ msgid "= click to open extended editor items."
 msgstr "= הקלק לפתוח נושאי עריכה מתקדמים"
 
 #: admin/views/editor.php:669 views/layout.php:881 views/list.php:478
-#: views/maps.php:28 views/relations.php:369 views/timeline.php:176
+#: views/maps.php:28 views/relations.php:368 views/timeline.php:176
 msgid "Help"
 msgstr "עזרה"
 
@@ -2244,13 +2245,11 @@ msgstr "שניהם"
 
 #: admin/views/editor_person.php:413 admin/views/editor_relation.php:423
 msgid "Info"
-msgstr ""
+msgstr "מידע"
 
 #: admin/views/editor_person.php:434 views/family_top_line.php:179
-#, fuzzy
-#| msgid "Add to favourite list"
 msgid "Remove from favourite list"
-msgstr "הוסף לרשימת המועדפים"
+msgstr "הסר מרשימת המועדפים"
 
 #: admin/views/editor_person.php:436 views/family_top_line.php:176
 msgid "Add to favourite list"
@@ -2594,16 +2593,14 @@ msgid "Person 1 should be the man. Switch person 1 and person 2."
 msgstr "  האדם הראשון אמור להיות הבעל. החליפו האדם הראשון והשני."
 
 #: admin/views/editor_relation.php:438
-#, fuzzy
-#| msgid "Switch persons"
 msgid "Switch Persons"
-msgstr "החלף אנשים"
+msgstr "החלף בין האנשים"
 
-#: admin/views/editor_relation.php:444 views/relations.php:160
+#: admin/views/editor_relation.php:444 views/relations.php:159
 msgid "Select person 1"
 msgstr "בחר אדם 1"
 
-#: admin/views/editor_relation.php:463 views/relations.php:288
+#: admin/views/editor_relation.php:463 views/relations.php:287
 msgid "Select person 2"
 msgstr "בחר אדם 2"
 
@@ -2638,17 +2635,17 @@ msgid "Age person 2"
 msgstr "גיל אדם 2"
 
 #: admin/views/editor_relation.php:733 include/MarriageCls.php:68
-#: include/PersonData.php:1286
+#: include/PersonData.php:1287
 msgid "Living apart together"
 msgstr "גרים בנפרד"
 
 #: admin/views/editor_relation.php:734 include/MarriageCls.php:72
-#: include/PersonData.php:1289
+#: include/PersonData.php:1290
 msgid "Intentionally unmarried mother"
 msgstr "אם חד-הורית"
 
 #: admin/views/editor_relation.php:735 include/MarriageCls.php:78
-#: include/PersonData.php:1292
+#: include/PersonData.php:1293
 msgid "Homosexual"
 msgstr "הומוסקסואל"
 
@@ -2657,13 +2654,13 @@ msgid "Non_marital"
 msgstr "לא ברית נישואין"
 
 #: admin/views/editor_relation.php:737 include/MarriageCls.php:87
-#: include/MarriageCls.php:94 include/PersonData.php:1298
-#: include/PersonData.php:1301
+#: include/MarriageCls.php:94 include/PersonData.php:1299
+#: include/PersonData.php:1302
 msgid "Extramarital"
 msgstr "מחוץ לנישואין"
 
 #: admin/views/editor_relation.php:738 include/MarriageCls.php:101
-#: include/PersonData.php:1304
+#: include/PersonData.php:1305
 msgid "Partner"
 msgstr "שותף"
 
@@ -2672,7 +2669,7 @@ msgid "Registered partnership"
 msgstr "זוגיות רשומה"
 
 #: admin/views/editor_relation.php:740 include/MarriageCls.php:109
-#: include/PersonData.php:1310
+#: include/PersonData.php:1311
 msgid "Unknown relation"
 msgstr "יחס לא נודע"
 
@@ -2721,10 +2718,8 @@ msgid "Children are re-ordered."
 msgstr "בוצע סידור הילידים"
 
 #: admin/views/editor_relation.php:1230
-#, fuzzy
-#| msgid "Automatic order children"
 msgid "No changes in order of children."
-msgstr "סדר אוטומטי של הילדים"
+msgstr "אין שינויים בסדר הילדים"
 
 #: admin/views/editor_relation.php:1247
 msgid "Disconnect child"
@@ -3207,9 +3202,9 @@ msgid "Add this GEDCOM file to the existing tree"
 msgstr "הוסף את קובץ הג'דקום הזה לעץ הקיים"
 
 #: admin/views/gedcom_import.php:333 admin/views/gedcom_import.php:336
-#: admin/views/gedcom_import.php:389 admin/views/gedcom_import.php:582
-#: admin/views/gedcom_import.php:1210 admin/views/gedcom_import.php:1337
-#: admin/views/gedcom_import.php:1360
+#: admin/views/gedcom_import.php:389 admin/views/gedcom_import.php:604
+#: admin/views/gedcom_import.php:1209 admin/views/gedcom_import.php:1336
+#: admin/views/gedcom_import.php:1359
 msgid "Step"
 msgstr "שלב"
 
@@ -3217,8 +3212,8 @@ msgstr "שלב"
 msgid "STEP 2) Remove old family tree:"
 msgstr "שלב 2) הסר את עץ המשפחה הישן:"
 
-#: admin/views/gedcom_import.php:388 admin/views/gedcom_import.php:704
-#: admin/views/gedcom_import.php:1360
+#: admin/views/gedcom_import.php:388 admin/views/gedcom_import.php:726
+#: admin/views/gedcom_import.php:1359
 msgid "ONLY use in case of a time-out, to continue click:"
 msgstr "רק במקרה של טיים-אוט (הפסקה בטרם עת) הקלק כאן כדי להמשיך:"
 
@@ -3227,11 +3222,11 @@ msgid ""
 "The data in this GEDCOM will be appended to the existing data in this tree!"
 msgstr "הנתונים של ג'דקום זה יתווספו לנתונים הקיימים בעץ זה!"
 
-#: admin/views/gedcom_import.php:589 admin/views/maps_locations.php:538
+#: admin/views/gedcom_import.php:611 admin/views/maps_locations.php:538
 msgid "Cancel"
 msgstr "בטל"
 
-#: admin/views/gedcom_import.php:680
+#: admin/views/gedcom_import.php:702
 msgid ""
 "<b>STEP 3) Processing GEDCOM file:</b>\n"
 "<p>The following lines have to be processed without error messages...<br>\n"
@@ -3241,35 +3236,35 @@ msgstr ""
 "<p>את השורות הבאות צריך לסיים ללא הודעות שגיאה...<br>\n"
 "<b>הייבוא עשוי לקחת זמן-מה!"
 
-#: admin/views/gedcom_import.php:704
+#: admin/views/gedcom_import.php:726
 msgid "Restart"
 msgstr "התחל מחדש"
 
-#: admin/views/gedcom_import.php:705
+#: admin/views/gedcom_import.php:727
 msgid "Restarts reading of GEDCOM using a controlled time-out."
 msgstr "יתחיל את ייבוא הג'דקום מחדש באמצעות טיים-אואט מבוקר."
 
-#: admin/views/gedcom_import.php:783 admin/views/gedcom_import.php:1150
-#: admin/views/gedcom_import.php:1316 admin/views/gedcom_import.php:1550
-#: admin/views/gedcom_import.php:1739 admin/views/gedcom_import.php:1944
-#: admin/views/gedcom_import.php:1987
+#: admin/views/gedcom_import.php:805 admin/views/gedcom_import.php:1149
+#: admin/views/gedcom_import.php:1315 admin/views/gedcom_import.php:1552
+#: admin/views/gedcom_import.php:1741 admin/views/gedcom_import.php:1946
+#: admin/views/gedcom_import.php:1989
 msgid "lines processed"
 msgstr "שורות עובדו"
 
-#: admin/views/gedcom_import.php:1102
+#: admin/views/gedcom_import.php:1101
 msgid "GEDCOM file"
 msgstr "קובץ ג'דקום"
 
-#: admin/views/gedcom_import.php:1104
+#: admin/views/gedcom_import.php:1103
 #, php-format
 msgid "this is an <b>%s</b> file"
 msgstr "זהו קובץ  <b>%s</b>"
 
-#: admin/views/gedcom_import.php:1210
+#: admin/views/gedcom_import.php:1209
 msgid "Controlled time-out to continue reading of GEDCOM file, click:"
 msgstr "טיים-אואט מבוקר להמשך ייבוא קובץ הג'דקום - הקלק:"
 
-#: admin/views/gedcom_import.php:1211
+#: admin/views/gedcom_import.php:1210
 #, php-format
 msgid ""
 "Or wait %s seconds for automatic continuation. Some browsers will give a "
@@ -3277,79 +3272,79 @@ msgid ""
 msgstr ""
 "או המתן %s שניות להמשך אוטומטי. בחלק מהדפדפנים תראו הודעת טעינה מחדש..."
 
-#: admin/views/gedcom_import.php:1238 admin/views/gedcom_import.php:1250
+#: admin/views/gedcom_import.php:1237 admin/views/gedcom_import.php:1249
 msgid "Persons added by GEDCOM import."
 msgstr "אנשים שנוספו על ידי ייבוא ג'דקום."
 
-#: admin/views/gedcom_import.php:1270
+#: admin/views/gedcom_import.php:1269
 #, php-format
 msgid "Reading in the file took: %d seconds"
 msgstr "עיבוד הקובץ נמשך %d שניות"
 
-#: admin/views/gedcom_import.php:1279
+#: admin/views/gedcom_import.php:1278
 msgid "Non-processed items"
 msgstr "פריטים שלא עובדו"
 
-#: admin/views/gedcom_import.php:1283 admin/views/gedcom_import.php:1284
-#: admin/views/gedcom_import.php:1285 admin/views/gedcom_import.php:1286
+#: admin/views/gedcom_import.php:1282 admin/views/gedcom_import.php:1283
+#: admin/views/gedcom_import.php:1284 admin/views/gedcom_import.php:1285
 msgid "Level"
 msgstr "רמה"
 
-#: admin/views/gedcom_import.php:1305
+#: admin/views/gedcom_import.php:1304
 msgid "All items have been processed!"
 msgstr "כל הפריטים עובדו!"
 
-#: admin/views/gedcom_import.php:1352
+#: admin/views/gedcom_import.php:1351
 msgid "STEP 4) Final database processing:"
 msgstr "שלב 4) עיבוד סופי של בסיס הנתונים:"
 
-#: admin/views/gedcom_import.php:1519
+#: admin/views/gedcom_import.php:1521
 msgid "Processing of referenced texts into standard texts..."
 msgstr "הופך את הטקסטים שצויינו לטקסטים סטנדרטיים..."
 
-#: admin/views/gedcom_import.php:1739 admin/views/index_admin.php:530
+#: admin/views/gedcom_import.php:1741 admin/views/index_admin.php:530
 #: admin/views/statistics_families.php:41 admin/views/tree_admin.php:89
 #: app/Model/TreeIndexModel.php:309
 msgid "persons"
 msgstr "אנשים‏"
 
-#: admin/views/gedcom_import.php:1944 admin/views/index_admin.php:530
+#: admin/views/gedcom_import.php:1946 admin/views/index_admin.php:530
 #: admin/views/statistics_families.php:41 admin/views/tree_admin.php:89
 #: app/Model/TreeIndexModel.php:309
 msgid "families"
 msgstr "משפחות‏"
 
-#: admin/views/gedcom_import.php:2004
+#: admin/views/gedcom_import.php:2006
 msgid "Processing texts IN names..."
 msgstr "מעבד טקסטים בשמות..."
 
-#: admin/views/gedcom_import.php:2041
+#: admin/views/gedcom_import.php:2043
 msgid "Order children..."
 msgstr "עורך סדר הילדים"
 
-#: admin/views/gedcom_import.php:2069
+#: admin/views/gedcom_import.php:2071
 msgid "Order families..."
 msgstr "ערוך את סדר המשפחות"
 
-#: admin/views/gedcom_import.php:2252
+#: admin/views/gedcom_import.php:2254
 msgid "Counting persons and families and enter into database..."
 msgstr "סופר אנשים ומשפחות ומכניס אותם לתוך בסיס הנתונים..."
 
-#: admin/views/gedcom_import.php:2273
+#: admin/views/gedcom_import.php:2275
 #, php-format
 msgid "Processing took: %d seconds"
 msgstr "העיבוד נמשך %d שניות"
 
-#: admin/views/gedcom_import.php:2274
+#: admin/views/gedcom_import.php:2276
 msgid "No error messages? In this case the database is ready for use!"
 msgstr "אין הודעות שגיאה? פירוש שבסיס הנתונים מוכן לשימוש!"
 
-#: admin/views/gedcom_import.php:2276
+#: admin/views/gedcom_import.php:2278
 #, php-format
 msgid "Ready! Now click %s to watch the family tree"
 msgstr "מוכן! עכשיו הקלק %s כדי לראות טת עץ המשפחה"
 
-#: admin/views/gedcom_import.php:2277
+#: admin/views/gedcom_import.php:2279
 msgid ""
 "TIP: Use <a href=\"index.php?page=cal_date\">\"Calculated birth dates\"</a> "
 "for a better privacy filter."
@@ -3441,7 +3436,7 @@ msgstr "תפריט \"מידע\": הצג עמודי CMS"
 
 #: admin/views/groups.php:143
 msgid "Chat menu: show \"Chat Genealogy\" page"
-msgstr ""
+msgstr "תפריט הצ'אט: הצג את עמוד \"צ'אט גניאלוגיה\""
 
 #: admin/views/groups.php:148
 msgid "FAMILY TREE menu: show \"Persons\" submenu"
@@ -4179,11 +4174,11 @@ msgstr "יוצר טבלאות:"
 #: admin/views/install.php:459 admin/views/install.php:478
 #: admin/views/install.php:507 admin/views/install.php:525
 #: admin/views/install.php:562 admin/views/install.php:591
-#: admin/views/install.php:657 admin/views/install.php:681
-#: admin/views/install.php:718 admin/views/install.php:746
-#: admin/views/install.php:780 admin/views/install.php:810
-#: admin/views/install.php:848 admin/views/install.php:871
-#: admin/views/install.php:905 admin/views/install.php:938
+#: admin/views/install.php:657 admin/views/install.php:686
+#: admin/views/install.php:723 admin/views/install.php:751
+#: admin/views/install.php:785 admin/views/install.php:815
+#: admin/views/install.php:853 admin/views/install.php:876
+#: admin/views/install.php:910 admin/views/install.php:943
 #, php-format
 msgid "create table: %s."
 msgstr "תיצור את טבלת: %s"
@@ -4194,19 +4189,14 @@ msgstr "תיצור את טבלת: %s"
 msgid "filling table: %s."
 msgstr "טבלה למילוי: %s."
 
-#: admin/views/install.php:971
+#: admin/views/install.php:975
 msgid "No errors above? This means that the database has been processed!"
 msgstr "אין הודעות שגיאה? פירוש הדבר שבסיס הנתונים נוצר בהצלחה!"
 
-#: admin/views/install.php:972
+#: admin/views/install.php:976
 #, php-format
 msgid "All updates completed, go to: %s"
 msgstr "כל העדכונים הושלמו, עברו ל:%s"
-
-#: admin/views/install.php:972 admin/views/menu.php:51
-#: admin/views/update.php:218
-msgid "Main menu"
-msgstr "תפריט ראשי"
 
 #: admin/views/language_editor.php:163
 #, php-format
@@ -4312,22 +4302,18 @@ msgid "Edit geolocation database"
 msgstr "ערוך את טבלת המקומות של Google Maps"
 
 #: admin/views/maps_locations.php:49
-#, fuzzy
-#| msgid "Edit geolocation database"
 msgid "Update geolocation database"
-msgstr "ערוך את טבלת המקומות של Google Maps"
+msgstr "עדכן את בסיס הנתונים של geolocation"
 
 #: admin/views/maps_locations.php:65
-#, fuzzy, php-format
-#| msgid "%d locations."
+#, php-format
 msgid "%d locations indexed."
-msgstr "%d מיקומים."
+msgstr "%d מיקומים נכללו באינדקס"
 
 #: admin/views/maps_locations.php:66
-#, fuzzy, php-format
-#| msgid "Geolocation database is deleted!"
+#, php-format
 msgid "%d new locations to be indexed."
-msgstr "בסיס נתונים של ה-geolocation נמחק!"
+msgstr "%d מיקומים חדשים להיכלל באינדקס."
 
 #: admin/views/maps_locations.php:67
 #, php-format
@@ -4335,13 +4321,8 @@ msgid "%d non-indexable locations."
 msgstr "יש %d מיקומים שלא ניתנים לאיתור."
 
 #: admin/views/maps_locations.php:79
-#, fuzzy
-#| msgid ""
-#| "Check how many new locations have to be indexed and how long the indexing "
-#| "may take (approximately)."
 msgid "Check how long the indexing may take (approximately)."
-msgstr ""
-"בדוק כמה מיקומים חדשים טרם הוכנסו לאינדקס וכמה זמן בערך יימשך תהליך האינדוקס."
+msgstr "בדוק כמה זמן  תיארך ההכללה באינדקס (בהערכה)."
 
 #: admin/views/maps_locations.php:84 app/Model/TreeIndexModel.php:611
 #: views/list.php:161 views/list.php:445
@@ -4383,10 +4364,8 @@ msgid "Retry to index these locations"
 msgstr "נסה מחדש ליצור אינדקס של המיקומים האלה"
 
 #: admin/views/maps_locations.php:183
-#, fuzzy
-#| msgid "Started adding to data base."
 msgid "Started adding to database."
-msgstr "הוחל בהליך ההוספה לטבלת המקומות."
+msgstr "התחילה ההוספה לבסיס הנתונים."
 
 #: admin/views/maps_locations.php:261
 msgid ""
@@ -4488,18 +4467,16 @@ msgid "Interval"
 msgstr "מרווח"
 
 #: admin/views/maps_settings.php:77
-#, fuzzy
-#| msgid "Default settings"
 msgid "Default slider position"
-msgstr "הגדרות ברירת המחדל"
+msgstr "מיקום ברירת המחדל של פס הגלישה"
 
 #: admin/views/maps_settings.php:80
 msgid "OFF position (leftmost position)"
-msgstr ""
+msgstr "אל תציג תקופות עד להזזה (מיקום שמאלי ביותר)"
 
 #: admin/views/maps_settings.php:81
 msgid "Show all periods (rightmost position)"
-msgstr ""
+msgstr "הצג כל התקופות (מיקום ימיני ביותר)"
 
 #: admin/views/maps_worldmap.php:38
 msgid "Use Google Maps"
@@ -4661,29 +4638,33 @@ msgid ""
 "programs."
 msgstr "כתובת משותפת נתמכת רק על ידי תוכנת Haza-data ותוכנת HuMo-genealogy"
 
-#: admin/views/partial/editor_addresses.php:110
+#: admin/views/partial/editor_addresses.php:73
 #: admin/views/settings_homepage.php:102 admin/views/settings_homepage.php:237
 #: admin/views/tree_admin.php:63 include/EditorEvent.php:119
 msgid "EMPTY LINE"
 msgstr "שורה ריקה"
 
-#: admin/views/partial/editor_addresses.php:153
+#: admin/views/partial/editor_addresses.php:157
 msgid "Address GEDCOM number:"
 msgstr "מספר ג'דקום של כתובת"
 
-#: admin/views/partial/editor_addresses.php:156
+#: admin/views/partial/editor_addresses.php:160
 msgid "Shared address"
 msgstr "כתובת משותפת"
 
-#: admin/views/partial/editor_addresses.php:245
+#: admin/views/partial/editor_addresses.php:236
+msgid "Only use the following fields for shared addresses."
+msgstr ""
+
+#: admin/views/partial/editor_addresses.php:239
 msgid "Addressrole"
 msgstr "תפקיד הכתובת"
 
-#: admin/views/partial/editor_addresses.php:253
+#: admin/views/partial/editor_addresses.php:247
 msgid "Extra text by address"
 msgstr "טקסט נוסף ליד כתובת"
 
-#: admin/views/partial/editor_addresses.php:322
+#: admin/views/partial/editor_addresses.php:303
 msgid "Or: add new address"
 msgstr "או הוסף כתובת חדשה"
 
@@ -5168,7 +5149,7 @@ msgstr "השתמש ב-geoplugin.com."
 
 #: admin/views/settings.php:860
 msgid "Oct. 2025: this option is no longer available."
-msgstr ""
+msgstr "החל מאוקטובר 2025 אופציה זו אינה קיימת יותר."
 
 #: admin/views/settings.php:866
 msgid "GeoPlugin: free license = max. 10 requests a day allowed."
@@ -5610,7 +5591,7 @@ msgstr "Ghostscript (תמיכת PDF)"
 
 #: admin/views/thumbs.php:196 admin/views/thumbs.php:209
 msgid "Unknown (shell_exec disabled)"
-msgstr ""
+msgstr "לא ידוע (shell_exec אינו מופעל)"
 
 #: admin/views/thumbs.php:205
 msgid "ffmpeg (movie support)"
@@ -5843,18 +5824,16 @@ msgid "default - without prefix"
 msgstr "ברירת מחדל - ללא קידומת"
 
 #: admin/views/thumbs.php:864
-#, fuzzy
-#| msgid "Category"
 msgid "Delete Category"
-msgstr "קטגוריה"
+msgstr "מחק קטגוריה"
 
 #: admin/views/thumbs.php:870
 msgid "Move Up"
-msgstr ""
+msgstr "העבר למעלה"
 
 #: admin/views/thumbs.php:876
 msgid "Move Down"
-msgstr ""
+msgstr "העבר למטה"
 
 #: admin/views/thumbs.php:916
 msgid "Do you really want to delete category:"
@@ -6858,8 +6837,8 @@ msgstr ""
 msgid "GEDCOM no. (\"I43\")"
 msgstr "GEDCOM no. (\"I43\")"
 
-#: admin/views/tree_merge_manual.php:107 views/relations.php:158
-#: views/relations.php:286
+#: admin/views/tree_merge_manual.php:107 views/relations.php:157
+#: views/relations.php:285
 msgid "Pick a name from search results"
 msgstr "בחר שם מבין תוצאות החיפוש"
 
@@ -6867,7 +6846,7 @@ msgstr "בחר שם מבין תוצאות החיפוש"
 msgid "Show details"
 msgstr "הצג פרטים"
 
-#: admin/views/tree_merge_manual.php:187 views/relations.php:340
+#: admin/views/tree_merge_manual.php:187 views/relations.php:339
 msgid "Switch persons"
 msgstr "החלף אנשים"
 
@@ -7063,14 +7042,12 @@ msgid "Update in progress..."
 msgstr "השידרוג בהליך ביצוע..."
 
 #: admin/views/update.php:67 admin/views/update.php:73
-#, fuzzy
-#| msgid "Processed lines..."
 msgid "Processing..."
-msgstr "שורות שעובדו"
+msgstr "מעבד..."
 
 #: admin/views/update.php:67
 msgid "Reload for next update"
-msgstr ""
+msgstr "טען לעדכון הבא"
 
 #: admin/views/update.php:86
 msgid "Database updated!"
@@ -7102,146 +7079,138 @@ msgstr "הסר את חסימת כתובת ה-IP"
 
 #: app/Controller/AncestorChartController.php:27
 #: app/Controller/AncestorSheetController.php:30
-#: app/Model/AncestorModel.php:127 views/ancestor_sheet.php:31
+#: app/Model/AncestorModel.php:128 views/ancestor_sheet.php:31
 #: views/ancestor_sheet_pdf.php:308 views/ancestor_sheet_pdf.php:327
 #: views/help.php:34
 msgid "Ancestor sheet"
 msgstr "דף טבלת אבות"
 
 #: app/Controller/AncestorReportController.php:38
-#: app/Model/AncestorModel.php:108 include/PersonPopup.php:94
+#: app/Model/AncestorModel.php:109 include/PersonPopup.php:94
 #: views/ancestor_report_pdf.php:41 views/ancestor_report_pdf.php:55
 #: views/ancestor_report_rtf.php:70 views/help.php:22
 msgid "Ancestor report"
 msgstr "דוח אבות"
 
-#: app/Model/AddressModel.php:17 app/Model/AddressesModel.php:27
+#: app/Model/AddressModel.php:18 app/Model/AddressesModel.php:27
 #: app/Model/CmsPagesModel.php:14 include/ShowSourcePDF.php:22
 #: views/anniversary.php:14 views/photoalbum.php:4 views/source.php:9
 #: views/sources.php:5
 msgid "You are not authorised to see this page."
 msgstr "אין לך הרשאה לעיין בדף זה."
 
-#: app/Model/AddressModel.php:58
+#: app/Model/AddressModel.php:51
 msgid "Address by person"
 msgstr "כתובת של אדם"
 
-#: app/Model/AncestorModel.php:118
+#: app/Model/AddressModel.php:84
+#, fuzzy
+#| msgid "Address by person"
+msgid "Address by relation"
+msgstr "כתובת של אדם"
+
+#: app/Model/AncestorModel.php:119
 msgid "Ancestor chart"
 msgstr "תרשים אבות"
 
-#: app/Model/AncestorModel.php:135 views/help.php:38
+#: app/Model/AncestorModel.php:136 views/help.php:38
 msgid "Fanchart"
 msgstr "תרשים עוגה"
 
 #: app/Model/ChatGenealogyApiModel.php:44
 msgid "Welcome to Chat Genealogy! How can I assist you today?"
-msgstr ""
+msgstr "ברוכים הבאים לצ'אט גניאלוגיה! כיצד אוכל לסייע לך היום?"
 
 #: app/Model/ChatGenealogyApiModel.php:50
-#, fuzzy
-#| msgid "High"
 msgid "Hi"
-msgstr "גבוה"
+msgstr "שלום"
 
 #: app/Model/ChatGenealogyApiModel.php:51
 msgid "Hello"
-msgstr ""
+msgstr "שלום"
 
 #: app/Model/ChatGenealogyApiModel.php:52
-#, fuzzy
-#| msgid "becomes:"
 msgid "Welcome"
-msgstr "הופך להיות:"
+msgstr "ברוכים הבאים"
 
 #: app/Model/ChatGenealogyApiModel.php:80
 #: app/Model/ChatGenealogyApiModel.php:163
-#, fuzzy
-#| msgid "born"
 msgid "born in"
-msgstr "נולד/ה"
+msgstr "נולד ב-"
 
 #: app/Model/ChatGenealogyApiModel.php:85
 msgid "how many"
-msgstr ""
+msgstr "כמה"
 
 #: app/Model/ChatGenealogyApiModel.php:90
 #: app/Model/ChatGenealogyApiModel.php:416
-#, fuzzy
-#| msgid "child of"
 msgid "children of"
-msgstr "ילד/ה של ‏"
+msgstr "ילדים של"
 
 #: app/Model/ChatGenealogyApiModel.php:96
-#, fuzzy
-#| msgid "manual"
 msgid "the manual"
-msgstr "ידנית"
+msgstr "ספר ההדרכה"
 
 #: app/Model/ChatGenealogyApiModel.php:101
 msgid "help"
-msgstr ""
+msgstr "עזרה"
 
 #: app/Model/ChatGenealogyApiModel.php:107
 #: app/Model/ChatGenealogyApiModel.php:344
 msgid "show"
-msgstr ""
+msgstr "הצג"
 
 #: app/Model/ChatGenealogyApiModel.php:112
 msgid ""
 "Sorry, I did not understand your question. Here are some examples of "
 "questions you can ask:"
-msgstr ""
+msgstr "סליחה, לא הבנתי את השאלה שלך. להן כמה דוגמאות של שאלות שניתן לשאול:"
 
 #: app/Model/ChatGenealogyApiModel.php:121 views/chat_genealogy.php:38
 msgid "Hi! I can help you search your family tree. Try asking:"
-msgstr ""
+msgstr "שלום! אני מסוגל לעזור לך לחפש בעץ המשפחה שלך. נסו לשאול:"
 
 #: app/Model/ChatGenealogyApiModel.php:128
 msgid "Here are some examples of questions you can ask:"
-msgstr ""
+msgstr "הנה כמה דוגמאות של שאלות שאפשר לשאול:"
 
 #: app/Model/ChatGenealogyApiModel.php:138
 #: app/Model/ChatGenealogyApiModel.php:170
 #: app/Model/ChatGenealogyApiModel.php:206 views/chat_genealogy.php:40
 msgid "Who was born in Amsterdam in 1850?"
-msgstr ""
+msgstr "מי נולד באמסטרדם בשנת 1850?"
 
 #: app/Model/ChatGenealogyApiModel.php:139 views/chat_genealogy.php:41
 msgid "How many persons are in my tree?"
-msgstr ""
+msgstr "כמה אנשים יש בעץ המשפחה שלי?"
 
 #: app/Model/ChatGenealogyApiModel.php:140
 #: app/Model/ChatGenealogyApiModel.php:420
 #: app/Model/ChatGenealogyApiModel.php:426 views/chat_genealogy.php:42
 msgid "Show children of Jan Pietersen"
-msgstr ""
+msgstr "הצג את הילדים של Jan Pietersen"
 
 #: app/Model/ChatGenealogyApiModel.php:141 views/chat_genealogy.php:43
-#, fuzzy
-#| msgid "Show thumbnails"
 msgid "Show me the manual"
-msgstr "הצג תמונות ממוזערות"
+msgstr "הצג את ספר ההדרכה"
 
 #: app/Model/ChatGenealogyApiModel.php:146 views/chat_genealogy.php:48
 msgid "Extra options for editors/admins:"
-msgstr ""
+msgstr "אופציות נוספות למנהלים/עורכים:"
 
 #: app/Model/ChatGenealogyApiModel.php:151
 msgid "If the selected language doesn't work well, try asking in English."
-msgstr ""
+msgstr "אם השפה בה נעשה שימוש לא עובדת טוב, נסה לשאול באנגלית."
 
 #: app/Model/ChatGenealogyApiModel.php:169
 #: app/Model/ChatGenealogyApiModel.php:205
 msgid "Please specify a place and/or year. Example:"
-msgstr ""
+msgstr "נא פרט מיקום ו/או שנה. למשל:"
 
 #: app/Model/ChatGenealogyApiModel.php:252
 #: app/Model/ChatGenealogyApiModel.php:394
-#, fuzzy
-#| msgid " persons are not shown due to privacy settings"
 msgid "Some persons could not be displayed due to privacy settings."
-msgstr " אנשים לא נמצאו בגלל הגדרות פרטיות‏"
+msgstr "אנשים מסוימים לא היה ניתן להציג בגלל הגדרות פרטיות."
 
 #: app/Model/ChatGenealogyApiModel.php:256
 #: app/Model/ChatGenealogyApiModel.php:404 app/Model/MapsModel.php:316
@@ -7249,85 +7218,73 @@ msgid "Results are limited."
 msgstr "התוצאות מוגבלים."
 
 #: app/Model/ChatGenealogyApiModel.php:260
-#, fuzzy, php-format
-#| msgid "Add person"
+#, php-format
 msgid "Found %d persons:"
-msgstr "הוסף אדם"
+msgstr "נמצאו %d אנשים:"
 
 #: app/Model/ChatGenealogyApiModel.php:277
 #, php-format
 msgid "The selected family tree contains %d persons and %d families."
-msgstr ""
+msgstr "בעץ הנבחר יש %d אנשים ו-%d משפחות."
 
 #: app/Model/ChatGenealogyApiModel.php:303
 msgid "Value"
-msgstr ""
+msgstr "ערך"
 
 #: app/Model/ChatGenealogyApiModel.php:306 views/stats_tree.php:18
 msgid "Latest update"
 msgstr "עדכון אחרון"
 
 #: app/Model/ChatGenealogyApiModel.php:334 app/Model/TreeIndexModel.php:362
-#, fuzzy
-#| msgid "More statistics"
 msgid "Show more statistics"
-msgstr "יותר סטטיסטיקה"
+msgstr "הצג יותר סטטיסטיקות"
 
 #: app/Model/ChatGenealogyApiModel.php:348
 #: app/Model/ChatGenealogyApiModel.php:420
 msgid "Please specify a person. Example:"
-msgstr ""
+msgstr "נא ציין אדם ספציפי. למשל:"
 
 #: app/Model/ChatGenealogyApiModel.php:348
 #: app/Model/ChatGenealogyApiModel.php:359
-#, fuzzy
-#| msgid "Show dates"
 msgid "Show Jan Pietersen"
-msgstr "הצג תאריכים"
+msgstr "הצג את Jan Pietersen"
 
 #: app/Model/ChatGenealogyApiModel.php:359
 #: app/Model/ChatGenealogyApiModel.php:426
 msgid "Please specify a person name. Example:"
-msgstr ""
+msgstr "נא הצג שם של אדם. למשל:"
 
 #: app/Model/ChatGenealogyApiModel.php:380
 #: app/Model/ChatGenealogyApiModel.php:446
-#, fuzzy
-#| msgid " persons found."
 msgid "No person found matching:"
-msgstr " אנשים נמצאו‏"
+msgstr "לא נמצא אדם שמתאים להגדרות:"
 
 #: app/Model/ChatGenealogyApiModel.php:398
-#, fuzzy, php-format
-#| msgid "Add person"
+#, php-format
 msgid "Found %d person(s) matching '%s':"
-msgstr "הוסף אדם"
+msgstr "נמצאו %d אנשים התואמים להגדרה '%s':"
 
 #: app/Model/ChatGenealogyApiModel.php:469
 #: app/Model/ChatGenealogyApiModel.php:471
-#, fuzzy
-#| msgid "Parents"
 msgid "Parent:"
-msgstr "הורים"
+msgstr "הורה:"
 
 #: app/Model/ChatGenealogyApiModel.php:507
 msgid "No children found for the specified person(s)."
-msgstr ""
+msgstr "לא נמצאו ילדים לאדם (או אנשים) שצויינו."
 
 #: app/Model/ChatGenealogyApiModel.php:520
 msgid "No children were found in the family tree for the detected relations."
-msgstr ""
+msgstr "לא נמצאו ילדים בעץ המשפחה העונים על הקשרים המשפחתיים שהתגלו."
 
 #: app/Model/ChatGenealogyApiModel.php:524
-#, fuzzy
-#| msgid " persons are not shown due to privacy settings"
 msgid "Some children could not be displayed due to privacy settings."
-msgstr " אנשים לא נמצאו בגלל הגדרות פרטיות‏"
+msgstr "לא היה ניתן להצג חלק מהילדים בגלל הגדרות פרטיות."
 
 #: app/Model/ChatGenealogyApiModel.php:527
 #, php-format
 msgid "Found %d children for person(s) matching '%s':"
-msgstr ""
+msgstr "נמצאו %d ילדים לאדם (או לאנשים) התואמים את ההגדרה '%s':"
 
 # Birth
 #: app/Model/ChatGenealogyApiModel.php:573 include/AncestorBox.php:68
@@ -7335,7 +7292,7 @@ msgstr ""
 #: views/ancestor_sheet.php:99 views/ancestor_sheet_pdf.php:116
 #: views/ancestor_sheet_pdf.php:384 views/descendant_chart.php:319
 #: views/list.php:42 views/list.php:867 views/list.php:1055 views/list.php:1070
-#: views/relations.php:174 views/relations.php:302
+#: views/relations.php:173 views/relations.php:301
 msgid "*"
 msgstr "*"
 
@@ -7381,7 +7338,7 @@ msgid "Receive newsletter"
 msgstr "קבל הודעות עדכון"
 
 #: app/Model/OutlineReportModel.php:261 app/Model/OutlineReportModel.php:275
-#: views/family.php:430 views/family.php:493 views/photoalbum.php:266
+#: views/family.php:430 views/family.php:493 views/photoalbum.php:269
 #: views/timeline.php:224
 msgid ""
 "*** Privacy filter is active, one or more items are filtered. Please login "
@@ -7414,8 +7371,8 @@ msgstr "הוא/היא"
 msgid " identical to "
 msgstr " זהה ל "
 
-#: app/Model/RelationsModel.php:563 app/Model/RelationsModel.php:2548
-#: app/Model/RelationsModel.php:2582
+#: app/Model/RelationsModel.php:563 app/Model/RelationsModel.php:2547
+#: app/Model/RelationsModel.php:2581
 msgid "brother of "
 msgstr "אח של "
 
@@ -7427,8 +7384,8 @@ msgstr "גיסה של "
 msgid "brother-in-law of "
 msgstr "גיס של "
 
-#: app/Model/RelationsModel.php:670 app/Model/RelationsModel.php:2550
-#: app/Model/RelationsModel.php:2584
+#: app/Model/RelationsModel.php:670 app/Model/RelationsModel.php:2549
+#: app/Model/RelationsModel.php:2583
 msgid "sister of "
 msgstr "אחות של "
 
@@ -7457,82 +7414,82 @@ msgstr "חמות"
 #: app/Model/RelationsModel.php:1247 app/Model/RelationsModel.php:1249
 #: app/Model/RelationsModel.php:1255 app/Model/RelationsModel.php:1258
 #: app/Model/RelationsModel.php:1261 app/Model/RelationsModel.php:1264
-#: app/Model/RelationsModel.php:1268 app/Model/RelationsModel.php:1412
-#: app/Model/RelationsModel.php:1473 app/Model/RelationsModel.php:1475
-#: app/Model/RelationsModel.php:1477 app/Model/RelationsModel.php:1489
-#: app/Model/RelationsModel.php:1495 app/Model/RelationsModel.php:1499
-#: app/Model/RelationsModel.php:1503 app/Model/RelationsModel.php:1509
-#: app/Model/RelationsModel.php:1513 app/Model/RelationsModel.php:1517
-#: app/Model/RelationsModel.php:1521 app/Model/RelationsModel.php:1525
-#: app/Model/RelationsModel.php:1549 app/Model/RelationsModel.php:1551
-#: app/Model/RelationsModel.php:1557 app/Model/RelationsModel.php:1561
-#: app/Model/RelationsModel.php:1565 app/Model/RelationsModel.php:1569
-#: app/Model/RelationsModel.php:1573 app/Model/RelationsModel.php:1665
-#: app/Model/RelationsModel.php:1668 app/Model/RelationsModel.php:1671
-#: app/Model/RelationsModel.php:1675 app/Model/RelationsModel.php:1719
-#: app/Model/RelationsModel.php:1722 app/Model/RelationsModel.php:1725
-#: app/Model/RelationsModel.php:1728 app/Model/RelationsModel.php:1732
-#: app/Model/RelationsModel.php:1737 app/Model/RelationsModel.php:1739
-#: app/Model/RelationsModel.php:1744 app/Model/RelationsModel.php:1746
-#: app/Model/RelationsModel.php:1759 app/Model/RelationsModel.php:1761
-#: app/Model/RelationsModel.php:1766 app/Model/RelationsModel.php:1769
-#: app/Model/RelationsModel.php:1772 app/Model/RelationsModel.php:1775
-#: app/Model/RelationsModel.php:1779 app/Model/RelationsModel.php:1869
-#: app/Model/RelationsModel.php:1871 app/Model/RelationsModel.php:1879
-#: app/Model/RelationsModel.php:1882 app/Model/RelationsModel.php:1887
-#: app/Model/RelationsModel.php:1890 app/Model/RelationsModel.php:1894
-#: app/Model/RelationsModel.php:1904 app/Model/RelationsModel.php:1907
-#: app/Model/RelationsModel.php:1910 app/Model/RelationsModel.php:1913
-#: app/Model/RelationsModel.php:1916 app/Model/RelationsModel.php:1919
-#: app/Model/RelationsModel.php:1923 app/Model/RelationsModel.php:1933
-#: app/Model/RelationsModel.php:1936 app/Model/RelationsModel.php:1939
-#: app/Model/RelationsModel.php:1942 app/Model/RelationsModel.php:1945
-#: app/Model/RelationsModel.php:1948 app/Model/RelationsModel.php:1951
-#: app/Model/RelationsModel.php:1955 app/Model/RelationsModel.php:1961
-#: app/Model/RelationsModel.php:1964 app/Model/RelationsModel.php:1967
-#: app/Model/RelationsModel.php:1970 app/Model/RelationsModel.php:1973
-#: app/Model/RelationsModel.php:1977 app/Model/RelationsModel.php:2032
-#: app/Model/RelationsModel.php:2035 app/Model/RelationsModel.php:2046
-#: app/Model/RelationsModel.php:2108 app/Model/RelationsModel.php:2111
-#: app/Model/RelationsModel.php:2114 app/Model/RelationsModel.php:2117
-#: app/Model/RelationsModel.php:2120 app/Model/RelationsModel.php:2124
-#: app/Model/RelationsModel.php:2138 app/Model/RelationsModel.php:2141
-#: app/Model/RelationsModel.php:2144 app/Model/RelationsModel.php:2147
-#: app/Model/RelationsModel.php:2150 app/Model/RelationsModel.php:2154
-#: app/Model/RelationsModel.php:2414 app/Model/RelationsModel.php:2497
-#: app/Model/RelationsModel.php:2499 app/Model/RelationsModel.php:2506
-#: app/Model/RelationsModel.php:2509 app/Model/RelationsModel.php:2513
-#: app/Model/RelationsModel.php:2516 app/Model/RelationsModel.php:2520
-#: app/Model/RelationsModel.php:2524 app/Model/RelationsModel.php:2527
-#: app/Model/RelationsModel.php:2530 app/Model/RelationsModel.php:2534
-#: app/Model/RelationsModel.php:2541 app/Model/RelationsModel.php:2544
-#: app/Model/RelationsModel.php:2568 app/Model/RelationsModel.php:2616
-#: app/Model/RelationsModel.php:2619 app/Model/RelationsModel.php:2622
-#: app/Model/RelationsModel.php:2625 app/Model/RelationsModel.php:2628
-#: app/Model/RelationsModel.php:2631 app/Model/RelationsModel.php:2635
-#: app/Model/RelationsModel.php:2639 app/Model/RelationsModel.php:2642
-#: app/Model/RelationsModel.php:2645 app/Model/RelationsModel.php:2648
-#: app/Model/RelationsModel.php:2651 app/Model/RelationsModel.php:2655
-#: app/Model/RelationsModel.php:2676 app/Model/RelationsModel.php:2679
-#: app/Model/RelationsModel.php:2698 app/Model/RelationsModel.php:2715
-#: app/Model/RelationsModel.php:2906 app/Model/RelationsModel.php:2927
-#: app/Model/RelationsModel.php:2938 app/Model/RelationsModel.php:2942
-#: app/Model/RelationsModel.php:2946 app/Model/RelationsModel.php:2949
-#: app/Model/RelationsModel.php:2952 app/Model/RelationsModel.php:2956
-#: app/Model/RelationsModel.php:2959 app/Model/RelationsModel.php:2981
-#: app/Model/RelationsModel.php:2983 app/Model/RelationsModel.php:3092
-#: app/Model/RelationsModel.php:3097 app/Model/RelationsModel.php:3099
-#: app/Model/RelationsModel.php:3102 app/Model/RelationsModel.php:3106
-#: app/Model/RelationsModel.php:3150 app/Model/RelationsModel.php:3153
-#: app/Model/RelationsModel.php:3157 app/Model/RelationsModel.php:3262
-#: app/Model/RelationsModel.php:3266 app/Model/RelationsModel.php:3268
-#: app/Model/RelationsModel.php:3273 app/Model/RelationsModel.php:3275
-#: app/Model/RelationsModel.php:3279 app/Model/RelationsModel.php:3290
-#: app/Model/RelationsModel.php:3294 app/Model/RelationsModel.php:3297
-#: app/Model/RelationsModel.php:3300 app/Model/RelationsModel.php:3303
-#: app/Model/RelationsModel.php:3306 app/Model/RelationsModel.php:3310
-#: app/Model/RelationsModel.php:3313 app/Model/RelationsModel.php:3391
-#: app/Model/RelationsModel.php:3428 app/Model/RelationsModel.php:3430
+#: app/Model/RelationsModel.php:1268 app/Model/RelationsModel.php:1411
+#: app/Model/RelationsModel.php:1472 app/Model/RelationsModel.php:1474
+#: app/Model/RelationsModel.php:1476 app/Model/RelationsModel.php:1488
+#: app/Model/RelationsModel.php:1494 app/Model/RelationsModel.php:1498
+#: app/Model/RelationsModel.php:1502 app/Model/RelationsModel.php:1508
+#: app/Model/RelationsModel.php:1512 app/Model/RelationsModel.php:1516
+#: app/Model/RelationsModel.php:1520 app/Model/RelationsModel.php:1524
+#: app/Model/RelationsModel.php:1548 app/Model/RelationsModel.php:1550
+#: app/Model/RelationsModel.php:1556 app/Model/RelationsModel.php:1560
+#: app/Model/RelationsModel.php:1564 app/Model/RelationsModel.php:1568
+#: app/Model/RelationsModel.php:1572 app/Model/RelationsModel.php:1664
+#: app/Model/RelationsModel.php:1667 app/Model/RelationsModel.php:1670
+#: app/Model/RelationsModel.php:1674 app/Model/RelationsModel.php:1718
+#: app/Model/RelationsModel.php:1721 app/Model/RelationsModel.php:1724
+#: app/Model/RelationsModel.php:1727 app/Model/RelationsModel.php:1731
+#: app/Model/RelationsModel.php:1736 app/Model/RelationsModel.php:1738
+#: app/Model/RelationsModel.php:1743 app/Model/RelationsModel.php:1745
+#: app/Model/RelationsModel.php:1758 app/Model/RelationsModel.php:1760
+#: app/Model/RelationsModel.php:1765 app/Model/RelationsModel.php:1768
+#: app/Model/RelationsModel.php:1771 app/Model/RelationsModel.php:1774
+#: app/Model/RelationsModel.php:1778 app/Model/RelationsModel.php:1868
+#: app/Model/RelationsModel.php:1870 app/Model/RelationsModel.php:1878
+#: app/Model/RelationsModel.php:1881 app/Model/RelationsModel.php:1886
+#: app/Model/RelationsModel.php:1889 app/Model/RelationsModel.php:1893
+#: app/Model/RelationsModel.php:1903 app/Model/RelationsModel.php:1906
+#: app/Model/RelationsModel.php:1909 app/Model/RelationsModel.php:1912
+#: app/Model/RelationsModel.php:1915 app/Model/RelationsModel.php:1918
+#: app/Model/RelationsModel.php:1922 app/Model/RelationsModel.php:1932
+#: app/Model/RelationsModel.php:1935 app/Model/RelationsModel.php:1938
+#: app/Model/RelationsModel.php:1941 app/Model/RelationsModel.php:1944
+#: app/Model/RelationsModel.php:1947 app/Model/RelationsModel.php:1950
+#: app/Model/RelationsModel.php:1954 app/Model/RelationsModel.php:1960
+#: app/Model/RelationsModel.php:1963 app/Model/RelationsModel.php:1966
+#: app/Model/RelationsModel.php:1969 app/Model/RelationsModel.php:1972
+#: app/Model/RelationsModel.php:1976 app/Model/RelationsModel.php:2031
+#: app/Model/RelationsModel.php:2034 app/Model/RelationsModel.php:2045
+#: app/Model/RelationsModel.php:2107 app/Model/RelationsModel.php:2110
+#: app/Model/RelationsModel.php:2113 app/Model/RelationsModel.php:2116
+#: app/Model/RelationsModel.php:2119 app/Model/RelationsModel.php:2123
+#: app/Model/RelationsModel.php:2137 app/Model/RelationsModel.php:2140
+#: app/Model/RelationsModel.php:2143 app/Model/RelationsModel.php:2146
+#: app/Model/RelationsModel.php:2149 app/Model/RelationsModel.php:2153
+#: app/Model/RelationsModel.php:2413 app/Model/RelationsModel.php:2496
+#: app/Model/RelationsModel.php:2498 app/Model/RelationsModel.php:2505
+#: app/Model/RelationsModel.php:2508 app/Model/RelationsModel.php:2512
+#: app/Model/RelationsModel.php:2515 app/Model/RelationsModel.php:2519
+#: app/Model/RelationsModel.php:2523 app/Model/RelationsModel.php:2526
+#: app/Model/RelationsModel.php:2529 app/Model/RelationsModel.php:2533
+#: app/Model/RelationsModel.php:2540 app/Model/RelationsModel.php:2543
+#: app/Model/RelationsModel.php:2567 app/Model/RelationsModel.php:2615
+#: app/Model/RelationsModel.php:2618 app/Model/RelationsModel.php:2621
+#: app/Model/RelationsModel.php:2624 app/Model/RelationsModel.php:2627
+#: app/Model/RelationsModel.php:2630 app/Model/RelationsModel.php:2634
+#: app/Model/RelationsModel.php:2638 app/Model/RelationsModel.php:2641
+#: app/Model/RelationsModel.php:2644 app/Model/RelationsModel.php:2647
+#: app/Model/RelationsModel.php:2650 app/Model/RelationsModel.php:2654
+#: app/Model/RelationsModel.php:2675 app/Model/RelationsModel.php:2678
+#: app/Model/RelationsModel.php:2697 app/Model/RelationsModel.php:2714
+#: app/Model/RelationsModel.php:2905 app/Model/RelationsModel.php:2926
+#: app/Model/RelationsModel.php:2937 app/Model/RelationsModel.php:2941
+#: app/Model/RelationsModel.php:2945 app/Model/RelationsModel.php:2948
+#: app/Model/RelationsModel.php:2951 app/Model/RelationsModel.php:2955
+#: app/Model/RelationsModel.php:2958 app/Model/RelationsModel.php:2980
+#: app/Model/RelationsModel.php:2982 app/Model/RelationsModel.php:3091
+#: app/Model/RelationsModel.php:3096 app/Model/RelationsModel.php:3098
+#: app/Model/RelationsModel.php:3101 app/Model/RelationsModel.php:3105
+#: app/Model/RelationsModel.php:3149 app/Model/RelationsModel.php:3152
+#: app/Model/RelationsModel.php:3156 app/Model/RelationsModel.php:3261
+#: app/Model/RelationsModel.php:3265 app/Model/RelationsModel.php:3267
+#: app/Model/RelationsModel.php:3272 app/Model/RelationsModel.php:3274
+#: app/Model/RelationsModel.php:3278 app/Model/RelationsModel.php:3289
+#: app/Model/RelationsModel.php:3293 app/Model/RelationsModel.php:3296
+#: app/Model/RelationsModel.php:3299 app/Model/RelationsModel.php:3302
+#: app/Model/RelationsModel.php:3305 app/Model/RelationsModel.php:3309
+#: app/Model/RelationsModel.php:3312 app/Model/RelationsModel.php:3390
+#: app/Model/RelationsModel.php:3427 app/Model/RelationsModel.php:3429
 #: include/TreeMerge.php:346 views/ancestor_report_pdf.php:41
 #: views/ancestor_report_pdf.php:55 views/ancestor_report_rtf.php:70
 #: views/ancestor_sheet.php:31 views/ancestor_sheet_pdf.php:308
@@ -7541,15 +7498,15 @@ msgstr "חמות"
 #: views/family_pdf.php:133 views/family_pdf.php:313 views/family_rtf.php:101
 #: views/family_rtf.php:103 views/hourglass.php:137
 #: views/outline_report_pdf.php:84 views/outline_report_pdf.php:100
-#: views/relations.php:574 views/relations.php:600
+#: views/relations.php:573 views/relations.php:599
 msgid " of "
 msgstr " של "
 
 #: app/Model/RelationsModel.php:933 app/Model/RelationsModel.php:1268
-#: app/Model/RelationsModel.php:1779 app/Model/RelationsModel.php:2417
-#: app/Model/RelationsModel.php:2520 app/Model/RelationsModel.php:2655
-#: app/Model/RelationsModel.php:3419 app/Model/RelationsModel.php:3422
-#: include/MarriageCls.php:875 include/PersonData.php:1347 views/list.php:1040
+#: app/Model/RelationsModel.php:1778 app/Model/RelationsModel.php:2416
+#: app/Model/RelationsModel.php:2519 app/Model/RelationsModel.php:2654
+#: app/Model/RelationsModel.php:3418 app/Model/RelationsModel.php:3421
+#: include/MarriageCls.php:875 include/PersonData.php:1348 views/list.php:1040
 #: views/list_places_families.php:393
 msgid "th"
 msgstr "."
@@ -7558,170 +7515,170 @@ msgstr "."
 #: app/Model/RelationsModel.php:986 app/Model/RelationsModel.php:1012
 #: app/Model/RelationsModel.php:1258 app/Model/RelationsModel.php:1261
 #: app/Model/RelationsModel.php:1264 app/Model/RelationsModel.php:1268
-#: app/Model/RelationsModel.php:1513 app/Model/RelationsModel.php:1769
-#: app/Model/RelationsModel.php:1772 app/Model/RelationsModel.php:1775
-#: app/Model/RelationsModel.php:1779 app/Model/RelationsModel.php:1913
-#: app/Model/RelationsModel.php:2144 app/Model/RelationsModel.php:2147
-#: app/Model/RelationsModel.php:2150 app/Model/RelationsModel.php:2154
-#: app/Model/RelationsModel.php:2417 app/Model/RelationsModel.php:2645
-#: app/Model/RelationsModel.php:2648 app/Model/RelationsModel.php:2651
-#: app/Model/RelationsModel.php:2655 app/Model/RelationsModel.php:2946
-#: app/Model/RelationsModel.php:2969
+#: app/Model/RelationsModel.php:1512 app/Model/RelationsModel.php:1768
+#: app/Model/RelationsModel.php:1771 app/Model/RelationsModel.php:1774
+#: app/Model/RelationsModel.php:1778 app/Model/RelationsModel.php:1912
+#: app/Model/RelationsModel.php:2143 app/Model/RelationsModel.php:2146
+#: app/Model/RelationsModel.php:2149 app/Model/RelationsModel.php:2153
+#: app/Model/RelationsModel.php:2416 app/Model/RelationsModel.php:2644
+#: app/Model/RelationsModel.php:2647 app/Model/RelationsModel.php:2650
+#: app/Model/RelationsModel.php:2654 app/Model/RelationsModel.php:2945
+#: app/Model/RelationsModel.php:2968
 msgid "great-grand"
 msgstr "סבא רבא"
 
 #: app/Model/RelationsModel.php:982 app/Model/RelationsModel.php:985
 #: app/Model/RelationsModel.php:1001 app/Model/RelationsModel.php:1005
 #: app/Model/RelationsModel.php:1009 app/Model/RelationsModel.php:1255
-#: app/Model/RelationsModel.php:1766 app/Model/RelationsModel.php:1890
-#: app/Model/RelationsModel.php:1894 app/Model/RelationsModel.php:2141
-#: app/Model/RelationsModel.php:2516 app/Model/RelationsModel.php:2520
-#: app/Model/RelationsModel.php:2642 app/Model/RelationsModel.php:2966
+#: app/Model/RelationsModel.php:1765 app/Model/RelationsModel.php:1889
+#: app/Model/RelationsModel.php:1893 app/Model/RelationsModel.php:2140
+#: app/Model/RelationsModel.php:2515 app/Model/RelationsModel.php:2519
+#: app/Model/RelationsModel.php:2641 app/Model/RelationsModel.php:2965
 msgid "grand"
 msgstr "סבא"
 
-#: app/Model/RelationsModel.php:1261 app/Model/RelationsModel.php:1772
-#: app/Model/RelationsModel.php:1970 app/Model/RelationsModel.php:2147
-#: app/Model/RelationsModel.php:2648 include/MarriageCls.php:869
-#: include/PersonData.php:1343 views/list.php:1036
+#: app/Model/RelationsModel.php:1261 app/Model/RelationsModel.php:1771
+#: app/Model/RelationsModel.php:1969 app/Model/RelationsModel.php:2146
+#: app/Model/RelationsModel.php:2647 include/MarriageCls.php:869
+#: include/PersonData.php:1344 views/list.php:1036
 #: views/list_places_families.php:389
 msgid "2nd"
 msgstr "דרגה שניה"
 
-#: app/Model/RelationsModel.php:1264 app/Model/RelationsModel.php:1775
-#: app/Model/RelationsModel.php:1973 app/Model/RelationsModel.php:2150
-#: app/Model/RelationsModel.php:2651 include/MarriageCls.php:872
-#: include/PersonData.php:1345 views/list.php:1038
+#: app/Model/RelationsModel.php:1264 app/Model/RelationsModel.php:1774
+#: app/Model/RelationsModel.php:1972 app/Model/RelationsModel.php:2149
+#: app/Model/RelationsModel.php:2650 include/MarriageCls.php:872
+#: include/PersonData.php:1346 views/list.php:1038
 #: views/list_places_families.php:391
 msgid "3rd"
 msgstr "דרגה שלישית"
 
-#: app/Model/RelationsModel.php:1330 app/Model/RelationsModel.php:1364
-#: app/Model/RelationsModel.php:1420 app/Model/RelationsModel.php:1463
-#: app/Model/RelationsModel.php:1480 app/Model/RelationsModel.php:2932
-#: app/Model/RelationsModel.php:3284 app/Model/TimelineModel.php:262
+#: app/Model/RelationsModel.php:1330 app/Model/RelationsModel.php:1363
+#: app/Model/RelationsModel.php:1419 app/Model/RelationsModel.php:1462
+#: app/Model/RelationsModel.php:1479 app/Model/RelationsModel.php:2931
+#: app/Model/RelationsModel.php:3283 app/Model/TimelineModel.php:262
 msgid "son"
 msgstr "בן"
 
-#: app/Model/RelationsModel.php:1330 app/Model/RelationsModel.php:2934
-#: app/Model/RelationsModel.php:3286 app/Model/TimelineModel.php:264
+#: app/Model/RelationsModel.php:1330 app/Model/RelationsModel.php:2933
+#: app/Model/RelationsModel.php:3285 app/Model/TimelineModel.php:264
 msgid "daughter"
 msgstr "בת"
 
-#: app/Model/RelationsModel.php:1364
+#: app/Model/RelationsModel.php:1363
 msgid "son-in-law"
 msgstr "חתן"
 
-#: app/Model/RelationsModel.php:1364
+#: app/Model/RelationsModel.php:1363
 msgid "daughter-in-law"
 msgstr "כלה"
 
-#: app/Model/RelationsModel.php:1499 app/Model/RelationsModel.php:1503
+#: app/Model/RelationsModel.php:1498 app/Model/RelationsModel.php:1502
 #: app/Model/TimelineModel.php:401
 msgid "grandchild"
 msgstr "נכד/ה"
 
-#: app/Model/RelationsModel.php:1857 app/Model/RelationsModel.php:1876
-#: app/Model/RelationsModel.php:1885 app/Model/RelationsModel.php:1897
-#: app/Model/RelationsModel.php:1926 app/Model/RelationsModel.php:1958
-#: app/Model/RelationsModel.php:2101 app/Model/RelationsModel.php:2136
-#: app/Model/RelationsModel.php:2701
+#: app/Model/RelationsModel.php:1856 app/Model/RelationsModel.php:1875
+#: app/Model/RelationsModel.php:1884 app/Model/RelationsModel.php:1896
+#: app/Model/RelationsModel.php:1925 app/Model/RelationsModel.php:1957
+#: app/Model/RelationsModel.php:2100 app/Model/RelationsModel.php:2135
+#: app/Model/RelationsModel.php:2700
 msgid "nephew"
 msgstr "אחיין"
 
-#: app/Model/RelationsModel.php:1861 app/Model/RelationsModel.php:1876
-#: app/Model/RelationsModel.php:1885 app/Model/RelationsModel.php:1897
-#: app/Model/RelationsModel.php:1926 app/Model/RelationsModel.php:1958
-#: app/Model/RelationsModel.php:2104 app/Model/RelationsModel.php:2136
-#: app/Model/RelationsModel.php:2705
+#: app/Model/RelationsModel.php:1860 app/Model/RelationsModel.php:1875
+#: app/Model/RelationsModel.php:1884 app/Model/RelationsModel.php:1896
+#: app/Model/RelationsModel.php:1925 app/Model/RelationsModel.php:1957
+#: app/Model/RelationsModel.php:2103 app/Model/RelationsModel.php:2135
+#: app/Model/RelationsModel.php:2704
 msgid "niece"
 msgstr "אחיינית"
 
-#: app/Model/RelationsModel.php:1964 app/Model/RelationsModel.php:2914
-#: app/Model/RelationsModel.php:3409 app/Model/RelationsModel.php:3422
+#: app/Model/RelationsModel.php:1963 app/Model/RelationsModel.php:2913
+#: app/Model/RelationsModel.php:3408 app/Model/RelationsModel.php:3421
 msgid "2nd [COUSIN]"
 msgstr "בן/בת דוד/ה שני/ה"
 
-#: app/Model/RelationsModel.php:1967 app/Model/RelationsModel.php:1970
-#: app/Model/RelationsModel.php:1973 app/Model/RelationsModel.php:1977
-#: app/Model/RelationsModel.php:2916 app/Model/RelationsModel.php:3412
+#: app/Model/RelationsModel.php:1966 app/Model/RelationsModel.php:1969
+#: app/Model/RelationsModel.php:1972 app/Model/RelationsModel.php:1976
+#: app/Model/RelationsModel.php:2915 app/Model/RelationsModel.php:3411
 msgid "3rd [COUSIN]"
 msgstr "בן/בת דוד/ה שלשית/ת"
 
-#: app/Model/RelationsModel.php:1977 app/Model/RelationsModel.php:2154
+#: app/Model/RelationsModel.php:1976 app/Model/RelationsModel.php:2153
 msgid "th "
 msgstr ". "
 
-#: app/Model/RelationsModel.php:2163 app/Model/RelationsModel.php:2485
-#: app/Model/RelationsModel.php:2547 app/Model/RelationsModel.php:2581
-#: app/Model/RelationsModel.php:2683 app/Model/RelationsModel.php:2765
+#: app/Model/RelationsModel.php:2162 app/Model/RelationsModel.php:2484
+#: app/Model/RelationsModel.php:2546 app/Model/RelationsModel.php:2580
+#: app/Model/RelationsModel.php:2682 app/Model/RelationsModel.php:2764
 msgid "uncle"
 msgstr "דוד"
 
-#: app/Model/RelationsModel.php:2316 app/Model/RelationsModel.php:2489
-#: app/Model/RelationsModel.php:2687 app/Model/RelationsModel.php:2769
+#: app/Model/RelationsModel.php:2315 app/Model/RelationsModel.php:2488
+#: app/Model/RelationsModel.php:2686 app/Model/RelationsModel.php:2768
 msgid "aunt"
 msgstr "דודה"
 
 # Only translate: cousin
-#: app/Model/RelationsModel.php:2667 app/Model/RelationsModel.php:2725
-#: app/Model/RelationsModel.php:3345 app/Model/RelationsModel.php:3415
+#: app/Model/RelationsModel.php:2666 app/Model/RelationsModel.php:2724
+#: app/Model/RelationsModel.php:3344 app/Model/RelationsModel.php:3414
 msgid "cousin.male"
 msgstr "בן דוד/ה"
 
-#: app/Model/RelationsModel.php:2669 app/Model/RelationsModel.php:2727
-#: app/Model/RelationsModel.php:2731 app/Model/RelationsModel.php:2912
-#: app/Model/RelationsModel.php:3406
+#: app/Model/RelationsModel.php:2668 app/Model/RelationsModel.php:2726
+#: app/Model/RelationsModel.php:2730 app/Model/RelationsModel.php:2911
+#: app/Model/RelationsModel.php:3405
 msgid "1st [COUSIN]"
 msgstr "בן/בת דוד/ה"
 
 # Only translate: cousin
-#: app/Model/RelationsModel.php:2671 app/Model/RelationsModel.php:2729
-#: app/Model/RelationsModel.php:3348 app/Model/RelationsModel.php:3415
+#: app/Model/RelationsModel.php:2670 app/Model/RelationsModel.php:2728
+#: app/Model/RelationsModel.php:3347 app/Model/RelationsModel.php:3414
 msgid "cousin.female"
 msgstr "בת דוד/ה"
 
 # Enter the text for cousin male here. There is no seperate text for male/
 # female cousin in english.
-#: app/Model/RelationsModel.php:2889 app/Model/RelationsModel.php:3262
+#: app/Model/RelationsModel.php:2888 app/Model/RelationsModel.php:3261
 msgid "COUSIN_MALE"
 msgstr "בן דוד/ה"
 
 # Enter the text for cousin male here. There is no seperate text for male/
 # female cousin in english.
-#: app/Model/RelationsModel.php:2891
+#: app/Model/RelationsModel.php:2890
 msgid "COUSIN_FEMALE"
 msgstr "בת דוד/ה"
 
-#: app/Model/RelationsModel.php:2897 app/Model/RelationsModel.php:3397
+#: app/Model/RelationsModel.php:2896 app/Model/RelationsModel.php:3396
 msgid "once removed"
 msgstr "דור אחד"
 
-#: app/Model/RelationsModel.php:2899 app/Model/RelationsModel.php:3401
+#: app/Model/RelationsModel.php:2898 app/Model/RelationsModel.php:3400
 msgid "times removed"
 msgstr "דורות"
 
-#: app/Model/RelationsModel.php:2918
+#: app/Model/RelationsModel.php:2917
 msgid "4th [COUSIN]"
 msgstr "בן/בת דוד/ה רביעי/ת"
 
-#: app/Model/RelationsModel.php:3399
+#: app/Model/RelationsModel.php:3398
 msgid "twice removed"
 msgstr "twice removed"
 
-#: app/Model/RelationsModel.php:3570 app/Model/RelationsModel.php:3694
+#: app/Model/RelationsModel.php:3569 app/Model/RelationsModel.php:3693
 msgid "No such person"
 msgstr "האדם הזה לא נמצא"
 
-#: app/Model/RelationsModel.php:3582 app/Model/RelationsModel.php:3706
+#: app/Model/RelationsModel.php:3581 app/Model/RelationsModel.php:3705
 msgid "No such family"
 msgstr "משפחה זו לא נמצאה"
 
-#: app/Model/RelationsModel.php:3838
+#: app/Model/RelationsModel.php:3837
 msgid "These persons are not related in any way."
 msgstr "שני האנשים האלה אינם קשורים בדרך כלשהי."
 
-#: app/Model/RelationsModel.php:3840
+#: app/Model/RelationsModel.php:3839
 msgid "No further paths found."
 msgstr "לא נמצאו קישורים נוספים"
 
@@ -7935,7 +7892,7 @@ msgstr " מסנן פרטיות ‏"
 #: include/AncestorBox.php:73 include/Editor_cls.php:327
 #: include/PersonPopup.php:174 views/descendant_chart.php:324 views/list.php:52
 #: views/list.php:875 views/list.php:1052 views/list.php:1067
-#: views/relations.php:171 views/relations.php:299
+#: views/relations.php:170 views/relations.php:298
 msgid "~"
 msgstr "~"
 
@@ -8533,7 +8490,7 @@ msgstr "מחושב"
 msgid "After nightfall"
 msgstr "אחרי השקיעה"
 
-#: include/GedcomExport.php:1998
+#: include/GedcomExport.php:341
 msgid "No valid family number."
 msgstr "מספר משפחה לא תקין"
 
@@ -8782,7 +8739,7 @@ msgstr "צוואה נחתמה"
 msgid "Yartzeit"
 msgstr "יארצייט"
 
-#: include/MarriageCls.php:82 include/PersonData.php:1295
+#: include/MarriageCls.php:82 include/PersonData.php:1296
 msgid "Non marital"
 msgstr "קשר שאינו נישואין"
 
@@ -8822,7 +8779,7 @@ msgstr "גירושין"
 msgid "Married/ Related"
 msgstr "נשוי/נשואה או בקשר זוגי"
 
-#: include/MarriageCls.php:866 include/PersonData.php:1341 views/list.php:1034
+#: include/MarriageCls.php:866 include/PersonData.php:1342 views/list.php:1034
 #: views/list_places_families.php:387
 msgid "1st"
 msgstr "דרגה ראשונה"
@@ -8855,27 +8812,27 @@ msgstr "מקצועות"
 msgid "religions"
 msgstr "דתות"
 
-#: include/PersonData.php:1272
+#: include/PersonData.php:1273
 msgid "relationship with"
 msgstr "קשר עם"
 
-#: include/PersonData.php:1275
+#: include/PersonData.php:1276
 msgid "married to"
 msgstr "נשוי/נשואה ל-"
 
-#: include/PersonData.php:1277
+#: include/PersonData.php:1278
 msgid "marriage with"
 msgstr "נישואין עם"
 
-#: include/PersonData.php:1307
+#: include/PersonData.php:1308
 msgid "Registered"
 msgstr "רשום"
 
-#: include/PersonData.php:1316
+#: include/PersonData.php:1317
 msgid "divorced from"
 msgstr "התגרש/ה מ-"
 
-#: include/PersonData.php:1318
+#: include/PersonData.php:1319
 msgid "marriage (divorced) with"
 msgstr "נישואין (וגירושין) עם"
 
@@ -9018,11 +8975,11 @@ msgstr "בדיקת מיזוג קרובים"
 #: include/TreeMerge.php:333
 #, php-format
 msgid "Score %d%% match"
-msgstr ""
+msgstr "Score %d%% match"
 
 #: include/TreeMerge.php:335
 msgid "points"
-msgstr ""
+msgstr "נקודות"
 
 #: include/TreeMerge.php:346
 msgid "Nr. "
@@ -9236,38 +9193,32 @@ msgid "No results found for this month"
 msgstr "לא נמצאו תוצאות לחודש זה"
 
 #: views/chat_genealogy.php:14
-#, fuzzy
-#| msgid "Extensions"
 msgid "Questions"
-msgstr "הרחבות"
+msgstr "שאלות"
 
 #: views/chat_genealogy.php:15
-#, fuzzy
-#| msgid "%s version history"
 msgid "Clear history"
-msgstr " היסטוריה של גרסאות %s"
+msgstr "מחק הסטוריה"
 
 #: views/chat_genealogy.php:16
 msgid "Clear"
-msgstr ""
+msgstr "מחק"
 
 #: views/chat_genealogy.php:21
 msgid "Click a question to re-run it."
-msgstr ""
+msgstr "הקלק על שאלה כדי להריץ אותה מחדש."
 
 #: views/chat_genealogy.php:29
 msgid "Chat Genealogy"
-msgstr ""
+msgstr "ציאט גיניאלוגיה"
 
 #: views/chat_genealogy.php:36 views/chat_genealogy.php:76
 msgid "Assistant"
-msgstr ""
+msgstr "מסייע"
 
 #: views/chat_genealogy.php:60
-#, fuzzy
-#| msgid "Block spam question"
 msgid "Ask a question..."
-msgstr "השאלה למניעת דואר זבל"
+msgstr "תשאלו שאלה..."
 
 #: views/chat_genealogy.php:62 views/family.php:1238 views/mailform.php:99
 #: views/register.php:105 views/reset_password.php:95
@@ -9276,13 +9227,11 @@ msgstr "שלח"
 
 #: views/chat_genealogy.php:75
 msgid "You"
-msgstr ""
+msgstr "את/ה"
 
 #: views/chat_genealogy.php:77
-#, fuzzy
-#| msgid "Today in history"
 msgid "No history yet"
-msgstr "היום בהיסטוריה"
+msgstr "עדיין אין הסטוריה"
 
 #: views/cookies.php:1 views/layout.php:884
 #, php-format
@@ -9949,7 +9898,7 @@ msgstr "מידע"
 
 #: views/layout.php:560
 msgid "Chat"
-msgstr ""
+msgstr "צ'אט"
 
 #: views/layout.php:586
 msgid "Places (by persons)"
@@ -10139,10 +10088,8 @@ msgstr "מיין לפי:"
 #: views/list.php:653 views/list.php:670 views/list.php:689 views/list.php:708
 #: views/list.php:727 views/list.php:746 views/sources.php:57
 #: views/sources.php:74 views/sources.php:91
-#, fuzzy
-#| msgid "Sort by:"
 msgid "Sort"
-msgstr "מיין לפי:"
+msgstr "מיין"
 
 # Divorse
 #: views/list.php:1017 views/list_places_families.php:365
@@ -10374,10 +10321,8 @@ msgid "Choose number of generations to display"
 msgstr "בחר מספר הדורות להצגה"
 
 #: views/outline_report.php:73
-#, fuzzy
-#| msgid "Choose number of generations to display"
 msgid "Select number of generations to display"
-msgstr "בחר מספר הדורות להצגה"
+msgstr "בחרו את מספר הדורות להצגה"
 
 #: views/outline_report.php:110
 msgid "PDF (Portrait)"
@@ -10393,7 +10338,7 @@ msgstr "מספר תמונות בעמוד"
 
 #: views/photoalbum.php:86
 msgid "Select number of photos per page"
-msgstr ""
+msgstr "בחרו את מספר התמונות לכל עמוד"
 
 #: views/register.php:10
 msgid "Registration completed"
@@ -10423,15 +10368,15 @@ msgstr "מינימום 6 אותיות"
 msgid "Repeat password"
 msgstr "חזור על הסיסמה"
 
-#: views/relations.php:94 views/relations.php:222
+#: views/relations.php:94 views/relations.php:221
 msgid "or: ID"
 msgstr "או: ID"
 
-#: views/relations.php:196 views/relations.php:322
+#: views/relations.php:195 views/relations.php:321
 msgid "Results are limited, use search to find more persons."
 msgstr "התוצאות מוגבלות, השתמש בחיפוש למצוא אנשים נוספים."
 
-#: views/relations.php:355
+#: views/relations.php:354
 msgid ""
 "This calculator will find the following relationships:<br>\n"
 "<ul><li>Any blood relationship between X and Y (\"X is great-grandfather of "
@@ -10470,58 +10415,58 @@ msgstr ""
 "<li><b>הצעה: אם תקליקו על \"חיפוש\" כאשר שתי משבצות החיפוש ריקות, תקבלו "
 "רשימה של כל השמות בבסיס הנתונים (עשוי לקחת כמה שניות).</b></li></ul>"
 
-#: views/relations.php:374
+#: views/relations.php:373
 msgid "Calculate relationships"
 msgstr "חשב יחסי משפחה"
 
-#: views/relations.php:410
+#: views/relations.php:409
 msgid ""
 "You have to search and than choose Person 1 and Person 2 from the search "
 "result pulldown"
 msgstr "צריך קודם לחפש 2 שמות ואחר-כך להקליק על \"חשב קשרי משפחה\"."
 
-#: views/relations.php:427
+#: views/relations.php:426
 msgid "Blood relationship"
 msgstr "קשרי דם"
 
-#: views/relations.php:539
+#: views/relations.php:538
 msgid "Use Extended Calculator"
 msgstr "השתמש במחשבון המורחב"
 
-#: views/relations.php:542 views/relations.php:735
+#: views/relations.php:541 views/relations.php:734
 msgid "Marital relationship"
 msgstr "קשרי נישואין"
 
-#: views/relations.php:558
+#: views/relations.php:557
 msgid "are both husbands of"
 msgstr "שניהם בעליה של"
 
-#: views/relations.php:560
+#: views/relations.php:559
 msgid "are both wifes of"
 msgstr "שתיהן נשותיו של"
 
-#: views/relations.php:574 views/relations.php:575 views/relations.php:600
-#: views/relations.php:601 views/relations.php:672
+#: views/relations.php:573 views/relations.php:574 views/relations.php:599
+#: views/relations.php:600 views/relations.php:671
 msgid "partner"
 msgstr "בן-בת זוג"
 
-#: views/relations.php:578 views/relations.php:614
+#: views/relations.php:577 views/relations.php:613
 msgid "husband of"
 msgstr "בעלה של"
 
-#: views/relations.php:587 views/relations.php:604
+#: views/relations.php:586 views/relations.php:603
 msgid "wife of"
 msgstr "אשתו של"
 
-#: views/relations.php:732
+#: views/relations.php:731
 msgid "No blood relation or direct marital relation found"
 msgstr "לא נמצא קשר דם או קשר חיתון ישיר"
 
-#: views/relations.php:736
+#: views/relations.php:735
 msgid "No direct marital relation found"
 msgstr "לא נמצא קשר חיתון ישיר"
 
-#: views/relations.php:741
+#: views/relations.php:740
 msgid ""
 "You may wish to try finding a connection with the <span style='font-"
 "weight:bold'>Extended Marital Calculator</span> below.<br>\n"
@@ -10542,15 +10487,15 @@ msgstr ""
 "1-2 שניות.<br>\n"
 "בעץ של 75,000 אנשים מציאת שני אנשים מרוחקים מאד עשויה לקחת עד 8 שניות."
 
-#: views/relations.php:746
+#: views/relations.php:745
 msgid "Perform extended marital calculation"
 msgstr "בצע חישוב קשרי חיתון מורחב"
 
-#: views/relations.php:839
+#: views/relations.php:840
 msgid "Try to find another path"
 msgstr "נסה למצוא קשר נוסף"
 
-#: views/relations.php:840
+#: views/relations.php:841
 msgid ""
 "With each consecutive search the path may get longer and computing time may "
 "increase!"
@@ -10712,10 +10657,8 @@ msgid "Number of displayed first names"
 msgstr "מספר שמות פרטיים מוצגים"
 
 #: views/stats_firstnames.php:87
-#, fuzzy
-#| msgid "Number of displayed first names"
 msgid "Select number of displayed first names"
-msgstr "מספר שמות פרטיים מוצגים"
+msgstr "בחרו את מספר השמות הפרטיים שיוצגו"
 
 #: views/stats_persons.php:12 views/stats_tree.php:46
 msgid "No. of persons"
@@ -10762,16 +10705,12 @@ msgid "Lifespan range of married individuals"
 msgstr "טווח אורך חיים של אנשים נשואים/נשואות"
 
 #: views/stats_surnames.php:44
-#, fuzzy
-#| msgid "Number of displayed surnames"
 msgid "Select number of displayed surnames"
-msgstr "מספר שמות משפחה מוצגים"
+msgstr "בחרו את מספר שמות המשפחה שיוצגו"
 
 #: views/stats_surnames.php:61
-#, fuzzy
-#| msgid "Number of columns"
 msgid "Select number of columns"
-msgstr "מספר הטורים"
+msgstr "בחרו את מספר הטורים"
 
 #: views/stats_tree.php:29
 msgid "No. of families"
@@ -10791,20 +10730,16 @@ msgid "Steps:"
 msgstr "מקבצי שנים"
 
 #: views/timeline.php:101
-#, fuzzy
-#| msgid "Select source"
 msgid "Select step"
-msgstr "בחר מקור"
+msgstr "בחרו שלב"
 
 #: views/timeline.php:110
 msgid "Choose timeline"
 msgstr "בחר ציר זמן"
 
 #: views/timeline.php:112
-#, fuzzy
-#| msgid "Select media"
 msgid "Select timeline"
-msgstr "בחרו מדיה"
+msgstr "בחרו קו זמן"
 
 #: views/timeline.php:145
 msgid "Change Display"
@@ -10918,89 +10853,3 @@ msgstr "בחר סגנון"
 #: views/user_settings.php:128 views/user_settings.php:131
 msgid "Standard-colours"
 msgstr "צבעים של ברירת המחדל"
-
-#~ msgid "source text"
-#~ msgstr "טקסט המקור"
-
-#~ msgid "extra text"
-#~ msgstr "טקסט נוסף"
-
-#~ msgid "Person disconnected from marriage(s)."
-#~ msgstr "האדם נותק מהנישואין"
-
-#, fuzzy
-#~| msgid ""
-#~| "(Re) create location table. <b>This will remove all locations used for "
-#~| "World map.</b>"
-#~ msgid ""
-#~ "(Re) create location table. <b>This is the general table for all places.</"
-#~ "b>"
-#~ msgstr ""
-#~ "תיצור (מחדש) את טבלת המיקומים. <b>הליך זה ימחק את כל המיקומים שבשימוש "
-#~ "World map.</b>"
-
-#~ msgid "Checked all person index numbers"
-#~ msgstr "נבדקו כל המספרים הסידוריים של אנשים"
-
-#~ msgid "Checked all person - relation connections"
-#~ msgstr "נבדקו כל הקשרים בין אנשים לבין בני/בנות זוג"
-
-#~ msgid "Checked all child - parent connections"
-#~ msgstr "נבדקו כל הקשרים בין ילדים להורים"
-
-#~ msgid "Checked all parent - child connections"
-#~ msgstr "נבדקו כל הקשרים בין הורים לבין ילדים"
-
-#~ msgid "Please wait while duplicate list is generated"
-#~ msgstr "נא המתינו עד לגמר יצירת רשימת הכפולים"
-
-#~ msgid "Please wait while the automatic merges are processed..."
-#~ msgstr "אנא המתינו במהלך תהליך המיזוג האוטומטי..."
-
-#~ msgid ""
-#~ "Default plugin in 2025, but will probably stop working in the future."
-#~ msgstr "זה תוסף ברירת המחדל ב-2025, אבל ככל הנראה יפסיק לעבוד בעתיד."
-
-#~ msgid "Select place"
-#~ msgstr "בחר מיקום"
-
-#~ msgid ""
-#~ "Add new locations to geo-location database (for Google Maps locations). "
-#~ "This will slow down reading of GEDCOM file!"
-#~ msgstr ""
-#~ "הוסף מיקומים חדשים לבסיס הניתונים  של ה-geo-location (בשביל המיקומים "
-#~ "במפות גוגל). הגדרה זו תאיט את הייבוא של קובץ הג'דקום!"
-
-#~ msgid "Updating location database..."
-#~ msgstr "מעדכן בסיס נתונים של מיקומים"
-
-#~ msgid ""
-#~ "Are your sure you want to delete the <b>entire geolocation database</b>?"
-#~ msgstr ""
-#~ "האם אתה בטוח שאתה רוצה למחוק את <b> כל בסיס הנתונים של geolocation</b>?"
-
-#, php-format
-#~ msgid "Are your sure you want to delete location \"%s\"?"
-#~ msgstr "האם אתה בטוח שאתה רוצה למחוק את המיקום \"%s\"?"
-
-#~ msgid "Location is deleted."
-#~ msgstr "המיקום נמחק."
-
-#~ msgid "Create or update geolocation database"
-#~ msgstr "צור או עדכן את טבלת המקומות של Google Maps"
-
-#~ msgid "Delete entire geolocation database"
-#~ msgstr "מחק את כל בסיס הנתונים של geolocation."
-
-#~ msgid "Add this location"
-#~ msgstr "הוסף מקום זה"
-
-#~ msgid "Delete this location"
-#~ msgstr "מחק מקום זה"
-
-#, php-format
-#~ msgid "Generated with %s on %s"
-#~ msgstr "Generated with %s on %s"
-
-#~ msgid "died "
-#~ msgstr "פטירה:"

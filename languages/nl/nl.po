@@ -2,8 +2,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: HuMo-genealogy\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-11-24 17:12+0100\n"
-"PO-Revision-Date: 2025-11-24 17:12+0100\n"
+"POT-Creation-Date: 2025-12-02 17:02+0100\n"
+"PO-Revision-Date: 2025-12-02 17:02+0100\n"
 "Last-Translator: Huub Mons\n"
 "Language-Team: \n"
 "Language: nl_NL\n"
@@ -242,7 +242,7 @@ msgstr "persoon"
 #: admin/Models/AdminSourcesModel.php:159
 #: admin/Models/AdminSourcesModel.php:165 admin/views/edit_address.php:54
 #: admin/views/edit_repository.php:139 admin/views/gedcom_export.php:286
-#: admin/views/partial/editor_addresses.php:298
+#: admin/views/partial/editor_addresses.php:303
 #: app/Controller/AddressController.php:29
 #: app/Controller/AddressesController.php:39
 #: app/Controller/CmsPagesController.php:31 include/TreeMerge.php:638
@@ -253,7 +253,7 @@ msgstr "Adres"
 #: admin/Models/AdminSourcesModel.php:111 admin/views/editor_relation.php:491
 #: admin/views/editor_relation.php:732 include/MarriageCls.php:65
 #: include/MarriageCls.php:171 include/MarriageCls.php:173
-#: include/MarriageCls.php:175 include/PersonData.php:1283
+#: include/MarriageCls.php:175 include/PersonData.php:1284
 msgid "Living together"
 msgstr "Samenwonend"
 
@@ -492,7 +492,7 @@ msgstr "Update beschikbaar"
 msgid "Beta version available"
 msgstr "Beta versie beschikbaar"
 
-#: admin/include/index_check_update.php:311 admin/update/install_update.php:585
+#: admin/include/index_check_update.php:311 admin/update/install_update.php:586
 msgid "Online version check unavailable."
 msgstr "Online versiecontrole niet beschikbaar."
 
@@ -754,12 +754,12 @@ msgstr "%s beta versie beschikbaar"
 msgid "No beta version available."
 msgstr "Geen beta versie beschikbaar."
 
-#: admin/update/install_update.php:82 admin/update/install_update.php:619
+#: admin/update/install_update.php:82 admin/update/install_update.php:620
 #, php-format
 msgid "Enable/ disable %s update check."
 msgstr "%s update controle aan/ uitzetten."
 
-#: admin/update/install_update.php:86 admin/update/install_update.php:624
+#: admin/update/install_update.php:86 admin/update/install_update.php:625
 #, php-format
 msgid "Check regularly for %s updates."
 msgstr "Controleer regelmatig voor %s updates."
@@ -866,80 +866,90 @@ msgstr "Bestand is bijgewerkt."
 msgid "Install files!"
 msgstr "Installeer bestanden!"
 
-#: admin/update/install_update.php:545
-msgid "Update completed and installation files removed!"
-msgstr "Update uitgevoerd en installatie bestanden verwijderd!"
+#: admin/update/install_update.php:546
+#, php-format
+msgid ""
+"Update completed and installation files removed! Click %s to return to the "
+"main menu."
+msgstr ""
+"Update voltooid en installatiebestanden verwijderd! Klik op %s om terug te "
+"keren naar het hoofdmenu."
 
-#: admin/update/install_update.php:552
+#: admin/update/install_update.php:546 admin/views/install.php:976
+#: admin/views/menu.php:51 admin/views/update.php:218
+msgid "Main menu"
+msgstr "Hoofdmenu"
+
+#: admin/update/install_update.php:553
 #, php-format
 msgid "Current %s version:"
 msgstr "Huidige %s versie:"
 
-#: admin/update/install_update.php:555
+#: admin/update/install_update.php:556
 #, php-format
 msgid "Available %s version:"
 msgstr "Beschikbare %s versie:"
 
-#: admin/update/install_update.php:559
+#: admin/update/install_update.php:560
 msgid "There are 2 update methods: automatic and manually."
 msgstr "Er zijn 2 update methoden: automatisch en handmatig."
 
-#: admin/update/install_update.php:562
+#: admin/update/install_update.php:563
 #, php-format
 msgid "1) Automatic update of %s"
 msgstr "1) Automatische update van %s"
 
-#: admin/update/install_update.php:564 admin/update/install_update.php:570
+#: admin/update/install_update.php:565 admin/update/install_update.php:571
 msgid "a) [Optional, but highly recommended] Do a database backup first"
 msgstr "a) [Optioneel, maar aanbevolen] Maak eerst een database back-up"
 
-#: admin/update/install_update.php:564 admin/update/install_update.php:570
+#: admin/update/install_update.php:565 admin/update/install_update.php:571
 msgid "backup page"
 msgstr "back-up bladzijde"
 
-#: admin/update/install_update.php:565
+#: admin/update/install_update.php:566
 msgid "b)"
 msgstr "b)"
 
-#: admin/update/install_update.php:565
+#: admin/update/install_update.php:566
 msgid "Start automatic update"
 msgstr "Start automatische update"
 
-#: admin/update/install_update.php:568
+#: admin/update/install_update.php:569
 #, php-format
 msgid "1) Manual update of %s"
 msgstr "2) Handmatige installatie van %s"
 
-#: admin/update/install_update.php:572
+#: admin/update/install_update.php:573
 msgid "b) Download the new version: "
 msgstr "b) Download de nieuwe versie: "
 
-#: admin/update/install_update.php:573
+#: admin/update/install_update.php:574
 #, php-format
 msgid "%s version:"
 msgstr "%s versie:"
 
-#: admin/update/install_update.php:576
+#: admin/update/install_update.php:577
 #, php-format
 msgid "c) Unzip the file and replace the old %s files by the new %s files."
 msgstr ""
 "c) Unzip bestanden en vervang de oude %s-bestanden door de nieuwe %s-"
 "bestanden."
 
-#: admin/update/install_update.php:578
+#: admin/update/install_update.php:579
 msgid "Full installation and update instructions can be found at:"
 msgstr "Volledige installatie en update instructies zijn hier te vinden:"
 
-#: admin/update/install_update.php:579
+#: admin/update/install_update.php:580
 #, php-format
 msgid "%s manual"
 msgstr "%s handleiding"
 
-#: admin/update/install_update.php:586
+#: admin/update/install_update.php:587
 msgid "Semi-automatic update"
 msgstr "Semi-automatische update"
 
-#: admin/update/install_update.php:587
+#: admin/update/install_update.php:588
 msgid ""
 "In some cases the automatic update doesn't work. Then use this semi-"
 "automatic update method."
@@ -947,48 +957,48 @@ msgstr ""
 "In sommige gevallen werkt de automatische update niet. Gebruik dan deze semi-"
 "automatische update methode."
 
-#: admin/update/install_update.php:588
+#: admin/update/install_update.php:589
 #, php-format
 msgid "1. Download a new version of %s."
 msgstr "1. Download een nieuwe versie van %s."
 
-#: admin/update/install_update.php:589
+#: admin/update/install_update.php:590
 msgid "2. Rename the zip file into: humo-gen_update.zip"
 msgstr "3. Hernoem het zip bestand naar: humo-gen_update.zip"
 
-#: admin/update/install_update.php:598
+#: admin/update/install_update.php:599
 msgid "Upload failed, check folder rights"
 msgstr "Upload is mislukt, controleer de map rechten"
 
-#: admin/update/install_update.php:604
+#: admin/update/install_update.php:605
 msgid "3. Upload humo-gen_update.zip:"
 msgstr "3. Upload humo-gen_update.zip:"
 
-#: admin/update/install_update.php:605 admin/views/backup.php:131
+#: admin/update/install_update.php:606 admin/views/backup.php:131
 #: admin/views/gedcom_import.php:65 admin/views/settings.php:102
 #: admin/views/settings.php:657 include/EditorEvent.php:1269
 msgid "Upload"
 msgstr "Upload"
 
-#: admin/update/install_update.php:607
+#: admin/update/install_update.php:608
 msgid "OR: manually upload the file to folder: admin/update/"
 msgstr "OF: upload het bestand handmatig naar map: admin/update/"
 
-#: admin/update/install_update.php:610
+#: admin/update/install_update.php:611
 msgid "4. Then click:"
 msgstr "4. Klik dan op:"
 
-#: admin/update/install_update.php:612
+#: admin/update/install_update.php:613
 #, php-format
 msgid "start update of %s."
 msgstr "start update van %s"
 
-#: admin/update/install_update.php:616
+#: admin/update/install_update.php:617
 #, php-format
 msgid "%s version history"
 msgstr "%s versie overzicht"
 
-#: admin/update/install_update.php:617 admin/views/index_admin.php:22
+#: admin/update/install_update.php:618 admin/views/index_admin.php:22
 #, php-format
 msgid "%s version"
 msgstr "%s versie"
@@ -1405,7 +1415,7 @@ msgid "Search"
 msgstr "Zoeken"
 
 #: admin/views/edit_address.php:64 admin/views/edit_address.php:68
-#: admin/views/edit_address.php:69 admin/views/partial/editor_addresses.php:302
+#: admin/views/edit_address.php:69 admin/views/partial/editor_addresses.php:307
 msgid "Select address"
 msgstr "Selecteer adres"
 
@@ -1507,7 +1517,7 @@ msgstr "Telefoon"
 #: admin/views/editor_relation.php:1034 admin/views/editor_relation.php:1074
 #: admin/views/editor_relation.php:1097 admin/views/editor_sources.php:35
 #: admin/views/editor_sources.php:100 admin/views/editor_sources.php:128
-#: admin/views/partial/editor_addresses.php:270
+#: admin/views/partial/editor_addresses.php:275
 #: app/Controller/SourceController.php:26 include/EditorEvent.php:1158
 #: views/address.php:51 views/source.php:20
 msgid "Source"
@@ -1547,7 +1557,7 @@ msgstr "Tekst"
 #: admin/views/editor_person.php:1683 admin/views/editor_person.php:1878
 #: admin/views/editor_sources.php:355 admin/views/log.php:111
 #: admin/views/partial/editor_addresses.php:13
-#: admin/views/partial/editor_addresses.php:326
+#: admin/views/partial/editor_addresses.php:331
 #: admin/views/partial/editor_notes.php:26
 #: admin/views/settings_homepage.php:244 admin/views/settings_homepage.php:327
 #: admin/views/users.php:191 include/EditorEvent.php:339
@@ -1834,7 +1844,7 @@ msgstr "E-mail"
 
 #: admin/views/edit_repository.php:209 admin/views/editor_person.php:1749
 #: admin/views/editor_relation.php:1128 include/EditorEvent.php:72
-#: include/MarriageCls.php:781 include/PersonData.php:1108
+#: include/MarriageCls.php:781 include/PersonData.php:1109
 msgid "URL/ Internet link"
 msgstr "URL/ Internet link"
 
@@ -2046,8 +2056,8 @@ msgstr "Ouders"
 #: admin/views/statistics_families.php:76
 #: admin/views/statistics_families.php:88 include/EditorEvent.php:743
 #: include/EditorEvent.php:752 include/Editor_cls.php:310
-#: include/PersonData.php:1042 include/PersonData.php:1062
-#: include/PersonData.php:1079 include/PersonData.php:1330
+#: include/PersonData.php:1043 include/PersonData.php:1063
+#: include/PersonData.php:1080 include/PersonData.php:1331
 #: include/PersonName.php:503 include/PersonName.php:505
 #: include/PersonName.php:506 include/PersonName.php:507
 #: include/PersonName.php:508 include/PersonNameExtended.php:59
@@ -2651,17 +2661,17 @@ msgid "Age person 2"
 msgstr "Leeftijd persoon 2"
 
 #: admin/views/editor_relation.php:733 include/MarriageCls.php:68
-#: include/PersonData.php:1286
+#: include/PersonData.php:1287
 msgid "Living apart together"
 msgstr "LAT relatie"
 
 #: admin/views/editor_relation.php:734 include/MarriageCls.php:72
-#: include/PersonData.php:1289
+#: include/PersonData.php:1290
 msgid "Intentionally unmarried mother"
 msgstr "Bewust ongehuwde moeder"
 
 #: admin/views/editor_relation.php:735 include/MarriageCls.php:78
-#: include/PersonData.php:1292
+#: include/PersonData.php:1293
 msgid "Homosexual"
 msgstr "Homosexuele relatie"
 
@@ -2670,13 +2680,13 @@ msgid "Non_marital"
 msgstr "Ongehuwd"
 
 #: admin/views/editor_relation.php:737 include/MarriageCls.php:87
-#: include/MarriageCls.php:94 include/PersonData.php:1298
-#: include/PersonData.php:1301
+#: include/MarriageCls.php:94 include/PersonData.php:1299
+#: include/PersonData.php:1302
 msgid "Extramarital"
 msgstr "Buitenechtelijk"
 
 #: admin/views/editor_relation.php:738 include/MarriageCls.php:101
-#: include/PersonData.php:1304
+#: include/PersonData.php:1305
 msgid "Partner"
 msgstr "Partner"
 
@@ -2685,7 +2695,7 @@ msgid "Registered partnership"
 msgstr "Geregistreerd partnerschap"
 
 #: admin/views/editor_relation.php:740 include/MarriageCls.php:109
-#: include/PersonData.php:1310
+#: include/PersonData.php:1311
 msgid "Unknown relation"
 msgstr "Onbekende relatie"
 
@@ -4240,11 +4250,11 @@ msgstr "Tabellen aanmaken:"
 #: admin/views/install.php:459 admin/views/install.php:478
 #: admin/views/install.php:507 admin/views/install.php:525
 #: admin/views/install.php:562 admin/views/install.php:591
-#: admin/views/install.php:657 admin/views/install.php:681
-#: admin/views/install.php:718 admin/views/install.php:746
-#: admin/views/install.php:780 admin/views/install.php:810
-#: admin/views/install.php:848 admin/views/install.php:871
-#: admin/views/install.php:905 admin/views/install.php:938
+#: admin/views/install.php:657 admin/views/install.php:686
+#: admin/views/install.php:723 admin/views/install.php:751
+#: admin/views/install.php:785 admin/views/install.php:815
+#: admin/views/install.php:853 admin/views/install.php:876
+#: admin/views/install.php:910 admin/views/install.php:943
 #, php-format
 msgid "create table: %s."
 msgstr "tabel aanmaken: %s."
@@ -4255,19 +4265,14 @@ msgstr "tabel aanmaken: %s."
 msgid "filling table: %s."
 msgstr "tabel vullen: %s."
 
-#: admin/views/install.php:971
+#: admin/views/install.php:975
 msgid "No errors above? This means that the database has been processed!"
 msgstr "Geen foutmeldingen hierboven? Dan zijn de tabellen aangemaakt!"
 
-#: admin/views/install.php:972
+#: admin/views/install.php:976
 #, php-format
 msgid "All updates completed, go to: %s"
 msgstr "Alle updates voltooid, ga naar: %s"
-
-#: admin/views/install.php:972 admin/views/menu.php:51
-#: admin/views/update.php:218
-msgid "Main menu"
-msgstr "Hoofdmenu"
 
 #: admin/views/language_editor.php:163
 #, php-format
@@ -4734,15 +4739,19 @@ msgstr "Adres GEDCOM-nummer:"
 msgid "Shared address"
 msgstr "Gedeeld adres"
 
-#: admin/views/partial/editor_addresses.php:245
+#: admin/views/partial/editor_addresses.php:246
+msgid "Only use the following fields for shared addresses."
+msgstr "Gebruik de volgende velden alleen voor gedeelde adressen."
+
+#: admin/views/partial/editor_addresses.php:249
 msgid "Addressrole"
 msgstr "Adresrol"
 
-#: admin/views/partial/editor_addresses.php:253
+#: admin/views/partial/editor_addresses.php:257
 msgid "Extra text by address"
 msgstr "Extra tekst bij adres"
 
-#: admin/views/partial/editor_addresses.php:322
+#: admin/views/partial/editor_addresses.php:327
 msgid "Or: add new address"
 msgstr "Of: voeg nieuw adres toe"
 
@@ -7535,7 +7544,7 @@ msgid "Receive newsletter"
 msgstr "Nieuwsbrief ontvangen"
 
 #: app/Model/OutlineReportModel.php:261 app/Model/OutlineReportModel.php:275
-#: views/family.php:430 views/family.php:493 views/photoalbum.php:266
+#: views/family.php:430 views/family.php:493 views/photoalbum.php:269
 #: views/timeline.php:224
 msgid ""
 "*** Privacy filter is active, one or more items are filtered. Please login "
@@ -7703,7 +7712,7 @@ msgstr " van "
 #: app/Model/RelationsModel.php:1779 app/Model/RelationsModel.php:2417
 #: app/Model/RelationsModel.php:2520 app/Model/RelationsModel.php:2655
 #: app/Model/RelationsModel.php:3419 app/Model/RelationsModel.php:3422
-#: include/MarriageCls.php:875 include/PersonData.php:1347 views/list.php:1040
+#: include/MarriageCls.php:875 include/PersonData.php:1348 views/list.php:1040
 #: views/list_places_families.php:393
 msgid "th"
 msgstr "e"
@@ -7737,7 +7746,7 @@ msgstr "klein"
 #: app/Model/RelationsModel.php:1261 app/Model/RelationsModel.php:1772
 #: app/Model/RelationsModel.php:1970 app/Model/RelationsModel.php:2147
 #: app/Model/RelationsModel.php:2648 include/MarriageCls.php:869
-#: include/PersonData.php:1343 views/list.php:1036
+#: include/PersonData.php:1344 views/list.php:1036
 #: views/list_places_families.php:389
 msgid "2nd"
 msgstr "2e"
@@ -7745,7 +7754,7 @@ msgstr "2e"
 #: app/Model/RelationsModel.php:1264 app/Model/RelationsModel.php:1775
 #: app/Model/RelationsModel.php:1973 app/Model/RelationsModel.php:2150
 #: app/Model/RelationsModel.php:2651 include/MarriageCls.php:872
-#: include/PersonData.php:1345 views/list.php:1038
+#: include/PersonData.php:1346 views/list.php:1038
 #: views/list_places_families.php:391
 msgid "3rd"
 msgstr "3e"
@@ -8679,7 +8688,7 @@ msgstr "berekend"
 msgid "After nightfall"
 msgstr "Na het vallen van de avond"
 
-#: include/GedcomExport.php:1998
+#: include/GedcomExport.php:2092
 msgid "No valid family number."
 msgstr "Geen geldig gezinsnummer."
 
@@ -8928,7 +8937,7 @@ msgstr "Testament getekend"
 msgid "Yartzeit"
 msgstr "Yartzeit"
 
-#: include/MarriageCls.php:82 include/PersonData.php:1295
+#: include/MarriageCls.php:82 include/PersonData.php:1296
 msgid "Non marital"
 msgstr "Ongehuwd"
 
@@ -8968,7 +8977,7 @@ msgstr "gescheiden"
 msgid "Married/ Related"
 msgstr "Huwelijk/relatie"
 
-#: include/MarriageCls.php:866 include/PersonData.php:1341 views/list.php:1034
+#: include/MarriageCls.php:866 include/PersonData.php:1342 views/list.php:1034
 #: views/list_places_families.php:387
 msgid "1st"
 msgstr "1e"
@@ -9001,27 +9010,27 @@ msgstr "beroepen"
 msgid "religions"
 msgstr "religies"
 
-#: include/PersonData.php:1272
+#: include/PersonData.php:1273
 msgid "relationship with"
 msgstr "relatie met"
 
-#: include/PersonData.php:1275
+#: include/PersonData.php:1276
 msgid "married to"
 msgstr "gehuwd met"
 
-#: include/PersonData.php:1277
+#: include/PersonData.php:1278
 msgid "marriage with"
 msgstr "huwelijk met"
 
-#: include/PersonData.php:1307
+#: include/PersonData.php:1308
 msgid "Registered"
 msgstr "Geregistreerd"
 
-#: include/PersonData.php:1316
+#: include/PersonData.php:1317
 msgid "divorced from"
 msgstr "gescheiden van"
 
-#: include/PersonData.php:1318
+#: include/PersonData.php:1319
 msgid "marriage (divorced) with"
 msgstr "huwelijk (gescheiden) met"
 

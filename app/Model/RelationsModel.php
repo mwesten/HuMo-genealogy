@@ -224,7 +224,7 @@ class RelationsModel extends BaseModel
 
             $first_relation = $this->db_functions->get_first_relation($searchDb->pers_id);
             if (isset($first_relation)) {
-                $this->relation['family_id1'] = $first_relation->person_gedcomnumber;
+                $this->relation['family_id1'] = $first_relation->relation_gedcomnumber;
             } else {
                 $this->relation['family_id1'] = $searchDb->parent_relation_gedcomnumber;
             }
@@ -244,7 +244,7 @@ class RelationsModel extends BaseModel
 
             $first_relation = $this->db_functions->get_first_relation($searchDb2->pers_id);
             if ($first_relation) {
-                $this->relation['family_id2'] = $first_relation->person_gedcomnumber;
+                $this->relation['family_id2'] = $first_relation->relation_gedcomnumber;
             } else {
                 $this->relation['family_id2'] = $searchDb2->parent_relation_gedcomnumber;
             }
@@ -1328,7 +1328,6 @@ class RelationsModel extends BaseModel
     private function calculate_descendant($pers): void
     {
         $child = $this->relation['sexe1'] == 'M' ? __('son') : __('daughter');
-
         // *** Greek***
         // *** Ελληνικά γιος κόρη***  
         if ($this->selected_language == "gr") {
@@ -1361,7 +1360,8 @@ class RelationsModel extends BaseModel
 
         if ($pers == 1) {
             if ($this->relation['spouse'] == 1) {
-                $child = $child == __('son') ? __('son-in-law') : __('daughter-in-law');
+                // *** Remark: this should be switched. Otherwise some languages can't show proper texts ***
+                $child = $child == __('son') ? __('daughter-in-law') : __('son-in-law');
                 $this->relation['special_spouseX'] = 1;
 
                 // *** Greek***
@@ -3438,7 +3438,7 @@ class RelationsModel extends BaseModel
         $personName = new PersonName();
         $privacy = new PersonPrivacy();
 
-        if (isset($relation)) {
+        if (isset($this->relation)) {
             foreach ($this->relations1 as $relation) {
                 $familyDb = $this->db_functions->get_family_with_id($relation->relation_id, 'man-woman');
                 $thespouse = $this->relation['sexe1'] == 'F' ? $familyDb->partner1_gedcomnumber : $familyDb->partner2_gedcomnumber;
@@ -3448,17 +3448,24 @@ class RelationsModel extends BaseModel
                 if (isset($this->rel_arrayspouseX)) {
                     $this->compare_rel_array($this->rel_arrayspouseX, $this->rel_arrayY, 1); // "1" flags comparison with "spouse of X"
                 }
-
                 if ($this->relation['foundX_match'] !== '') {
                     $this->relation['famspouseX'] = $relation->relation_gedcomnumber;
 
-                    $this->relation['sexe1'] = $this->relation['sexe1'] == 'M' ? "f" : "m"; // we have to switch sex since the spouse is the relative!
+                    // Needed to calculate relation text.
+                    $this->relation['sexe1'] = $this->relation['sexe1'] == 'M' ? "F" : "M"; // we have to switch sex since the spouse is the relative!
                     $this->calculate_rel();
 
                     $spouseidDb = $this->db_functions->get_person($thespouse);
                     $privacy = $privacy->get_privacy($spouseidDb);
                     $name = $personName->get_person_name($spouseidDb, $privacy);
                     $this->relation['spousenameX'] = $name["name"];
+
+                    // Added dec. 2025 to show proper sexe colour for person 1.
+                    $this->relation['sexe1'] = $spouseidDb->pers_sexe;
+
+                    // Added dec. 2025 to show proper sexe colour for person 2.
+                    $person2 = $this->db_functions->get_person($familyDb->partner1_gedcomnumber == $thespouse ? $familyDb->partner2_gedcomnumber : $familyDb->partner1_gedcomnumber);
+                    $this->relation['sexe2'] = $person2->pers_sexe;
 
                     break;
                 }
@@ -3506,7 +3513,7 @@ class RelationsModel extends BaseModel
                     }
                     if ($this->relation['foundX_match'] !== '') {
                         // we have to switch sex since the spouse is the relative!
-                        $this->relation['sexe1'] = $this->relation['sexe1'] == 'M' ? "f" : "m";
+                        $this->relation['sexe1'] = $this->relation['sexe1'] == 'M' ? "F" : "M";
                         $this->calculate_rel();
 
                         $spouseidDb = $this->db_functions->get_person($thespouse);
@@ -3629,7 +3636,7 @@ class RelationsModel extends BaseModel
                                     $this->relation['global_array'][] = $child->person_gedcomnumber . "@par@" . $persged . "@" . $pathway . ";" . "par" . $child->person_gedcomnumber;
                                 }
                                 $this->count++;
-                                $this->globaltrack .= $value . "@";
+                                $this->globaltrack .= $child->person_gedcomnumber . "@";
                             }
                         }
                     }
@@ -3650,8 +3657,8 @@ class RelationsModel extends BaseModel
                     if ($famsDb->partner1_gedcomnumber == $persDb->pers_gedcomnumber) {
                         if (isset($famsDb->partner2_gedcomnumber) && $famsDb->partner2_gedcomnumber != "" && $famsDb->partner2_gedcomnumber != "0" && strpos($this->globaltrack, $famsDb->partner2_gedcomnumber . "@") === false) {
                             if (strpos($_SESSION['next_path'], $famsDb->partner2_gedcomnumber . "@") === false) {
-                                $work_array[] = $famsDb->partner2_gedcomnumber . "@spo@" . $value . "@" . $pathway . ";" . "spo" . $famsDb->partner2_gedcomnumber;
-                                $this->relation['global_array'][] = $famsDb->partner2_gedcomnumber . "@spo@" . $value . "@" . $pathway . ";" . "spo" . $famsDb->partner2_gedcomnumber;
+                                $work_array[] = $famsDb->partner2_gedcomnumber . "@spo@" . $persged . "@" . $pathway . ";" . "spo" . $famsDb->partner2_gedcomnumber;
+                                $this->relation['global_array'][] = $famsDb->partner2_gedcomnumber . "@spo@" . $persged . "@" . $pathway . ";" . "spo" . $famsDb->partner2_gedcomnumber;
                             }
                             $this->count++;
                             $this->globaltrack .= $famsDb->partner2_gedcomnumber . "@";
@@ -3659,8 +3666,8 @@ class RelationsModel extends BaseModel
                     } else {
                         if (isset($famsDb->partner1_gedcomnumber) && $famsDb->partner1_gedcomnumber != "" && $famsDb->partner1_gedcomnumber != "0" && strpos($this->globaltrack, $famsDb->partner1_gedcomnumber . "@") === false) {
                             if (strpos($_SESSION['next_path'], $famsDb->partner1_gedcomnumber . "@") === false) {
-                                $work_array[] = $famsDb->partner1_gedcomnumber . "@spo@" . $value . "@" . $pathway . ";" . "spo" . $famsDb->partner1_gedcomnumber;
-                                $this->relation['global_array'][] = $famsDb->partner1_gedcomnumber . "@spo@" . $value . "@" . $pathway . ";" . "spo" . $famsDb->partner1_gedcomnumber;
+                                $work_array[] = $famsDb->partner1_gedcomnumber . "@spo@" . $persged . "@" . $pathway . ";" . "spo" . $famsDb->partner1_gedcomnumber;
+                                $this->relation['global_array'][] = $famsDb->partner1_gedcomnumber . "@spo@" . $persged . "@" . $pathway . ";" . "spo" . $famsDb->partner1_gedcomnumber;
                             }
                             $this->count++;
                             $this->globaltrack .= $famsDb->partner1_gedcomnumber . "@";
@@ -3751,7 +3758,7 @@ class RelationsModel extends BaseModel
                     if ($refer === "fst" && $_SESSION['couple'] == $relation->relation_gedcomnumber) {
                         continue;
                     }
-                    $famsDb = $this->db_functions->get_family($relation);
+                    $famsDb = $this->db_functions->get_family_with_id($relation->relation_id);
                     if ($refer === "chd" && $famsDb->partner2_gedcomnumber == $persDb->pers_gedcomnumber && isset($famsDb->partner1_gedcomnumber) && $famsDb->partner1_gedcomnumber != "" && $famsDb->fam_gedcomnumber == $callarray[1]) {
                         continue;
                     }
@@ -3789,7 +3796,7 @@ class RelationsModel extends BaseModel
                     if ($refer === "fst" && $_SESSION['couple'] == $relation->relation_gedcomnumber) {
                         continue;
                     }
-                    $famsDb = $this->db_functions->get_family($relation->relation_gedcomnumber);
+                    $famsDb = $this->db_functions->get_family_with_id($relation->relation_id);
                     if ($famsDb->partner1_gedcomnumber == $persDb->pers_gedcomnumber) {
                         if (isset($famsDb->partner2_gedcomnumber) && $famsDb->partner2_gedcomnumber != "" && $famsDb->partner2_gedcomnumber != "0") {
                             $var4 = strpos($_SESSION['next_path'], $famsDb->partner2_gedcomnumber . "@");

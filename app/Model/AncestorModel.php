@@ -48,8 +48,9 @@ class AncestorModel extends FamilyModel
         $data["sexe"][1] = $personDb->pers_sexe;
         $parent_array[2] = '';
         $parent_array[3] = '';
+
         if ($parent_relation_id[1]) {
-            $parentDb = $this->db_functions->get_family($parent_relation_id[1]);
+            $parentDb = $this->db_functions->get_family_with_id($parent_relation_id[1]);
             $parent_array[2] = $parentDb->partner1_gedcomnumber;
             $parent_array[3] = $parentDb->partner2_gedcomnumber;
             $data["marr_date"][2] = $parentDb->fam_marr_date;
@@ -81,7 +82,7 @@ class AncestorModel extends FamilyModel
             $data["marr_date"][$Mcounter] = '';
             $data["marr_place"][$Mcounter] = '';
             if ($parent_relation_id[$counter]) {
-                $parentDb = $this->db_functions->get_family($parent_relation_id[$counter]);
+                $parentDb = $this->db_functions->get_family_with_id($parent_relation_id[$counter]);
                 $parent_array[$Mcounter] = $parentDb->partner1_gedcomnumber;
                 $parent_array[$Fcounter] = $parentDb->partner2_gedcomnumber;
                 $data["marr_date"][$Mcounter] = $parentDb->fam_marr_date;

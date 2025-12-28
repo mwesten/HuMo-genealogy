@@ -55,6 +55,52 @@ if ($count > 0) {
                         $sql = "UPDATE humo_connections SET connect_order='" . $address_nr . "' WHERE connect_id='" . $connectDb->connect_id . "'";
                         $dbh->query($sql);
                     }
+
+                    // *** Show addresses by person or relation ***
+                    $address3_qry = $dbh->query("SELECT * FROM humo_addresses WHERE address_tree_id='" . $tree_id . "' AND address_gedcomnr='" . $connectDb->connect_item_id . "'");
+                    $address3Db = $address3_qry->fetch(PDO::FETCH_OBJ);
+                    if ($address3Db) {
+                        // *** Use hideshow to show and hide the editor lines ***
+                        $hideshow = '8000' . $address3Db->address_id;
+                        // *** If address AND place are missing show all editor fields ***
+                        $display = ' display:none;';
+                        if ($address3Db->address_address == '' && $address3Db->address_place == '') {
+                            $display = '';
+                        }
+
+                        $address = $address3Db->address_address . ' ' . $address3Db->address_place;
+                        if ($address3Db->address_address == '' && $address3Db->address_place == '') {
+                            $address = __('EMPTY LINE');
+                        }
+
+                        // *** Also show date and place ***
+                        if ($connectDb->connect_date) {
+                            $address .= ', ' . hideshow_date_place($connectDb->connect_date, '');
+                        }
+
+                        if ($connectDb->connect_id) {
+                            if ($connect_kind == 'person') {
+                                $connect_kind = 'person';
+                                $connect_sub_kind_source = 'pers_address_connect_source';
+                            } else {
+                                $connect_kind = 'family';
+                                $connect_sub_kind_source = 'fam_address_connect_source';
+                            }
+                        }
+                        $check_sources_text = check_sources($connect_kind, $connect_sub_kind_source, $connectDb->connect_id);
+
+                        // TODO check code.
+                        if ($connect_kind == 'person') {
+                            $form = 1;
+                        } else {
+                            $form = 2;
+                        }
+
+                        $connect_role = '';
+                        if (isset($connectDb->connect_role)) {
+                            $connect_role = htmlspecialchars($connectDb->connect_role);
+                        }
+                    }
                 ?>
 
                     <li class="list-group-item">
@@ -87,54 +133,12 @@ if ($count > 0) {
                             </div>
 
                             <div class="col-md-11">
-                                <?php
-                                // *** Show addresses by person or relation ***
-                                $address3_qry = $dbh->query("SELECT * FROM humo_addresses WHERE address_tree_id='" . $tree_id . "' AND address_gedcomnr='" . $connectDb->connect_item_id . "'");
-                                $address3Db = $address3_qry->fetch(PDO::FETCH_OBJ);
-
-                                if ($address3Db) {
-                                    // *** Use hideshow to show and hide the editor lines ***
-                                    $hideshow = '8000' . $address3Db->address_id;
-                                    // *** If address AND place are missing show all editor fields ***
-                                    $display = ' display:none;';
-                                    if ($address3Db->address_address == '' && $address3Db->address_place == '') {
-                                        $display = '';
-                                    }
-                                }
-                                ?>
-
-                                <?php
-                                if ($address3Db) {
-                                    $address = $address3Db->address_address . ' ' . $address3Db->address_place;
-                                    if ($address3Db->address_address == '' && $address3Db->address_place == '') {
-                                        $address = __('EMPTY LINE');
-                                    }
-
-                                    // *** Also show date and place ***
-                                    if ($connectDb->connect_date) {
-                                        $address .= ', ' . hideshow_date_place($connectDb->connect_date, '');
-                                    }
-                                ?>
-
+                                <?php if ($address3Db) { ?>
                                     <span class="hideshowlink" onclick="hideShow(<?= $hideshow; ?>);"><?= $address; ?>
-                                        <?php
-                                        if ($address3Db->address_text || $connectDb->connect_text) {
-                                            echo ' <img src="images/text.png" height="16" alt="' . __('text') . '">';
-                                        }
-
-                                        if ($connectDb->connect_id) {
-                                            if ($connect_kind == 'person') {
-                                                $connect_kind = 'person';
-                                                $connect_sub_kind_source = 'pers_address_connect_source';
-                                            } else {
-                                                $connect_kind = 'family';
-                                                $connect_sub_kind_source = 'fam_address_connect_source';
-                                            }
-
-                                            $check_sources_text = check_sources($connect_kind, $connect_sub_kind_source, $connectDb->connect_id);
-                                            echo $check_sources_text;
-                                        }
-                                        ?>
+                                        <?php if ($address3Db->address_text || $connectDb->connect_text) { ?>
+                                            <img src="images/text.png" height="16" alt="<?= __('text'); ?>">
+                                        <?php } ?>
+                                        <?= $check_sources_text; ?>
                                     </span>
 
                                     <span class="humo row<?= $hideshow; ?>" style="margin-left:0px;<?= $display; ?>"><br>
@@ -158,14 +162,6 @@ if ($count > 0) {
                                         <?php
                                         // *** Don't use date here. Date of connection table will be used ***
                                         //echo $editor_cls->date_show($address3Db->address_date,'address_date',"[$address3Db->address_id]").' ';
-
-                                        if ($connect_kind == 'person') {
-                                            $form = 1;
-                                            //$place_item='place_person';
-                                        } else {
-                                            $form = 2;
-                                            //$place_item='place_relation';
-                                        }
                                         ?>
 
                                         <div class="row my-2">
@@ -235,52 +231,37 @@ if ($count > 0) {
                                             </div>
                                         </div>
 
-                                        <?php
-                                        $connect_role = '';
-                                        if (isset($connectDb->connect_role)) {
-                                            $connect_role = htmlspecialchars($connectDb->connect_role);
-                                        }
-                                        ?>
-                                        <div class="row mb-2">
-                                            <label for="pers_buried_place" class="col-md-3 col-form-label"><?= __('Addressrole'); ?></label>
-                                            <div class="col-md-3">
-                                                <input type="text" name="connect_role[<?= $key; ?>]" value="<?= $connect_role; ?>" size="6" class="form-control form-control-sm">
-                                            </div>
-                                        </div>
+                                        <!-- Highlight section for shared addresses only -->
+                                        <div class="alert alert-info p-3 mb-3" role="alert">
+                                            <small><?= __('Only use the following fields for shared addresses.'); ?></small>
 
-                                        <!-- Extra text by address -->
-                                        <div class="row mb-2">
-                                            <label for="pers_buried_place" class="col-md-3 col-form-label"><?= __('Extra text by address'); ?></label>
-                                            <div class="col-md-7">
-                                                <textarea name="connect_text[<?= $connectDb->connect_id; ?>]" <?= $field_text; ?> class="form-control form-control-sm"><?= $editor_cls->text_show($connectDb->connect_text); ?></textarea>
-                                            </div>
-                                        </div>
-
-                                        <?php if ($address3Db) { ?>
-                                            <?php
-                                            if ($connect_kind == 'person') {
-                                                $connect_kind = 'person';
-                                                $connect_sub_kind_source = 'pers_address_connect_source';
-                                            } else {
-                                                $connect_kind = 'family';
-                                                $connect_sub_kind_source = 'fam_address_connect_source';
-                                            }
-                                            ?>
-                                            <div class="row mb-2">
-                                                <label for="source_text" class="col-md-3 col-form-label"><?= __('Source'); ?></label>
-                                                <div class="col-md-7">
-                                                    <?php
-                                                    source_link3($connect_kind, $connect_sub_kind_source, $connectDb->connect_id);
-                                                    echo $check_sources_text;
-                                                    ?>
+                                            <div class="row my-2">
+                                                <label for="pers_buried_place" class="col-md-3 col-form-label"><?= __('Addressrole'); ?></label>
+                                                <div class="col-md-3">
+                                                    <input type="text" name="connect_role[<?= $key; ?>]" value="<?= $connect_role; ?>" size="6" class="form-control form-control-sm">
                                                 </div>
                                             </div>
-                                        <?php
-                                        }
 
-                                        // *** Use hideshow to show and hide the editor lines ***
-                                        if (isset($hideshow) && substr($hideshow, 0, 4) === '8000') {
-                                        ?>
+                                            <!-- Extra text by address -->
+                                            <div class="row mb-2">
+                                                <label for="pers_buried_place" class="col-md-3 col-form-label"><?= __('Extra text by address'); ?></label>
+                                                <div class="col-md-7">
+                                                    <textarea name="connect_text[<?= $connectDb->connect_id; ?>]" <?= $field_text; ?> class="form-control form-control-sm"><?= $editor_cls->text_show($connectDb->connect_text); ?></textarea>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="row mb-2">
+                                            <label for="source_text" class="col-md-3 col-form-label"><?= __('Source'); ?></label>
+                                            <div class="col-md-7">
+                                                <?php
+                                                source_link3($connect_kind, $connect_sub_kind_source, $connectDb->connect_id);
+                                                echo $check_sources_text;
+                                                ?>
+                                            </div>
+                                        </div>
+                                        <!-- Use hideshow to show and hide the editor lines -->
+                                        <?php if (isset($hideshow) && substr($hideshow, 0, 4) === '8000') { ?>
                                     </span>
                                 <?php
                                         }

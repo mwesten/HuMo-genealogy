@@ -11,11 +11,12 @@ namespace Genealogy\Include;
 use PDO;
 use PDOException;
 
-class GedcomExport
+class GedcomExport extends GedcomExportFunctions
 {
-    private $dbh, $db_functions, $humo_option;
-    private $tree_id, $buffer, $gedcom_version = '551', $gedcom_sources = '';
-    private $persids = array(), $famsids = array(), $noteids = array();
+    public $db_functions, $humo_option;
+    //private $tree_id;
+    public $gedcom_sources = '';
+    public $persids = array(), $famsids = array();
 
     public function __construct($dbh, $db_functions, $humo_option, $tree_id)
     {
@@ -85,111 +86,14 @@ class GedcomExport
 
             $fh = fopen($export['path'] . $export['file_name'], 'w') or die("<b>ERROR: no permission to open a new file! Please check permissions of admin/gedcom_files folder!</b>");
 
-            // *** GEDCOM header ***
             $this->buffer = '';
 
-            if ($this->gedcom_version == '551') {
-                // *** GEDCOM 5.5.1 ***
-                //if ($gedcom_char_set=='UTF-8'){
-                //  // *** Add BOM header to UTF-8 file ***
-                //  $this->buffer.= "\xEF\xBB\xBF";
-                //}
-                $this->buffer .= "0 HEAD\r\n";
-                $this->buffer .= "1 SOUR HuMo-genealogy\r\n";
-                $this->buffer .= "2 VERS " . $this->humo_option["version"] . "\r\n";
-                $this->buffer .= "2 NAME HuMo-genealogy\r\n";
-                $this->buffer .= "2 CORP HuMo-genealogy software\r\n";
-                $this->buffer .= "3 ADDR https://humo-gen.com\r\n";
-                $this->buffer .= "1 SUBM @S1@\r\n";
-                $this->buffer .= "1 GEDC\r\n";
-                $this->buffer .= "2 VERS 5.5.1\r\n";
-                $this->buffer .= "2 FORM Lineage-Linked\r\n";
-
-                if ($gedcom_char_set == 'UTF-8') {
-                    $this->buffer .= "1 CHAR UTF-8\r\n";
-                } elseif ($gedcom_char_set == 'ANSI') {
-                    $this->buffer .= "1 CHAR ANSI\r\n";
-                } else {
-                    $this->buffer .= "1 CHAR ASCII\r\n";
-                }
-            } else {
-                /**
-                 * GEDCOM 7.0
-                 * 
-                 * 0 HEAD
-                 * 1 GEDC
-                 * 2 VERS 7.0
-                 * 1 SCHMA
-                 * 2 TAG _SKYPEID http://xmlns.com/foaf/0.1/skypeID
-                 * 2 TAG _JABBERID http://xmlns.com/foaf/0.1/jabberID
-                 * 1 SOUR https://gedcom.io/
-                 * 2 VERS 0.3
-                 * 2 NAME GEDCOM Steering Committee
-                 * 2 CORP FamilySearch
-                 */
-                $this->buffer .= "0 HEAD\r\n";
-                $this->buffer .= "1 GEDC\r\n";
-                $this->buffer .= "2 VERS 7.0\r\n";
-                $this->buffer .= "1 SOUR https://humo-gen.com\r\n";
-                $this->buffer .= "2 VERS " . $this->humo_option["version"] . "\r\n";
-                $this->buffer .= "2 NAME HuMo-genealogy\r\n";
-                $this->buffer .= "2 CORP HuMo-genealogy software\r\n";
-            }
-
-            // 0 @S1@ SUBM
-            // 1 NAME Huub Mons
-            // 1 ADDR address
-            $this->buffer .= "0 @S1@ SUBM\r\n";
-            if ($export['submit_name']) {
-                $this->buffer .= "1 NAME " . $export['submit_name'] . "\r\n";
-            } else {
-                $this->buffer .= "1 NAME Unknown\r\n";
-            }
-
-            if ($export['submit_address'] != '') {
-                $this->buffer .= "1 ADDR " . $export['submit_address'] . "\r\n";
-                if ($export['submit_country'] != '') {
-                    $this->buffer .= "2 CTRY " . $export['submit_country'] . "\r\n";
-                }
-            }
-
-            if ($export['submit_mail'] != '') {
-                $this->buffer .= "1 EMAIL " . $export['submit_mail'] . "\r\n";
-            }
+            // *** GEDCOM header ***
+            $this->exportHeader($gedcom_char_set, $export);
 
             fwrite($fh, $this->buffer);
             //$this->buffer = str_replace("\n", "<br>", $this->buffer);
             //echo '<p>'.$this->buffer;
-
-            /**
-             * EXAMPLE:
-             * 0 @I1181@ INDI
-             * 1 RIN 1181
-             * 1 REFN Eigencode
-             * 1 NAME Voornaam/Achternaam/
-             * 1 SEX M
-             * 1 BIRT
-             * 2 DATE 21 FEB 1960
-             * 2 PLAC 1e woonplaats
-             * 1 RESI
-             * 2 ADDR 2e woonplaats
-             * 1 RESI
-             * 2 ADDR 3e woonplaats
-             * 1 RESI
-             * 2 ADDR 4e woonplaats
-             * 1 OCCU 1e beroep
-             * 1 OCCU 2e beroep
-             * 1 EVEN
-             * 2 TYPE living
-             * 1 _COLOR 0
-             * 1 NOTE @N51@
-             * 1 FAMS @F10@
-             * 1 FAMC @F8@
-             * 1 _NEW
-             * 2 TYPE 2
-             * 2 DATE 8 JAN 2005
-             * 3 TIME 20:31:24
-             */
 
             // *** Count records in all tables for Bootstrap progress bar ***
             $total = $this->dbh->query("SELECT COUNT(*) FROM humo_persons WHERE pers_tree_id='" . $this->tree_id . "'");
@@ -220,666 +124,73 @@ class GedcomExport
 
             // determines the steps in percentages.
             // regular: 2%
-            $devider = 50;
+            $this->devider = 50;
             // 1% for larger files with over 200,000 lines
             if ($nr_records > 200000) {
-                $devider = 100;
+                $this->devider = 100;
             }
             // 0.5% for very large files
             if ($nr_records > 1000000) {
-                $devider = 200;
+                $this->devider = 200;
             }
-            $step = round($nr_records / $devider);
-            if ($step < 1) {
-                $step = 1;
+            $this->step = round($nr_records / $this->devider);
+            if ($this->step < 1) {
+                $this->step = 1;
             }
-            $perc = 0;
-            $record_nr = 0;
-
-            //echo $nr_records . '!' . $step . '!' . $devider . '!' . $perc;
-            //$record_nr++;
-            //$perc = update_bootstrap_bar($record_nr, $step, $devider, $perc);
-
-            // *** To reduce use of memory, first read pers_id only ***
-            $persons_qry = "SELECT pers_id FROM humo_persons WHERE pers_tree_id='" . $this->tree_id . "'";
-            $persons_result = $this->dbh->query($persons_qry);
-            while ($persons = $persons_result->fetch(PDO::FETCH_OBJ)) {
-                // *** Now read all person items ***
-                $person = $this->db_functions->get_person_with_id($persons->pers_id);
-
-                if ($export["part_tree"] == 'part' && !in_array($person->pers_gedcomnumber, $this->persids)) {
-                    continue;
-                }
-
-                // 0 @I1181@ INDI *** Gedcomnumber ***
-                $this->buffer = '0 @' . $person->pers_gedcomnumber . "@ INDI\r\n";
-
-                if (isset($_POST['gedcom_status']) && $_POST['gedcom_status'] == 'yes') {
-                    echo $person->pers_gedcomnumber . ' ';
-                }
-
-                // 1 RIN 1181
-                // Not really necessary, so disabled this line...
-                //$this->buffer.='1 RIN '.substr($person->pers_gedcomnumber,1)."\r\n";
-
-                // 1 REFN Code *** Own code ***
-                if ($person->pers_own_code) {
-                    $this->buffer .= '1 REFN ' . $person->pers_own_code . "\r\n";
-                }
-
-                // *** Name, add a space after first name if first name is present ***
-                // 1 NAME Firstname /Lastname/
-                $this->buffer .= '1 NAME ' . $person->pers_firstname;
-                if ($person->pers_firstname) {
-                    // add a space after first name if first name is present
-                    $this->buffer .= ' ';
-                }
-                $this->buffer .= '/' . str_replace("_", " ", $person->pers_prefix);
-                $this->buffer .= $person->pers_lastname . "/\r\n";
-
-                // *** Create general person_events array ***
-                $person_events = $this->db_functions->get_events_connect('person', $person->pers_gedcomnumber, 'all');
-
-                // PMB if 'minimal' option selected don't export this
-                if ($_POST['export_type'] == 'normal') {
-                    // *** Text and source by name ***
-                    if ($this->gedcom_sources == 'yes') {
-                        $this->sources_export('person', 'pers_name_source', $person->pers_gedcomnumber, 2);
-                    }
-
-                    if ($gedcom_texts == 'yes' && $person->pers_name_text) {
-                        $this->buffer .= '2 NOTE ' . $this->process_text(3, $person->pers_name_text);
-                    }
-
-                    foreach ($person_events as $person_event) {
-                        // *** Export all name items, like 2 _AKAN etc. ***
-                        if ($person_event->event_kind == 'name' or $person_event->event_kind == 'NPFX' or $person_event->event_kind == 'NSFX') {
-                            $eventgedcom = $person_event->event_gedcom;
-                            // *** 2 _RUFNAME is only used in BK, HuMo-genealogy uses 2 _RUFN ***
-                            //if($nameDb->event_gedcom == "_RUFN"){
-                            //  $eventgedcom = '_RUFNAME';
-                            //}
-                            $this->buffer .= '2 ' . $eventgedcom . ' ' . $person_event->event_event . "\r\n";
-                            if ($person_event->event_date) {
-                                $this->buffer .= '3 DATE ' . $this->process_date($person_event->event_date) . "\r\n";
-                            }
-                            if ($this->gedcom_sources == 'yes') {
-                                $this->sources_export('person', 'pers_event_source', $person_event->event_id, 3);
-                            }
-                            if ($gedcom_texts == 'yes' && $person_event->event_text) {
-                                $this->buffer .= '3 NOTE ' . $this->process_text(4, $person_event->event_text);
-                            }
-                        }
-
-                        // *** Export of person titles ***
-                        // 1 TITL Ir.
-                        if ($person_event->event_kind == 'title') {
-                            $eventgedcom = $person_event->event_gedcom;
-                            $this->buffer .= '1 TITL ' . $person_event->event_event . "\r\n";
-                            if ($person_event->event_date) {
-                                $this->buffer .= '2 DATE ' . $this->process_date($person_event->event_date) . "\r\n";
-                            }
-                            if ($this->gedcom_sources == 'yes') {
-                                $this->sources_export('person', 'pers_event_source', $person_event->event_id, 2);
-                            }
-                            if ($gedcom_texts == 'yes' && $person_event->event_text) {
-                                $this->buffer .= '2 NOTE ' . $this->process_text(4, $person_event->event_text);
-                            }
-                        }
-                    }
-                }
-
-
-                foreach ($person_events as $person_event) {
-                    // TODO check event ADOP (to be removed?).
-                    // *** Adoption ***
-                    // 1 ADOP
-                    // 2 DATE 15 MAR 2025
-                    // 2 FAMC @F2@
-                    if ($person_event->event_kind == 'adoption') {
-                        $this->buffer .= '1 ADOP' . "\r\n";
-                        if ($person_event->event_event) {
-                            $this->buffer .= '2 FAMC @' . $person_event->event_event . '@' . "\r\n";
-                        }
-                        if ($person_event->event_date) {
-                            $this->buffer .= '2 DATE ' . $this->process_date($person_event->event_date) . "\r\n";
-                        }
-                        if ($this->gedcom_sources == 'yes') {
-                            $this->sources_export('person', 'pers_event_source', $person_event->event_id, 2);
-                        }
-                        if ($gedcom_texts == 'yes' && $person_event->event_text) {
-                            $this->buffer .= '2 NOTE ' . $this->process_text(4, $person_event->event_text);
-                        }
-                    }
-
-                    // *** Nobility (used by Aldfaer & HuMo-genealogy program) added may 2025. Use event tag, there is no tag nobility in GEDCOM 7. ***
-                    // 1 EVEN Predikaat naam
-                    // 2 TYPE predikaat
-                    if ($person_event->event_kind == 'nobility') {
-                        $this->buffer .= '1 EVEN ' . $person_event->event_event . "\r\n";
-                        $this->buffer .= '2 TYPE predikaat' . "\r\n";
-                        if ($person_event->event_date) {
-                            $this->buffer .= '2 DATE ' . $this->process_date($person_event->event_date) . "\r\n";
-                        }
-                        if ($this->gedcom_sources == 'yes') {
-                            $this->sources_export('person', 'pers_event_source', $person_event->event_id, 2);
-                        }
-                        if ($gedcom_texts == 'yes' && $person_event->event_text) {
-                            $this->buffer .= '2 NOTE ' . $this->process_text(4, $person_event->event_text);
-                        }
-                    }
-                }
-
-                // TODO (see also GEDCOM 7 specification):
-                // event_kind = adoption_by_person
-                // *** Aldfaer adopted/ steph/ legal/ foster childs ***
-                // 1 FAMC @F2@
-                // 2 PEDI adopted
-                // 2 PEDI steph
-                // 2 PEDI legal
-                // 2 PEDI foster
-                // 2 PEDI birth     is in use in Aldfaer 8.
-                // 3 PHRASE
-                // 2 NOTE
-
-                // TODO (GEDCOM 7 specification: there is 1 PROP):
-                // event_kind = lordship
-                // 1 PROP Heerlijkheid
-                // 2 TYPE heerlijkheid
-
-                // TODO (check GEDCOM 7 specification):
-                // event_kind = ash dispersion.
-                // 2 TYPE ash dispersion
-
-                if ($person->pers_patronym) {
-                    $this->buffer .= '1 _PATR ' . $person->pers_patronym . "\r\n";
-                }
-
-                // *** Sex ***
-                $this->buffer .= '1 SEX ' . $person->pers_sexe . "\r\n";
-                if ($this->gedcom_sources == 'yes') {
-                    $this->sources_export('person', 'pers_sexe_source', $person->pers_gedcomnumber, 2);
-                }
-
-                // *** Birth data ***
-                // TODO: if there are only witnesses, the witnesses are missing in export. But normally there should be a date or place?
-                if (
-                    $person->pers_birth_date || $person->pers_birth_place || $person->pers_birth_text
-                    || (isset($person->pers_stillborn) && $person->pers_stillborn == 'y')
-                ) {
-                    $this->buffer .= "1 BIRT\r\n";
-                    if ($person->pers_birth_date) {
-                        $this->buffer .= '2 DATE ' . $this->process_date($person->pers_birth_date) . "\r\n";
-                        if (isset($person->pers_birth_date_hebnight) && $person->pers_birth_date_hebnight == 'y') {
-                            $this->buffer .= '2 _HNIT y' . "\r\n";
-                        }
-                    }
-                    if ($person->pers_birth_place) {
-                        $this->buffer .= $this->process_place($person->pers_birth_place, 2);
-                    }
-                    if ($person->pers_birth_time) {
-                        $this->buffer .= '2 TIME ' . $person->pers_birth_time . "\r\n";
-                    }
-                    // PMB if 'minimal' option selected don't export this
-                    if ($_POST['export_type'] == 'normal') {
-                        if ($this->gedcom_sources == 'yes') {
-                            $this->sources_export('person', 'pers_birth_source', $person->pers_gedcomnumber, 2);
-                        }
-                        if ($gedcom_texts == 'yes' && $person->pers_birth_text) {
-                            $this->buffer .= '2 NOTE ' . $this->process_text(3, $person->pers_birth_text);
-                        }
-
-                        if (isset($person->pers_stillborn) && $person->pers_stillborn == 'y') {
-                            $this->buffer .= '2 TYPE stillborn' . "\r\n";
-                        }
-
-                        // *** New sept. 2023 ***
-                        // *** Remark: only exported if there is another birth item ***
-                        // *** Oct 2024: for GEDCOM 7 changed to seperate event ***
-                        if ($this->gedcom_version == '551') {
-                            $this->buffer .= $this->export_witnesses('birth_declaration', $person->pers_gedcomnumber, 'ASSO');
-                        }
-                    }
-                }
-
-                // GEDCOM 5.5.1
-                // 1 EVEN
-                // 2 TYPE birth registration
-                // 2 DATE 2 JAN 1980
-                // 2 SOUR @S5@
-                //
-                // GEDCOM 7.0 (Aldfaer)
-                // 1 EVEN
-                // 2 TYPE birth registration
-                // 2 DATE 2 JAN 1980
-                // 2 SOUR @S5@
-                // 2 _OBJE
-                // 3 FILE 0d0d3dfdf7eb5ec8d94609dc49079b2a.jpg
-                // 2 ASSO @I4@
-                // 3 ROLE OFFICIATOR
-                // 2 ASSO @I3@
-                // 3 ROLE WITN
-                // 2 ASSO @I5@
-                // 3 ROLE OTHER
-                // 4 PHRASE informant
-
-                //  *** NEW oct. 2024: seperate event for Birth registration ***
-                if ($this->gedcom_version != '551') {
-                    $birth_declarationDb = $this->db_functions->get_events_connect('person', $person->pers_gedcomnumber, 'birth_declaration');
-                    $birth_decl_witnesses = $this->export_witnesses('birth_declaration', $person->pers_gedcomnumber, 'ASSO');
-
-                    if ($birth_declarationDb || $birth_decl_witnesses) {
-                        $this->buffer .= "1 EVEN\r\n";
-                        $this->buffer .= "2 TYPE birth registration\r\n";
-
-                        if ($birth_declarationDb->event_date) {
-                            $this->buffer .= '2 DATE ' . $birth_declarationDb->event_date . "\r\n";
-                        }
-                        if ($birth_declarationDb->event_place) {
-                            $this->buffer .= '2 PLAC ' . $birth_declarationDb->event_place . "\r\n";
-                        }
-                        if ($this->gedcom_sources == 'yes') {
-                            $this->sources_export('person', 'birth_decl_source', $person->pers_gedcomnumber, 2);
-                        }
-                        if ($gedcom_texts == 'yes' && $birth_declarationDb->event_text) {
-                            $this->buffer .= '2 NOTE ' . $this->process_text(3, $birth_declarationDb->event_text);
-                        }
-
-                        $this->buffer .= $birth_decl_witnesses;
-                    }
-                }
-
-                // *** Christened data ***
-                // TODO: if there are only witnesses, the witnesses are missing in export. But normally there should be a date or place?
-                if ($person->pers_bapt_date || $person->pers_bapt_place || $person->pers_bapt_text || $person->pers_religion) {
-                    $this->buffer .= "1 CHR\r\n";
-                    if ($person->pers_bapt_date) {
-                        $this->buffer .= '2 DATE ' . $this->process_date($person->pers_bapt_date) . "\r\n";
-                    }
-                    if ($person->pers_bapt_place) {
-                        $this->buffer .= $this->process_place($person->pers_bapt_place, 2);
-                    }
-                    // PMB if 'minimal' option selected don't export this
-                    if ($_POST['export_type'] == 'normal') {
-                        // *** Person religion. This is 1 CHR -> 2 RELI! 1 RELI is exported as event (after profession) ***
-                        if ($person->pers_religion) {
-                            $this->buffer .= '2 RELI ' . $person->pers_religion . "\r\n";
-                        }
-
-                        if ($this->gedcom_sources == 'yes') {
-                            $this->sources_export('person', 'pers_bapt_source', $person->pers_gedcomnumber, 2);
-                        }
-                        if ($gedcom_texts == 'yes' && $person->pers_bapt_text) {
-                            $this->buffer .= '2 NOTE ' . $this->process_text(3, $person->pers_bapt_text);
-                        }
-
-                        // *** Remark: only exported if there is another baptism item ***
-                        $this->buffer .= $this->export_witnesses('CHR', $person->pers_gedcomnumber, 'ASSO');
-                    }
-                }
-
-                // *** Death data ***
-                // TODO: if there are only witnesses, the witnesses are missing in export. But normally there should be a date or place?
-                if ($person->pers_death_date || $person->pers_death_place || $person->pers_death_text || $person->pers_death_cause) {
-                    $this->buffer .= "1 DEAT\r\n";
-                    if ($person->pers_death_date) {
-                        $this->buffer .= '2 DATE ' . $this->process_date($person->pers_death_date) . "\r\n";
-                        if (isset($person->pers_death_date_hebnight) && $person->pers_death_date_hebnight == 'y') {
-                            $this->buffer .= '2 _HNIT y' . "\r\n";
-                        }
-                    }
-                    if ($person->pers_death_place) {
-                        $this->buffer .= $this->process_place($person->pers_death_place, 2);
-                    }
-                    if ($person->pers_death_time) {
-                        $this->buffer .= '2 TIME ' . $person->pers_death_time . "\r\n";
-                    }
-
-                    // PMB if 'minimal' option selected don't export this
-                    if ($_POST['export_type'] == 'normal') {
-                        if ($this->gedcom_sources == 'yes') {
-                            $this->sources_export('person', 'pers_death_source', $person->pers_gedcomnumber, 2);
-                        }
-                        if ($gedcom_texts == 'yes' && $person->pers_death_text) {
-                            $this->buffer .= '2 NOTE ' . $this->process_text(3, $person->pers_death_text);
-                        }
-                        if ($person->pers_death_cause) {
-                            $this->buffer .= '2 CAUS ' . $person->pers_death_cause . "\r\n";
-                        }
-                        if ($person->pers_death_age) {
-                            $this->buffer .= '2 AGE ' . $person->pers_death_age . "\r\n";
-                        }
-
-                        // *** Remark: only exported if there is another baptism item ***
-                        // *** Oct 2024: for GEDCOM 7 changed to seperate event ***
-                        if ($this->gedcom_version == '551') {
-                            $this->buffer .= $this->export_witnesses('death_declaration', $person->pers_gedcomnumber, 'ASSO');
-                        }
-                    }
-                }
-
-                //  *** NEW oct. 2024: seperate event for death registration ***
-                if ($this->gedcom_version != '551') {
-                    $death_declarationDb = $this->db_functions->get_events_connect('person', $person->pers_gedcomnumber, 'death_declaration');
-                    $death_decl_witnesses = $this->export_witnesses('death_declaration', $person->pers_gedcomnumber, 'ASSO');
-
-                    if ($death_declarationDb || $death_decl_witnesses) {
-                        $this->buffer .= "1 EVEN\r\n";
-                        $this->buffer .= "2 TYPE death registration\r\n";
-
-                        if ($death_declarationDb->event_date) {
-                            $this->buffer .= '2 DATE ' . $death_declarationDb->event_date . "\r\n";
-                        }
-                        if ($death_declarationDb->event_place) {
-                            $this->buffer .= '2 PLAC ' . $death_declarationDb->event_place . "\r\n";
-                        }
-                        if ($this->gedcom_sources == 'yes') {
-                            $this->sources_export('person', 'death_decl_source', $person->pers_gedcomnumber, 2);
-                        }
-                        if ($gedcom_texts == 'yes' && $death_declarationDb->event_text) {
-                            $this->buffer .= '2 NOTE ' . $this->process_text(3, $death_declarationDb->event_text);
-                        }
-
-                        $this->buffer .= $death_decl_witnesses;
-                    }
-                }
-
-                // *** Buried data ***
-                // TODO: if there are only witnesses, the witnesses are missing in export. But normally there should be a date or place?
-                if ($person->pers_buried_date || $person->pers_buried_place || $person->pers_buried_text || $person->pers_cremation) {
-                    $this->buffer .= "1 BURI\r\n";
-                    if ($person->pers_buried_date) {
-                        $this->buffer .= '2 DATE ' . $this->process_date($person->pers_buried_date) . "\r\n";
-                        if (isset($person->pers_buried_date_hebnight) && $person->pers_buried_date_hebnight == 'y') {
-                            $this->buffer .= '2 _HNIT y' . "\r\n";
-                        }
-                    }
-                    if ($person->pers_buried_place) {
-                        $this->buffer .= $this->process_place($person->pers_buried_place, 2);
-                    }
-
-                    // PMB if 'minimal' option selected don't export this
-                    if ($_POST['export_type'] == 'normal') {
-                        if ($this->gedcom_sources == 'yes') {
-                            $this->sources_export('person', 'pers_buried_source', $person->pers_gedcomnumber, 2);
-                        }
-                        if ($gedcom_texts == 'yes' && $person->pers_buried_text) {
-                            $this->buffer .= '2 NOTE ' . $this->process_text(3, $person->pers_buried_text);
-                        }
-                        if ($person->pers_cremation == '1') {
-                            $this->buffer .= '2 TYPE cremation' . "\r\n";
-                        }
-                        if ($person->pers_cremation == 'R') {
-                            $this->buffer .= '2 TYPE resomated' . "\r\n";
-                        }
-                        if ($person->pers_cremation == 'S') {
-                            $this->buffer .= '2 TYPE sailor\'s grave' . "\r\n";
-                        }
-                        if ($person->pers_cremation == 'D') {
-                            $this->buffer .= '2 TYPE donated to science' . "\r\n";
-                        }
-
-                        // *** Remark: only exported if there is another baptism item ***
-                        $this->buffer .= $this->export_witnesses('BURI', $person->pers_gedcomnumber, 'ASSO');
-                    }
-                }
-
-
-                // PMB if 'minimal' option selected don't export this
-                if ($_POST['export_type'] == 'normal') {
-                    // *** Addresses (shared addresses are no valid GEDCOM 5.5.1 but is used in some genealogical programs) ***
-                    // *** Living place ***
-                    // 1 RESI
-                    // 2 ADDR Ridderkerk
-                    // 1 RESI
-                    // 2 ADDR Slikkerveer
-                    $this->addresses_export('person', 'person_address', $person->pers_gedcomnumber);
-
-                    // *** Occupation ***
-                    $professionqry = $this->db_functions->get_events_connect('person', $person->pers_gedcomnumber, 'profession');
-
-                    //while ($professionDb = $professionqry->fetch(PDO::FETCH_OBJ)) {
-                    foreach ($professionqry as $professionDb) {
-                        $this->buffer .= '1 OCCU ' . $professionDb->event_event . "\r\n";
-
-                        if ($professionDb->event_date) {
-                            $this->buffer .= '2 DATE ' . $this->process_date($professionDb->event_date) . "\r\n";
-                        }
-                        if ($professionDb->event_place) {
-                            $this->buffer .= '2 PLAC ' . $professionDb->event_place . "\r\n";
-                        }
-                        if ($gedcom_texts == 'yes' && $professionDb->event_text) {
-                            $this->buffer .= '2 NOTE ' . $this->process_text(3, $professionDb->event_text);
-                        }
-
-                        // *** Source by occupation ***
-                        if ($this->gedcom_sources == 'yes') {
-                            $this->sources_export('person', 'pers_event_source', $professionDb->event_id, 2);
-                        }
-                    }
-
-                    // *** Religion. REMARK: this is religion event 1 RELI. Baptise religion is saved as 1 CHR -> 2 RELI. ***
-                    $professionqry = $this->db_functions->get_events_connect('person', $person->pers_gedcomnumber, 'religion');
-                    //while ($professionDb = $professionqry->fetch(PDO::FETCH_OBJ)) {
-                    foreach ($professionqry as $professionDb) {
-                        $this->buffer .= '1 RELI ' . $professionDb->event_event . "\r\n";
-
-                        if ($professionDb->event_date) {
-                            $this->buffer .= '2 DATE ' . $this->process_date($professionDb->event_date) . "\r\n";
-                        }
-                        if ($professionDb->event_place) {
-                            $this->buffer .= '2 PLAC ' . $professionDb->event_place . "\r\n";
-                        }
-                        if ($gedcom_texts == 'yes' && $professionDb->event_text) {
-                            $this->buffer .= '2 NOTE ' . $this->process_text(3, $professionDb->event_text);
-                        }
-
-                        // *** Source by religion ***
-                        if ($this->gedcom_sources == 'yes') {
-                            $this->sources_export('person', 'pers_event_source', $professionDb->event_id, 2);
-                        }
-                    }
-
-                    // *** Person source ***
-                    if ($this->gedcom_sources == 'yes') {
-                        $this->sources_export('person', 'person_source', $person->pers_gedcomnumber, 1);
-                    }
-
-                    // *** Person pictures ***
-                    $sourceqry = $this->db_functions->get_events_connect('person', $person->pers_gedcomnumber, 'picture');
-                    foreach ($sourceqry as $sourceDb) {
-
-                        $this->buffer .= "1 OBJE\r\n";
-                        $this->buffer .= "2 FORM jpg\r\n";
-                        $this->buffer .= '2 FILE ' . $sourceDb->event_event . "\r\n";
-                        if ($sourceDb->event_date) {
-                            $this->buffer .= '2 DATE ' . $this->process_date($sourceDb->event_date) . "\r\n";
-                        }
-
-                        if ($gedcom_texts == 'yes' && $sourceDb->event_text) {
-                            $this->buffer .= '2 NOTE ' . $this->process_text(3, $sourceDb->event_text);
-                        }
-
-                        if ($this->gedcom_sources == 'yes') {
-                            $this->sources_export('person', 'pers_event_source', $sourceDb->event_id, 2);
-                        }
-                    }
-
-                    // *** Person Note ***
-                    if ($gedcom_texts == 'yes' && $person->pers_text) {
-                        $this->buffer .= '1 NOTE ' . $this->process_text(2, $person->pers_text);
-                        $this->sources_export('person', 'pers_text_source', $person->pers_gedcomnumber, 2);
-                    }
-
-                    // *** Person color marks ***
-                    $sourceqry = $this->db_functions->get_events_connect('person', $person->pers_gedcomnumber, 'person_colour_mark');
-                    foreach ($sourceqry as $sourceDb) {
-                        $this->buffer .= '1 _COLOR ' . $sourceDb->event_event . "\r\n";
-                        //if ($this->gedcom_sources=='yes'){
-                        //	$this->sources_export('person','pers_event_source',$sourceDb->event_id,2);
-                        //}
-                    }
-
-                    // *** Person events ***
-                    $event_qry = $this->db_functions->get_events_connect('person', $person->pers_gedcomnumber, 'event');
-                    foreach ($event_qry as $eventDb) {
-                        // TODO: Check: ADOP, no longer in use?
-                        $eventMapping = [
-                            'ADOP' => '1 ADOP',
-                            '_ADPF' => '1 _ADPF',
-                            '_ADPM' => '1 _ADPM',
-                            'AFN' => '1 AFN',
-                            'ARVL' => '1 ARVL',
-                            'BAPM' => '1 BAPM',
-                            'BAPL' => '1 BAPL',
-                            'BARM' => '1 BARM',
-                            'BASM' => '1 BASM',
-                            'BLES' => '1 BLES',
-                            '_BRTM' => '1 _BRTM',
-                            'CAST' => '1 CAST',
-                            'CENS' => '1 CENS',
-                            'CHRA' => '1 CHRA',
-                            'CONF' => '1 CONF',
-                            'CONL' => '1 CONL',
-                            'DPRT' => '1 DPRT',
-                            'EDUC' => '1 EDUC',
-                            'EMIG' => '1 EMIG',
-                            'ENDL' => '1 ENDL',
-                            'EVEN' => '1 EVEN',
-                            '_EYEC' => '1 _EYEC',
-                            'FCOM' => '1 FCOM',
-                            '_FNRL' => '1 _FNRL',
-                            'GRAD' => '1 GRAD',
-                            '_HAIR' => '1 _HAIR',
-                            '_HEIG' => '1 _HEIG',
-                            'IDNO' => '1 IDNO',
-                            'IMMI' => '1 IMMI',
-                            '_INTE' => '1 _INTE',
-                            'LEGI' => '1 LEGI',
-                            '_MEDC' => '1 _MEDC',
-                            'MILI' => '1 _MILT',
-                            'NATU' => '1 NATU',
-                            'NATI' => '1 NATI',
-                            'NCHI' => '1 NCHI',
-                            '_NMAR' => '1 _NMAR',
-                            'ORDN' => '1 ORDN',
-                            'PROB' => '1 PROB',
-                            'PROP' => '1 PROP',
-                            'RETI' => '1 RETI',
-                            'SLGC' => '1 SLGC',
-                            'SLGL' => '1 SLGL',
-                            'SSN' => '1 SSN',
-                            'TXPY' => '1 TXPY',
-                            '_WEIG' => '1 _WEIG',
-                            'WILL' => '1 WILL',
-                            '_YART' => '1 _YART',
-                        ];
-                        $process_event = false;
-                        if (array_key_exists($eventDb->event_gedcom, $eventMapping)) {
-                            $process_event = true;
-                            $event_gedcom = $eventMapping[$eventDb->event_gedcom];
-                        }
-
-                        // *** No text behind first line, add text at second NOTE line ***
-                        if ($process_event) {
-                            $this->buffer .= $event_gedcom;
-                            // *** Add text behind GEDCOM tag ***
-                            if ($eventDb->event_event) {
-                                $this->buffer .= ' ' . $eventDb->event_event;
-                            }
-                            $this->buffer .= "\r\n";
-                            if ($eventDb->event_text) {
-                                $this->buffer .= '2 NOTE ' . $this->process_text(3, $eventDb->event_text);
-                            }
-                            if ($eventDb->event_date) {
-                                $this->buffer .= '2 DATE ' . $this->process_date($eventDb->event_date) . "\r\n";
-                            }
-                            if ($eventDb->event_place) {
-                                $this->buffer .= '2 PLAC ' . $eventDb->event_place . "\r\n";
-                            }
-                        }
-
-                        // *** Source ***
-                        $this->sources_export('person', 'pers_event_source', $eventDb->event_id, 2);
-                    }
-                }
-
-
-                // *** Quality ***
-                // Disabled because normally quality belongs to a source.
-                //if ($person->pers_quality=='0' || $person->pers_quality){
-                //	$this->buffer.='2 QUAY '.$person->pers_quality."\r\n";
-                //}
-
-                // *** FAMS ***
-                $relations = $this->db_functions->get_relations($person->pers_id);
-                foreach ($relations as $relation) {
-                    if ($export["part_tree"] == 'part' && !in_array($relation->relation_gedcomnumber, $this->famsids)) {
-                        continue;
-                    }
-                    $this->buffer .= '1 FAMS @' . $relation->relation_gedcomnumber . "@\r\n";
-                }
-
-                // *** FAMC ***
-                if ($person->parent_relation_gedcomnumber) {
-                    if ($export["part_tree"] == 'part' && !in_array($person->parent_relation_gedcomnumber, $this->famsids)) {
-                        // don't export FAMC
-                    } else {
-                        $this->buffer .= '1 FAMC @' . $person->parent_relation_gedcomnumber . "@\r\n";
-                    }
-                }
-
-
-                // PMB if 'minimal' option selected don't export this
-                // not sure if this is the right thing to do here...
-                // for my purposes, it is, as anyone not marked as
-                // dead will be 'living', so potentially hidden
-                // _NEW also causes a problem with PAF import
-                if ($_POST['export_type'] == 'normal') {
-                    // *** Privacy filter, HuMo-genealogy, Haza-data ***
-                    if ($person->pers_alive == 'alive') {
-                        $this->buffer .= "1 EVEN\r\n";
-                        $this->buffer .= "2 TYPE living\r\n";
-                    }
-                    // *** Privacy filter option for HuMo-genealogy ***
-                    if ($person->pers_alive == 'deceased') {
-                        if (
-                            !$person->pers_death_date && !$person->pers_death_place && !$person->pers_death_text && !$person->pers_death_cause
-                            && !$person->pers_buried_date && !$person->pers_buried_place && !$person->pers_buried_text && !$person->pers_cremation
-                        ) {
-                            $this->buffer .= "1 EVEN\r\n";
-                            $this->buffer .= "2 TYPE deceased\r\n";
-                        }
-                    }
-
-                    // *** Datetime new in database ***
-                    // 1_NEW
-                    // 2 DATE 04 AUG 2004
-                    // 3 TIME 13:39:58
-                    $this->buffer .= $this->process_datetime('new', $person->pers_new_datetime, $person->pers_new_user_id);
-                    // *** Datetime changed in database ***
-                    // 1_CHAN
-                    // 2 DATE 04 AUG 2004
-                    // 3 TIME 13:39:58
-                    $this->buffer .= $this->process_datetime('changed', $person->pers_changed_datetime, $person->pers_changed_user_id);
-                }
-
-                // *** Write person data ***
-                $this->decode();
-                fwrite($fh, $this->buffer);
-
-                // *** Update processed lines ***
-                $record_nr++;
-                $perc = $this->update_bootstrap_bar($record_nr, $step, $devider, $perc);
-                //flush();
-
-                // *** Show person data on screen ***
-                //$this->buffer = str_replace("\r\n", "<br>", $this->buffer);
-                //echo $this->buffer;
-            }
+            $this->perc = 0;
+            $this->record_nr = 0;
+
+            //echo $nr_records . '!' . $this->step . '!' . $this->devider . '!' . $this->perc;
+            //$this->record_nr++;
+            //$this->perc = $this->update_bootstrap_bar();
 
             /**
-             * EXAMPLE
+             * Export persons
+             * 
+             * Example:
+             * 0 @I1181@ INDI
+             * 1 RIN 1181
+             * 1 REFN Eigencode
+             * 1 NAME Voornaam/Achternaam/
+             * 1 SEX M
+             * 1 BIRT
+             * 2 DATE 21 FEB 1960
+             * 2 PLAC 1e woonplaats
+             * 1 RESI
+             * 2 ADDR 2e woonplaats
+             * 1 RESI
+             * 2 ADDR 3e woonplaats
+             * 1 RESI
+             * 2 ADDR 4e woonplaats
+             * 1 OCCU 1e beroep
+             * 1 OCCU 2e beroep
+             * 1 EVEN
+             * 2 TYPE living
+             * 1 _COLOR 0
+             * 1 NOTE @N51@
+             * 1 FAMS @F10@
+             * 1 FAMC @F8@
+             * 1 _NEW
+             * 2 TYPE 2
+             * 2 DATE 8 JAN 2005
+             * 3 TIME 20:31:24
+             */
+            $personExporter = new GedcomExportPersons($this->dbh, $this->db_functions, $this->tree_id, $this->gedcom_version, $this->gedcom_sources);
+            $personExporter->setExportArrays($this->persids, $this->famsids, $this->noteids);
+            $personExporter->setProgressTracking($this->record_nr, $this->step, $this->devider, $this->perc);
+            $personExporter->exportPersons($fh, $export, $gedcom_texts);
+            // Update progress tracking and noteids
+            $progress = $personExporter->getProgressTracking();
+            $this->record_nr = $progress['record_nr'];
+            $this->step = $progress['step'];
+            $this->devider = $progress['devider'];
+            $this->perc = $progress['perc'];
+            $this->noteids = $personExporter->getNoteids();
+
+            /**
+             * Export families
+             * 
+             * Example:
              * 0 @F1@ FAM
              * 1 HUSB @I2@
              * 1 WIFE @I3@
@@ -895,740 +206,102 @@ class GedcomExport
              * 1 CHIL @I5@
              * 1 CHIL @I6@
              */
+            $familyExporter = new GedcomExportFamilies($this->dbh, $this->db_functions, $this->tree_id, $this->gedcom_version, $this->gedcom_sources);
+            $familyExporter->setProgressTracking($this->record_nr, $this->step, $this->devider, $this->perc);
+            $familyExporter->exportFamilies($fh, $export, $gedcom_texts);
 
-            // *** FAMILY DATA ***
-            // *** To reduce use of memory, first read fam_id only ***
-            $families_qry = $this->dbh->query("SELECT fam_id FROM humo_families WHERE fam_tree_id='" . $this->tree_id . "'");
-            while ($families = $families_qry->fetch(PDO::FETCH_OBJ)) {
-                // *** Now read all family items ***
-                //$family_qry = $this->dbh->query("SELECT * FROM humo_families WHERE fam_id='" . $families->fam_id . "'");
-                //$family = $family_qry->fetch(PDO::FETCH_OBJ);
-                $family = $this->db_functions->get_family_with_id($families->fam_id);
+            // Retrieve updated progress values
+            $progress = $familyExporter->getProgressTracking();
+            $this->record_nr = $progress['record_nr'];
+            $this->perc = $progress['perc'];
+            $this->noteids = $progress['noteids'];
 
-                if ($export["part_tree"] == 'part'  && !in_array($family->fam_gedcomnumber, $this->famsids)) {
-                    continue;
-                }
+            /**
+             * Export sources and repositories
+             * 
+             * 0 @S1@ SOUR
+             * 1 TITL Persoonskaarten
+             * 1 DATE 24 JAN 2003
+             * 1 PLAC Heerhugowaard
+             * 1 REFN Pers-v
+             * 1 PHOTO @#APLAATJES\AKTEMONS.GIF GIF@
+             * 2 DSCR Afbeelding van Persoonskaarten
+             * 1 PHOTO @#APLAATJES\HUUB&LIN.JPG JPG@
+             * 2 DSCR Beschrijving
+             * 1 NOTE Persoonskaarten (van overleden personen) besteld bij CBVG te Den Haag.
+             */
+            if ($_POST['export_type'] == 'normal') {
+                $sourceExporter = new GedcomExportSources($this->dbh, $this->db_functions, $this->tree_id, $this->gedcom_version, $this->gedcom_sources);
+                $sourceExporter->setProgressTracking($this->record_nr, $this->step, $this->devider, $this->perc);
+                $sourceExporter->exportSources($fh, $export, $gedcom_texts, $this->persids, $this->famsids);
 
-                // 0 @I1181@ INDI *** Gedcomnumber ***
-                $this->buffer = '0 @' . $family->fam_gedcomnumber . "@ FAM\r\n";
+                // Retrieve updated progress values
+                $progress = $sourceExporter->getProgressTracking();
+                $this->record_nr = $progress['record_nr'];
+                $this->perc = $progress['perc'];
+            }
 
-                if (isset($_POST['gedcom_status']) && $_POST['gedcom_status'] == 'yes') {
-                    echo $family->fam_gedcomnumber . ' ';
-                }
+            // *** Addresses ***
+            $export_addresses = true;
+            if (isset($_POST['gedcom_shared_addresses']) && $_POST['gedcom_shared_addresses'] == 'standard') {
+                $export_addresses = false;
+            }
+            if ($export_addresses) {
+                $address_qry = $this->dbh->query("SELECT * FROM humo_addresses WHERE address_tree_id='" . $this->tree_id . "' AND address_shared='1'");
+                while ($addressDb = $address_qry->fetch(PDO::FETCH_OBJ)) {
+                    $this->buffer = '0 @' . $addressDb->address_gedcomnr . "@ RESI\r\n";
 
-
-                /* TODO (used twice for family events)
-                // *** Create general family_events array ***
-                //$event_qry = $this->dbh->query("SELECT * FROM humo_events
-                //    WHERE relation_id='" . $family->fam_id . "'
-                //    ORDER BY event_kind, event_order");
-                $event_qry = $db_functions->get_events_connect('family', $family->fam_gedcomnumber, 'all');
-                $family_events = $event_qry->fetchAll(PDO::FETCH_ASSOC);
-                */
-                /*
-                // Test lines
-                foreach ($family_events as $family_event) {
-                    echo $family_event['event_id'] . ' ';
-                    echo $family_event['event_connect_id'] . ' ';
-                    echo $family_event['event_kind'] . ' ';
-                    echo $family_event['event_order'] . ' ';
-                    echo $family_event['event_event'] . ' ';
-                    echo '<br>';
-                }
-                */
-
-
-                if ($family->partner1_gedcomnumber) {
-                    if ($export["part_tree"] == 'part' && !in_array($family->partner1_gedcomnumber, $this->persids)) {
-                        // skip if not included (e.g. if spouse of base person in ancestor export or spouses of descendants in desc export are not checked for export)
-                    } else {
-                        $this->buffer .= '1 HUSB @' . $family->partner1_gedcomnumber . "@\r\n";
+                    if ($addressDb->address_address) {
+                        $this->writeLine(1, 'ADDR', $addressDb->address_address);
                     }
-                }
-
-                if ($family->partner2_gedcomnumber) {
-                    if ($export["part_tree"] == 'part' && !in_array($family->partner2_gedcomnumber, $this->persids)) {
-                        // skip if not included
-                    } else {
-                        $this->buffer .= '1 WIFE @' . $family->partner2_gedcomnumber . "@\r\n";
+                    if ($addressDb->address_zip) {
+                        $this->writeLine(1, 'ZIP', $addressDb->address_zip);
                     }
-                }
-
-                // *** Pro-gen & HuMo-genealogy: Living together ***
-                if ($family->fam_relation_date || $family->fam_relation_place || $family->fam_relation_text) {
-                    $this->buffer .= "1 _LIV\r\n";
-
-                    // *** Relation start date ***
-                    if ($family->fam_relation_date) {
-                        $this->buffer .= '2 DATE ' . $this->process_date($family->fam_relation_date) . "\r\n";
+                    if ($addressDb->address_date) {
+                        $this->writeLine(1, 'DATE', $this->process_date($addressDb->address_date));
                     }
-
-                    // *** Relation end date ***
-                    // How to export this date?
-
-                    if ($family->fam_relation_place) {
-                        $this->buffer .= $this->process_place($family->fam_relation_place, 2);
+                    if ($addressDb->address_place) {
+                        $this->writeLine(1, 'PLAC', $addressDb->address_place);
+                    }
+                    if ($addressDb->address_phone) {
+                        $this->writeLine(1, 'PHON', $addressDb->address_phone);
                     }
                     if ($this->gedcom_sources == 'yes') {
-                        $this->sources_export('family', 'fam_relation_source', $family->fam_gedcomnumber, 2);
+                        $this->sources_export('address', 'address_source', $addressDb->address_gedcomnr, 2);
                     }
-                    if ($gedcom_texts == 'yes' && $family->fam_relation_text) {
-                        $this->buffer .= '2 NOTE ' . $this->process_text(3, $family->fam_relation_text);
+                    if ($addressDb->address_text) {
+                        $this->writeNote(1, $addressDb->address_text);
+                    }
+
+                    $this->decode();
+                    fwrite($fh, $this->buffer);
+                }
+            }
+
+            // *** Notes ***
+            if ($gedcom_texts == 'yes') {
+                $this->buffer = '';
+                natsort($this->noteids);
+                foreach ($this->noteids as $note_text) {
+                    $stmt = $this->dbh->prepare("SELECT * FROM humo_texts WHERE text_tree_id=:text_tree_id AND text_gedcomnr=:text_gedcomnr");
+                    $stmt->execute([
+                        ':text_tree_id' => $this->tree_id,
+                        ':text_gedcomnr' => substr($note_text, 1, -1)
+                    ]);
+                    while ($textDb = $stmt->fetch(PDO::FETCH_OBJ)) {
+                        $this->buffer .= "0 " . $note_text . " NOTE\r\n";
+                        $this->buffer .= '1 CONC ' . $this->process_text(1, $textDb->text_text);
+
+                        $this->buffer .= $this->process_datetime('new', $textDb->text_new_datetime, $textDb->text_new_user_id);
+                        $this->buffer .= $this->process_datetime('changed', $textDb->text_changed_datetime, $textDb->text_changed_user_id);
                     }
                 }
 
-                // PMB if 'minimal' option selected don't export this
-                if ($_POST['export_type'] == 'normal') {
-                    // *** Marriage notice ***
-                    if ($family->fam_marr_notice_date || $family->fam_marr_notice_place || $family->fam_marr_notice_text) {
-                        $this->buffer .= "1 MARB\r\n";
-                        $this->buffer .= "2 TYPE civil\r\n";
-                        if ($family->fam_marr_notice_date) {
-                            $this->buffer .= '2 DATE ' . $this->process_date($family->fam_marr_notice_date) . "\r\n";
-                            if (isset($family->fam_marr_notice_date_hebnight) && $family->fam_marr_notice_date_hebnight == 'y') {
-                                $this->buffer .= '2 _HNIT y' . "\r\n";
-                            }
-                        }
-                        if ($family->fam_marr_notice_place) {
-                            $this->buffer .= $this->process_place($family->fam_marr_notice_place, 2);
-                        }
-                        if ($this->gedcom_sources == 'yes') {
-                            $this->sources_export('family', 'fam_marr_notice_source', $family->fam_gedcomnumber, 2);
-                        }
-
-                        if ($gedcom_texts == 'yes' && $family->fam_marr_notice_text) {
-                            $this->buffer .= '2 NOTE ' . $this->process_text(3, $family->fam_marr_notice_text);
-                        }
-                    }
-
-                    // *** Marriage notice church ***
-                    if ($family->fam_marr_church_notice_date || $family->fam_marr_church_notice_place || $family->fam_marr_church_notice_text) {
-                        $this->buffer .= "1 MARB\r\n";
-                        $this->buffer .= "2 TYPE religious\r\n";
-                        if ($family->fam_marr_church_notice_date) {
-                            $this->buffer .= '2 DATE ' . $this->process_date($family->fam_marr_church_notice_date) . "\r\n";
-                            if (isset($family->fam_marr_church_notice_date_hebnight) && $family->fam_marr_church_notice_date_hebnight == 'y') {
-                                $this->buffer .= '2 _HNIT y' . "\r\n";
-                            }
-                        }
-                        if ($family->fam_marr_church_notice_place) {
-                            $this->buffer .= $this->process_place($family->fam_marr_church_notice_place, 2);
-                        }
-                        if ($this->gedcom_sources == 'yes') {
-                            $this->sources_export('family', 'fam_marr_church_notice_source', $family->fam_gedcomnumber, 2);
-                        }
-                        if ($gedcom_texts == 'yes' && $family->fam_marr_church_notice_text) {
-                            $this->buffer .= '2 NOTE ' . $this->process_text(3, $family->fam_marr_church_notice_text);
-                        }
-                    }
-                }
-
-                // *** Marriage ***
-                if ($family->fam_marr_date || $family->fam_marr_place || $family->fam_marr_text) {
-                    $this->buffer .= "1 MARR\r\n";
-                    // PMB if 'minimal' option selected don't export this
-                    if ($_POST['export_type'] == 'normal') {
-                        // 1 MARR
-                        // 2 TYPE partners
-                        /*
-                        living together
-                        living apart together
-                        intentionally unmarried mother
-                        homosexual
-                        non-marital
-                        extramarital
-                        partners
-                        registered
-                        unknown
-                        */
-                        //$this->buffer .= "2 TYPE civil\r\n";
-                        $this->buffer .= '2 TYPE ' . $family->fam_kind . "\r\n";
-                    }
-
-                    if ($family->fam_marr_date) {
-                        $this->buffer .= '2 DATE ' . $this->process_date($family->fam_marr_date) . "\r\n";
-                        if (isset($family->fam_marr_date_hebnight) && $family->fam_marr_date_hebnight == 'y') {
-                            $this->buffer .= '2 _HNIT y' . "\r\n";
-                        }
-                    }
-                    if ($family->fam_marr_place) {
-                        $this->buffer .= $this->process_place($family->fam_marr_place, 2);
-                    }
-
-                    // PMB if 'minimal' option selected don't export this
-                    if ($_POST['export_type'] == 'normal') {
-                        if ($this->gedcom_sources == 'yes') {
-                            $this->sources_export('family', 'fam_marr_source', $family->fam_gedcomnumber, 2);
-                        }
-                        if ($family->partner1_age) {
-                            $this->buffer .= "2 HUSB\r\n3 AGE " . $family->partner1_age . "\r\n";
-                        }
-                        if ($family->partner2_age) {
-                            $this->buffer .= "2 WIFE\r\n3 AGE " . $family->partner2_age . "\r\n";
-                        }
-                        if ($gedcom_texts == 'yes' && $family->fam_marr_text) {
-                            $this->buffer .= '2 NOTE ' . $this->process_text(3, $family->fam_marr_text);
-                        }
-
-                        // *** Remark: only exported if there is another baptism item ***
-                        $this->buffer .= $this->export_witnesses('MARR', $family->fam_gedcomnumber, 'ASSO');
-                    }
-                }
-
-                // *** Marriage religious ***
-                if ($family->fam_marr_church_date || $family->fam_marr_church_place || $family->fam_marr_church_text) {
-                    $this->buffer .= "1 MARR\r\n";
-                    // PMB if 'minimal' option selected don't export this
-                    if ($_POST['export_type'] == 'normal') {
-                        $this->buffer .= "2 TYPE religious\r\n";
-                    }
-
-                    if ($family->fam_marr_church_date) {
-                        $this->buffer .= '2 DATE ' . $this->process_date($family->fam_marr_church_date) . "\r\n";
-                        if (isset($family->fam_marr_church_date_hebnight) && $family->fam_marr_church_date_hebnight == 'y') {
-                            $this->buffer .= '2 _HNIT y' . "\r\n";
-                        }
-                    }
-                    if ($family->fam_marr_church_place) {
-                        $this->buffer .= $this->process_place($family->fam_marr_church_place, 2);
-                    }
-
-                    // PMB if 'minimal' option selected don't export this
-                    if ($_POST['export_type'] == 'normal') {
-                        if ($this->gedcom_sources == 'yes') {
-                            $this->sources_export('family', 'fam_marr_church_source', $family->fam_gedcomnumber, 2);
-                        }
-                        if ($gedcom_texts == 'yes' && $family->fam_marr_church_text) {
-                            $this->buffer .= '2 NOTE ' . $this->process_text(3, $family->fam_marr_church_text);
-                        }
-
-                        // *** Remark: only exported if there is another baptism item ***
-                        $this->buffer .= $this->export_witnesses('MARR_REL', $family->fam_gedcomnumber, 'ASSO');
-                    }
-                }
-
-
-                // PMB if 'minimal' option selected don't export this
-                if ($_POST['export_type'] == 'normal') {
-                    // *** Divorced ***
-                    if ($family->fam_div_date || $family->fam_div_place || $family->fam_div_text) {
-                        $this->buffer .= "1 DIV\r\n";
-                        if ($family->fam_div_date) {
-                            $this->buffer .= '2 DATE ' . $this->process_date($family->fam_div_date) . "\r\n";
-                        }
-                        if ($family->fam_div_place) {
-                            $this->buffer .= $this->process_place($family->fam_div_place, 2);
-                        }
-                        if ($this->gedcom_sources == 'yes') {
-                            $this->sources_export('family', 'fam_div_source', $family->fam_gedcomnumber, 2);
-                        }
-                        if ($gedcom_texts == 'yes' && $family->fam_div_text && $family->fam_div_text != 'DIVORCE') {
-                            $this->buffer .= '2 NOTE ' . $this->process_text(3, $family->fam_div_text);
-                        }
-                    }
-                }
-
-                $children = $this->db_functions->get_children($family->fam_id);
-                if ($children) {
-                    foreach ($children as $child) {
-                        if ($export["part_tree"] == 'part' && !in_array($child->person_gedcomnumber, $this->persids)) {
-                            continue;
-                        }
-                        $this->buffer .= '1 CHIL @' . $child->person_gedcomnumber . "@\r\n";
-                    }
-                }
-
-                // PMB if 'minimal' option selected don't export this
-                if ($_POST['export_type'] == 'normal') {
-                    // *** Family source ***
-                    if ($this->gedcom_sources == 'yes') {
-                        $this->sources_export('family', 'family_source', $family->fam_gedcomnumber, 1);
-                    }
-
-                    // *** Addresses (shared addresses are no valid GEDCOM 5.5.1) ***
-                    $this->addresses_export('family', 'family_address', $family->fam_gedcomnumber);
-
-                    // *** Family pictures ***
-                    $sourceqry = $this->db_functions->get_events_connect('family', $family->fam_gedcomnumber, 'picture');
-                    foreach ($sourceqry as $sourceDb) {
-                        $this->buffer .= "1 OBJE\r\n";
-                        $this->buffer .= "2 FORM jpg\r\n";
-                        $this->buffer .= '2 FILE ' . $sourceDb->event_event . "\r\n";
-                        if ($sourceDb->event_date) {
-                            $this->buffer .= '2 DATE ' . $this->process_date($sourceDb->event_date) . "\r\n";
-                        }
-
-                        if ($gedcom_texts == 'yes' && $sourceDb->event_text) {
-                            $this->buffer .= '2 NOTE ' . $this->process_text(3, $sourceDb->event_text);
-                        }
-
-                        if ($this->gedcom_sources == 'yes') {
-                            $this->sources_export('family', 'fam_event_source', $sourceDb->event_id, 2);
-                        }
-                    }
-
-                    // *** Family Note ***
-                    if ($gedcom_texts == 'yes' && $family->fam_text) {
-                        $this->buffer .= '1 NOTE ' . $this->process_text(2, $family->fam_text);
-                        $this->sources_export('family', 'fam_text_source', $family->fam_gedcomnumber, 2);
-                    }
-
-                    // *** Family events ***
-                    $event_qry = $this->db_functions->get_events_connect('family', $family->fam_gedcomnumber, 'event');
-                    foreach ($event_qry as $eventDb) {
-                        $process_event = false;
-                        if ($eventDb->event_gedcom == 'ANUL') {
-                            $process_event = true;
-                            $event_gedcom = '1 ANUL';
-                        }
-                        if ($eventDb->event_gedcom == 'CENS') {
-                            $process_event = true;
-                            $event_gedcom = '1 CENS';
-                        }
-                        if ($eventDb->event_gedcom == 'DIVF') {
-                            $process_event = true;
-                            $event_gedcom = '1 DIVF';
-                        }
-                        if ($eventDb->event_gedcom == 'ENGA') {
-                            $process_event = true;
-                            $event_gedcom = '1 ENGA';
-                        }
-                        if ($eventDb->event_gedcom == 'EVEN') {
-                            $process_event = true;
-                            $event_gedcom = '1 EVEN';
-                        }
-                        if ($eventDb->event_gedcom == 'MARC') {
-                            $process_event = true;
-                            $event_gedcom = '1 MARC';
-                        }
-                        if ($eventDb->event_gedcom == 'MARL') {
-                            $process_event = true;
-                            $event_gedcom = '1 MARL';
-                        }
-                        if ($eventDb->event_gedcom == 'MARS') {
-                            $process_event = true;
-                            $event_gedcom = '1 MARS';
-                        }
-                        if ($eventDb->event_gedcom == 'SLGS') {
-                            $process_event = true;
-                            $event_gedcom = '1 SLGS';
-                        }
-
-                        // *** No text behind first line, add text at second NOTE line ***
-                        if ($process_event) {
-                            $this->buffer .= $event_gedcom;
-                            if ($eventDb->event_event) {
-                                $this->buffer .= ' ' . $eventDb->event_event;
-                            }
-                            $this->buffer .= "\r\n";
-                            if ($eventDb->event_text) {
-                                $this->buffer .= '2 NOTE ' . $this->process_text(3, $eventDb->event_text);
-                            }
-                            if ($eventDb->event_date) {
-                                $this->buffer .= '2 DATE ' . $this->process_date($eventDb->event_date) . "\r\n";
-                            }
-                            if ($eventDb->event_place) {
-                                $this->buffer .= '2 PLAC ' . $eventDb->event_place . "\r\n";
-                            }
-                        }
-                    }
-
-                    // *** Datetime new in database ***
-                    // 1_NEW
-                    // 2 DATE 04 AUG 2004
-                    // 3 TIME 13:39:58
-                    $this->buffer .= $this->process_datetime('new', $family->fam_new_datetime, $family->fam_new_user_id);
-                    // *** Datetime changed in database ***
-                    // 1_CHAN
-                    // 2 DATE 04 AUG 2004
-                    // 3 TIME 13:39:58
-                    $this->buffer .= $this->process_datetime('changed', $family->fam_changed_datetime, $family->fam_changed_user_id);
-                }
-
-
-                // *** Write family data ***
                 $this->decode();
                 fwrite($fh, $this->buffer);
 
-                // *** Update processed lines ***
-                $record_nr++;
-                $perc = $this->update_bootstrap_bar($record_nr, $step, $devider, $perc);
-                //flush();
-
-                // *** Show family data on screen ***
-                //$this->buffer = str_replace("\r\n", "<br>", $this->buffer);
-                //echo $this->buffer;
-            }
-
-
-            // PMB if 'minimal' option selected don't export this
-            if ($_POST['export_type'] == 'normal') {
-
-                // *** Sources ***
-                //0 @S1@ SOUR
-                //1 TITL Persoonskaarten
-                //1 DATE 24 JAN 2003
-                //1 PLAC Heerhugowaard
-                //1 REFN Pers-v
-                //1 PHOTO @#APLAATJES\AKTEMONS.GIF GIF@
-                //2 DSCR Afbeelding van Persoonskaarten
-                //1 PHOTO @#APLAATJES\HUUB&LIN.JPG JPG@
-                //2 DSCR Beschrijving
-                //1 NOTE Persoonskaarten (van overleden personen) besteld bij CBVG te Den Haag.
-
-                if ($export["part_tree"] == 'part') {
-                    // only include sources that are used by the people in this partial tree
-                    $source_array = array();
-                    // find all sources referred to by persons (I233) or families (F233)
-                    $qry = $this->dbh->query("SELECT connect_connect_id, connect_source_id FROM humo_connections
-                        WHERE connect_tree_id='" . $this->tree_id . "' AND connect_source_id != ''");
-                    while ($qryDb = $qry->fetch(PDO::FETCH_OBJ)) {
-                        if (in_array($qryDb->connect_connect_id, $this->persids) || in_array($qryDb->connect_connect_id, $this->famsids)) {
-                            $source_array[] = $qryDb->connect_source_id;
-                        }
-                    }
-                    // find all sources referred to by addresses (233)
-                    // shared addresses: we need a three-fold procedure....
-                    // First: in the connections table search for exported persons/families that have an RESI number connection (R34)
-                    $address_connect_qry = $this->dbh->query("SELECT connect_connect_id, connect_item_id
-                        FROM humo_connections WHERE connect_tree_id='" . $this->tree_id . "' AND connect_sub_kind LIKE '%_address'");
-                    $resi_array = array();
-                    while ($address_connect_qryDb = $address_connect_qry->fetch(PDO::FETCH_OBJ)) {
-                        if (in_array($address_connect_qryDb->connect_connect_id, $this->persids) || in_array($address_connect_qryDb->connect_connect_id, $this->famsids)) {
-                            $resi_array[] = $address_connect_qryDb->connect_item_id;
-                        }
-                    }
-                    // Second: in the address table search for the previously found R numbers and get their id number (33)
-                    $address_address_qry = $this->dbh->query("SELECT address_gedcomnr, address_id FROM humo_addresses
-                        WHERE address_tree_id='" . $this->tree_id . "' AND address_gedcomnr !='' ");
-                    $resi_id_array = array();
-                    while ($address_address_qryDb = $address_address_qry->fetch(PDO::FETCH_OBJ)) {
-                        if (in_array($address_address_qryDb->address_gedcomnr, $resi_array)) {
-                            $resi_id_array[] = $address_address_qryDb->address_id;
-                        }
-                    }
-                    // Third: back in the connections table, find the previously found address id numbers and get the associated source ged number ($23)
-                    $address_connect2_qry = $this->dbh->query("SELECT connect_connect_id, connect_source_id
-                        FROM humo_connections WHERE connect_tree_id='" . $this->tree_id . "' AND connect_sub_kind = 'address_source'");
-                    while ($address_connect2_qry_qryDb = $address_connect2_qry->fetch(PDO::FETCH_OBJ)) {
-                        if (in_array($address_connect2_qry_qryDb->connect_connect_id, $resi_id_array)) {
-                            $source_array[] = $address_connect2_qry_qryDb->connect_source_id;
-                        }
-                    }
-                    // "direct" addresses
-                    $addressqry = $this->dbh->query("SELECT address_id, address_connect_sub_kind, address_connect_id
-                        FROM humo_addresses WHERE address_tree_id='" . $this->tree_id . "'");
-                    $source_address_array = array();
-                    while ($addressqryDb = $addressqry->fetch(PDO::FETCH_OBJ)) {
-                        if ($addressqryDb->address_connect_sub_kind == 'person' && in_array($addressqryDb->address_connect_id, $this->persids)) {
-                            $source_address_array[] = $addressqryDb->address_id;
-                        }
-                        if ($addressqryDb->address_connect_sub_kind == 'family' && in_array($addressqryDb->address_connect_id, $this->famsids)) {
-                            $source_address_array[] = $addressqryDb->address_id;
-                        }
-                    }
-                    $addresssourceqry = $this->dbh->query("SELECT connect_source_id, connect_connect_id
-                        FROM humo_connections WHERE connect_tree_id='" . $this->tree_id . "' AND connect_sub_kind LIKE 'address_%'");
-                    while ($addresssourceqryDb = $addresssourceqry->fetch(PDO::FETCH_OBJ)) {
-                        if (in_array($addresssourceqryDb->connect_connect_id, $source_address_array)) {
-                            $source_array[] = $addresssourceqryDb->connect_source_id;
-                        }
-                    }
-
-                    // find all sources referred to by events (233)
-                    $eventqry = $this->dbh->query("SELECT event_id, event_connect_kind, event_connect_id FROM humo_events");
-                    $source_event_array = array();
-                    while ($eventqryDb = $eventqry->fetch(PDO::FETCH_OBJ)) {
-                        if (
-                            $eventqryDb->event_connect_kind == 'person'
-                            && $eventqryDb->event_connect_id != '' && in_array($eventqryDb->event_connect_id, $this->persids)
-                        ) {
-                            $source_event_array[] = $eventqryDb->event_id;
-                        }
-                        if (
-                            $eventqryDb->event_connect_kind == 'family' and
-                            $eventqryDb->event_connect_id != '' && in_array($eventqryDb->event_connect_id, $this->famsids)
-                        ) {
-                            $source_event_array[] = $eventqryDb->event_id;
-                        }
-                    }
-                    $eventsourceqry = $this->dbh->query("SELECT connect_source_id, connect_connect_id
-                        FROM humo_connections WHERE connect_tree_id='" . $this->tree_id . "' AND connect_sub_kind LIKE 'event_%'");
-                    while ($eventsourceqryDb = $eventsourceqry->fetch(PDO::FETCH_OBJ)) {
-                        if (in_array($eventsourceqryDb->connect_connect_id, $source_event_array)) {
-                            $source_array[] = $eventsourceqryDb->connect_source_id;
-                        }
-                    }
-
-                    // eliminate duplicates
-                    if (isset($source_array)) {
-                        $source_array = array_unique($source_array);
-                    }
-                }
-
-                if ($this->gedcom_sources == 'yes') {
-                    $source_qry = $this->dbh->query("SELECT * FROM humo_sources WHERE source_tree_id='" . $this->tree_id . "'");
-                    while ($sourceDb = $source_qry->fetch(PDO::FETCH_OBJ)) {
-                        if ($export["part_tree"] == 'part'  && !in_array($sourceDb->source_gedcomnr, $source_array)) {
-                            continue;
-                        }
-
-                        // 0 @I1181@ INDI *** Gedcomnumber ***
-                        $this->buffer = '0 @' . $sourceDb->source_gedcomnr . "@ SOUR\r\n";
-
-                        if (isset($_POST['gedcom_status']) && $_POST['gedcom_status'] == 'yes') echo $sourceDb->source_gedcomnr . ' ';
-                        if ($sourceDb->source_title) {
-                            $this->buffer .= '1 TITL ' . $sourceDb->source_title . "\r\n";
-                        }
-                        if ($sourceDb->source_abbr) {
-                            $this->buffer .= '1 ABBR ' . $sourceDb->source_abbr . "\r\n";
-                        }
-
-                        // *** Source date and place. GEDCOM 7 uses DATA and EVEN tags ***
-                        $buffer_temp = '';
-                        $tag_number = 1;
-                        if ($this->gedcom_version != '551') {
-                            $tag_number = 3;
-                        }
-                        if ($sourceDb->source_date) {
-                            $buffer_temp .= $tag_number . ' DATE ' . $this->process_date($sourceDb->source_date) . "\r\n";
-                        }
-                        if ($sourceDb->source_place) {
-                            $buffer_temp .= $tag_number . ' PLAC ' . $sourceDb->source_place . "\r\n";
-                        }
-
-                        // GEDCOM 7 uses extra tags 1 DATA and 2 EVEN.
-                        if ($buffer_temp && $this->gedcom_version != '551') {
-                            $this->buffer .= '1 DATA' . "\r\n";
-                            $this->buffer .= '2 EVEN' . "\r\n";
-                        }
-                        $this->buffer .= $buffer_temp;
-                        // *** End of source date and place ***
-
-                        if ($sourceDb->source_publ) {
-                            $this->buffer .= '1 PUBL ' . $sourceDb->source_publ . "\r\n";
-                        }
-                        if ($sourceDb->source_refn) {
-                            $this->buffer .= '1 REFN ' . $sourceDb->source_refn . "\r\n";
-                        }
-                        if ($sourceDb->source_auth) {
-                            $this->buffer .= '1 AUTH ' . $sourceDb->source_auth . "\r\n";
-                        }
-                        if ($sourceDb->source_subj) {
-                            $this->buffer .= '1 SUBJ ' . $sourceDb->source_subj . "\r\n";
-                        }
-                        if ($sourceDb->source_item) {
-                            $this->buffer .= '1 ITEM ' . $sourceDb->source_item . "\r\n";
-                        }
-                        if ($sourceDb->source_kind) {
-                            $this->buffer .= '1 KIND ' . $sourceDb->source_kind . "\r\n";
-                        }
-                        if ($sourceDb->source_text) {
-                            $this->buffer .= '1 NOTE ' . $this->process_text(2, $sourceDb->source_text);
-                        }
-                        if (isset($sourceDb->source_status) && $sourceDb->source_status == 'restricted') {
-                            $this->buffer .= '1 RESN privacy' . "\r\n";
-                        }
-
-                        // *** Source pictures ***
-                        $source_pic_qry = $this->db_functions->get_events_connect('source', $sourceDb->source_gedcomnr, 'picture');
-                        foreach ($source_pic_qry as $source_picDb) {
-                            $this->buffer .= "1 OBJE\r\n";
-                            $this->buffer .= "2 FORM jpg\r\n";
-                            $this->buffer .= '2 FILE ' . $source_picDb->event_event . "\r\n";
-                            if ($source_picDb->event_date) {
-                                $this->buffer .= '2 DATE ' . $this->process_date($source_picDb->event_date) . "\r\n";
-                            }
-
-                            if ($gedcom_texts == 'yes' && $source_picDb->event_text) {
-                                $this->buffer .= '2 NOTE ' . $this->process_text(3, $source_picDb->event_text);
-                            }
-
-                            //if ($this->gedcom_sources=='yes'){
-                            //	$this->sources_export('source','source_event_source',$source_picDb->event_id,2);
-                            //}
-                        }
-
-                        // source_repo_name, source_repo_caln, source_repo_page.
-
-                        // *** Datetime new in database ***
-                        // 1_NEW
-                        // 2 DATE 04 AUG 2004
-                        // 3 TIME 13:39:58
-                        $this->buffer .= $this->process_datetime('new', $sourceDb->source_new_datetime, $sourceDb->source_new_user_id);
-                        // *** Datetime changed in database ***
-                        // 1_CHAN
-                        // 2 DATE 04 AUG 2004
-                        // 3 TIME 13:39:58
-                        $this->buffer .= $this->process_datetime('changed', $sourceDb->source_changed_datetime, $sourceDb->source_changed_user_id);
-
-
-                        // *** Write source data ***
-                        $this->decode();
-                        fwrite($fh, $this->buffer);
-
-                        // *** Update processed lines ***
-                        $record_nr++;
-                        $perc = $this->update_bootstrap_bar($record_nr, $step, $devider, $perc);
-                        //flush();
-
-                        // *** Show source data on screen ***
-                        //$this->buffer = str_replace("\n", "<br>", $this->buffer);
-                        //echo $this->buffer;
-                    }
-
-                    // *** Repository data ***
-                    $repo_qry = $this->dbh->query("SELECT * FROM humo_repositories WHERE repo_tree_id='" . $this->tree_id . "' ORDER BY repo_name, repo_place");
-                    while ($repoDb = $repo_qry->fetch(PDO::FETCH_OBJ)) {
-                        $this->buffer = '0 @' . $repoDb->repo_gedcomnr . "@ REPO\r\n";
-
-                        if ($repoDb->repo_date) {
-                            $this->buffer .= '1 DATE ' . $this->process_date($repoDb->repo_date) . "\r\n";
-                        }
-                        if ($repoDb->repo_place) {
-                            $this->buffer .= $this->process_place($repoDb->repo_place, 1);
-                        }
-
-                        if ($repoDb->repo_name) {
-                            $this->buffer .= '1 NAME ' . $repoDb->repo_name . "\r\n";
-                        }
-                        if ($repoDb->repo_text) {
-                            $this->buffer .= '1 NOTE ' . $this->process_text(2, $repoDb->repo_text);
-                        }
-                        if ($repoDb->repo_address) {
-                            $this->buffer .= '1 ADDR ' . $this->process_text(2, $repoDb->repo_address);
-                        }
-
-                        if ($repoDb->repo_zip) {
-                            $this->buffer .= '2 POST ' . $repoDb->repo_zip . "\r\n";
-                        }
-                        if ($repoDb->repo_phone) {
-                            $this->buffer .= '1 PHON ' . $repoDb->repo_phone . "\r\n";
-                        }
-                        if ($repoDb->repo_mail) {
-                            // *** GEDCOM 7 ***
-                            $this->buffer .= '1 EMAIL ' . $repoDb->repo_mail . "\r\n";
-                        }
-                        if ($repoDb->repo_url) {
-                            // *** GEDCOM 7 ***
-                            $this->buffer .= '1 WWW ' . $repoDb->repo_url . "\r\n";
-                        }
-
-                        // *** Datetime new in database ***
-                        // 1_NEW
-                        // 2 DATE 04 AUG 2004
-                        // 3 TIME 13:39:58
-                        $this->buffer .= $this->process_datetime('new', $repoDb->repo_new_datetime, $repoDb->repo_new_user_id);
-                        // *** Datetime changed in database ***
-                        // 1_CHAN
-                        // 2 DATE 04 AUG 2004
-                        // 3 TIME 13:39:58
-                        $this->buffer .= $this->process_datetime('changed', $repoDb->repo_changed_datetime, $repoDb->repo_changed_user_id);
-
-                        // *** Write repository data ***
-                        $this->decode();
-                        fwrite($fh, $this->buffer);
-
-                        // *** Update processed lines ***
-                        $record_nr++;
-                        $perc = $this->update_bootstrap_bar($record_nr, $step, $devider, $perc);
-                        //flush();
-                    }
-                }
-
-                // *** THIS PART ISN'T VALID GEDCOM 5.5.1!!!!!!!! ***
-                // *** Only export shared addresses ***
-                // *** Addresses ***
-                // 0 @R155@ RESI
-                // 1 ADDR Straat
-                // 1 ZIP
-                // 1 PLAC Plaats
-                // 1 PHON
-                $export_addresses = true;
-                if (isset($_POST['gedcom_shared_addresses']) && $_POST['gedcom_shared_addresses'] == 'standard') {
-                    $export_addresses = false;
-                }
-                if ($export_addresses) {
-                    $address_qry = $this->dbh->query("SELECT * FROM humo_addresses WHERE address_tree_id='" . $this->tree_id . "' AND address_shared='1'");
-                    while ($addressDb = $address_qry->fetch(PDO::FETCH_OBJ)) {
-                        // 0 @R1@ RESI *** Gedcomnumber ***
-                        $this->buffer = '0 @' . $addressDb->address_gedcomnr . "@ RESI\r\n";
-
-                        if ($addressDb->address_address) {
-                            $this->buffer .= '1 ADDR ' . $addressDb->address_address . "\r\n";
-                        }
-                        if ($addressDb->address_zip) {
-                            $this->buffer .= '1 ZIP ' . $addressDb->address_zip . "\r\n";
-                        }
-                        if ($addressDb->address_date) {
-                            $this->buffer .= '1 DATE ' . $this->process_date($addressDb->address_date) . "\r\n";
-                        }
-                        if ($addressDb->address_place) {
-                            $this->buffer .= '1 PLAC ' . $addressDb->address_place . "\r\n";
-                        }
-                        if ($addressDb->address_phone) {
-                            $this->buffer .= '1 PHON ' . $addressDb->address_phone . "\r\n";
-                        }
-                        if ($this->gedcom_sources == 'yes') {
-                            $this->sources_export('address', 'address_source', $addressDb->address_gedcomnr, 2);
-                        }
-                        if ($addressDb->address_text) {
-                            $this->buffer .= '1 NOTE ' . $this->process_text(2, $addressDb->address_text);
-                        }
-
-                        // photo
-
-                        // *** Write source data ***
-                        $this->decode();
-                        fwrite($fh, $this->buffer);
-                        // *** Show source data on screen ***
-                        //$this->buffer = str_replace("\r\n", "<br>", $this->buffer);
-                        //echo $this->buffer;
-                    }
-                }
-
-                // *** Notes ***
-                // 0 @N1@ NOTE
-                // 1 CONT Start of the note
-                // 2 CONC add a bit more to the line
-                // 2 CONT Another line of the note
-
-                // This adds seperate note records for all the note refs in table texts captured in $this->noteids
-                if ($gedcom_texts == 'yes') {
-                    $this->buffer = '';
-                    natsort($this->noteids);
-                    foreach ($this->noteids as $note_text) {
-                        $stmt = $this->dbh->prepare("SELECT * FROM humo_texts WHERE text_tree_id=:text_tree_id AND text_gedcomnr=:text_gedcomnr");
-                        $stmt->execute([
-                            ':text_tree_id' => $this->tree_id,
-                            ':text_gedcomnr' => substr($note_text, 1, -1)
-                        ]);
-                        while ($textDb = $stmt->fetch(PDO::FETCH_OBJ)) {
-                            $this->buffer .= "0 " . $note_text . " NOTE\r\n";
-                            $this->buffer .= '1 CONC ' . $this->process_text(1, $textDb->text_text);
-
-                            // *** Datetime new in database ***
-                            // 1_NEW
-                            // 2 DATE 04 AUG 2004
-                            // 3 TIME 13:39:58
-                            $this->buffer .= $this->process_datetime('new', $textDb->text_new_datetime, $textDb->text_new_user_id);
-                            // *** Datetime changed in database ***
-                            // 1_CHAN
-                            // 2 DATE 04 AUG 2004
-                            // 3 TIME 13:39:58
-                            $this->buffer .= $this->process_datetime('changed', $textDb->text_changed_datetime, $textDb->text_changed_user_id);
-                        }
-                    }
-
-                    // *** Write note data ***
-                    $this->decode();
-                    fwrite($fh, $this->buffer);
-
-                    // *** Update processed lines ***
-                    $record_nr++;
-                    $perc = $this->update_bootstrap_bar($record_nr, $step, $devider, $perc);
-                    //flush();
-                }
+                $this->record_nr++;
+                $this->perc = $this->update_bootstrap_bar();
             }
 
             // *** Bootstrap bar ***
@@ -1639,343 +312,13 @@ class GedcomExport
                 bar.innerText = 100 + "%";
             </script>
 
-        <?php
+<?php
             fwrite($fh, '0 TRLR');
             fclose($fh);
         }
     }
 
-    private function update_bootstrap_bar($record_nr, $step, $devider, $perc): int
-    {
-        // Calculate the percentage
-        if ($record_nr % $step == 0) {
-            if ($devider == 50) {
-                $perc += 2;
-            } elseif ($devider == 100) {
-                $perc += 1;
-            } elseif ($devider == 200) {
-                $perc += 0.5;
-            }
 
-            // *** Bootstrap bar ***
-        ?>
-            <script>
-                var bar = document.querySelector(".progress-bar");
-                bar.style.width = <?= $perc; ?> + "%";
-                bar.innerText = <?= $perc; ?> + "%";
-            </script>
-<?php
-
-            // TODO These items don't work properly. Probably because of the for loops.
-            // This is for the buffer achieve the minimum size in order to flush data
-            //echo str_repeat(' ', 1024 * 64);
-            //ob_flush();
-
-            flush();
-        }
-        return $perc;
-    }
-
-    private function decode(): void
-    {
-        //$buffer = html_entity_decode($buffer, ENT_NOQUOTES, 'ISO-8859-15');
-        //$buffer = html_entity_decode($buffer, ENT_QUOTES, 'ISO-8859-15');
-        if (isset($_POST['gedcom_char_set']) && $_POST['gedcom_char_set'] == 'ANSI') {
-            $this->buffer = iconv("UTF-8", "windows-1252", $this->buffer);
-        }
-    }
-
-    private function process_date($text): string
-    {
-        if ($this->gedcom_version == '551') {
-            //
-        } else {
-            if ($text) {
-                // *** Remove extra 0 for GEDCOM 7 export ***
-                $text = str_replace('01 ', '1 ', $text);
-                $text = str_replace('02 ', '2 ', $text);
-                $text = str_replace('03 ', '3 ', $text);
-                $text = str_replace('04 ', '4 ', $text);
-                $text = str_replace('05 ', '5 ', $text);
-                $text = str_replace('06 ', '6 ', $text);
-                $text = str_replace('07 ', '7 ', $text);
-                $text = str_replace('08 ', '8 ', $text);
-                $text = str_replace('09 ', '9 ', $text);
-            }
-        }
-        return $text;
-    }
-
-    // Official GEDCOM 5.5.1: 255 characters total (including tags).
-    // Character other programs: Aldfaer about 60 char., BK about 230.
-    // ALDFAER:
-    // 1 CONC Bla, bla text.
-    // 1 CONT
-    // 1 CONT Another text.
-    // 1 CONC Bla bla text etc.
-    // Don't process first part, add if processed (can be: 2 NOTE or 3 NOTE)
-    private function process_text($level, $text, $extractnoteids = true): string
-    {
-        $text = str_replace("<br>", "", $text);
-        $text = str_replace("\r", "", $text);
-
-        // *** Export referenced texts ***
-        if ($extractnoteids && substr($text, 0, 1) == '@') {
-            $this->noteids[] = $text;
-        }
-
-        $regel = explode("\n", $text);
-        // *** If text is too long split it, GEDCOM 5.5.1 specs: max. 255 characters including tag. ***
-        $text = '';
-        $text_processed = '';
-        for ($j = 0; $j <= (count($regel) - 1); $j++) {
-            $text = $regel[$j] . "\r\n";
-
-            // *** CONC isn't allowed in GEDCOM 7.0 ***
-            if ($this->gedcom_version == '551') {
-                if (strlen($regel[$j]) > 150) {
-                    $line_length = strlen($regel[$j]);
-                    $words = explode(" ", $regel[$j]);
-                    $new_line = '';
-                    $new_line2 = '';
-                    $characters = 0;
-                    for ($x = 0; $x <= (count($words) - 1); $x++) {
-                        if ($x > 0) {
-                            $new_line .= ' ';
-                            $new_line2 .= ' ';
-                        }
-                        $new_line .= $words[$x];
-                        $new_line2 .= $words[$x];
-                        $characters = (strlen($new_line2));
-                        //if ($characters>145){
-                        // *** Break line if there are >5 characters left AND there are >145 characters ***
-                        if ($characters > 145 && $line_length - $characters > 5) {
-                            $new_line .= "\r\n" . $level . " CONC";
-                            $new_line2 = '';
-                            $line_length = $line_length - $characters;
-                        }
-                    }
-                    $text = $new_line . "\r\n";
-                }
-            }
-
-            // *** First line is x NOTE, use CONT at other lines ***
-            if ($j > 0) {
-                if (rtrim($text) != '') {
-                    $text = $level . ' CONT ' . $text;
-                } else {
-                    $text = "2 CONT\r\n";
-                }
-            }
-            $text_processed .= $text;
-        }
-        return $text_processed;
-    }
-
-    private function process_place($place, $number): string
-    {
-        // 2 PLAC Cleveland, Ohio, USA
-        // 3 MAP
-        // 4 LATI N41.500347
-        // 4 LONG W81.66687
-        $text = $number . ' PLAC ' . $place . "\r\n";
-        if (isset($_POST['gedcom_geocode']) && $_POST['gedcom_geocode'] == 'yes') {
-            $geo_location_sql = "SELECT * FROM humo_location WHERE location_lat IS NOT NULL AND location_location='" . addslashes($place) . "'";
-            $geo_location_qry = $this->dbh->query($geo_location_sql);
-            $geo_locationDb = $geo_location_qry->fetch(PDO::FETCH_OBJ);
-            if ($geo_locationDb) {
-                $text .= ($number + 1) . ' MAP' . "\r\n";
-
-                $geocode = $geo_locationDb->location_lat;
-                if (substr($geocode, 0, 1) == '-') {
-                    $geocode = 'S' . substr($geocode, 1);
-                } else {
-                    $geocode = 'N' . $geocode;
-                }
-                $text .= ($number + 2) . ' LATI ' . $geocode . "\r\n";
-
-                $geocode = $geo_locationDb->location_lng;
-                if (substr($geocode, 0, 1) == '-') {
-                    $geocode = 'W' . substr($geocode, 1);
-                } else {
-                    $geocode = 'E' . $geocode;
-                }
-                $text .= ($number + 2) . ' LONG ' . $geocode . "\r\n";
-            }
-        }
-        return $text;
-    }
-
-
-    // *** jan. 2021 new function ***
-    private function addresses_export($connect_kind, $connect_sub_kind, $connect_connect_id): void
-    {
-        // *** Addresses (shared addresses are no valid GEDCOM 5.5.1) ***
-        // *** Living place ***
-        // 1 RESI
-        // 2 ADDR Ridderkerk
-        // 1 RESI
-        // 2 ADDR Slikkerveer
-
-        $eventnr = 0;
-        $connect_sql = $this->db_functions->get_connections_connect_id($connect_kind, $connect_sub_kind, $connect_connect_id);
-        foreach ($connect_sql as $connectDb) {
-            $addressDb = $this->db_functions->get_address($connectDb->connect_item_id);
-            // *** Next items are only exported if Address is shared ***
-
-            $export_addresses = false;
-            if ($addressDb->address_shared == '1') $export_addresses = true;
-            if (isset($_POST['gedcom_shared_addresses']) && $_POST['gedcom_shared_addresses'] == 'standard') {
-                $export_addresses = false;
-            }
-            if ($export_addresses) {
-                // *** Shared address ***
-                // 1 RESI @R210@
-                // 2 DATE 1 JAN 2021
-                // 2 ROLE ROL
-                $this->buffer .= '1 RESI @' . $connectDb->connect_item_id . "@\r\n";
-                if ($connectDb->connect_date) {
-                    $this->buffer .= '2 DATE ' . $this->process_date($connectDb->connect_date) . "\r\n";
-                }
-                if ($connectDb->connect_role) {
-                    $this->buffer .= '2 ROLE ' . $connectDb->connect_role . "\r\n";
-                }
-
-                // *** Extra text by address ***
-                if ($connectDb->connect_text) {
-                    // 2 DATA
-                    // 3 TEXT text .....
-                    // 4 CONT ..........
-                    $this->buffer .= "2 DATA\r\n";
-                    $this->buffer .= '3 TEXT ' . $this->process_text(4, $connectDb->connect_text);
-                }
-
-                // *** Source by address ***
-                if ($this->gedcom_sources == 'yes') {
-                    //if ($connect_kind=='person'){
-                    //	//$this->buffer.='2 SOUR '.$this->process_text(3,$addressDb->address_source);
-                    //	$this->sources_export('person','pers_address_source',$addressDb->address_id,2);
-                    //}
-                    //else{
-                    //	$this->sources_export('family','fam_address_source',$addressDb->address_id,2);
-                    //}
-
-                    if ($connect_kind == 'person') {
-                        $this->sources_export('person', 'pers_address_connect_source', $connectDb->connect_id, 2);
-                    } else {
-                        $this->sources_export('family', 'fam_address_connect_source', $connectDb->connect_id, 2);
-                    }
-                }
-            } else {
-                // *** Living place ***
-                // 1 RESI
-                // 2 ADDR Ridderkerk
-                // 1 RESI
-                // 2 ADDR Slikkerveer
-                $this->buffer .= "1 RESI\r\n";
-
-                // *** Export HuMo-genealogy address GEDCOM numbers ***
-                $this->buffer .= '2 RIN ' . substr($connectDb->connect_item_id, 1) . "\r\n";
-
-                $this->buffer .= '2 ADDR';
-                if ($addressDb->address_address) {
-                    $this->buffer .= ' ' . $addressDb->address_address;
-                }
-                $this->buffer .= "\r\n";
-                if ($addressDb->address_place) {
-                    $this->buffer .= '3 CITY ' . $addressDb->address_place . "\r\n";
-                }
-                if ($addressDb->address_zip) {
-                    $this->buffer .= '3 POST ' . $addressDb->address_zip . "\r\n";
-                }
-                if ($addressDb->address_phone) {
-                    $this->buffer .= '2 PHON ' . $addressDb->address_phone . "\r\n";
-                }
-                //if ($addressDb->address_date){
-                //  $this->buffer.='2 DATE '.$this->process_date($addressDb->address_date)."\r\n";
-                //}
-                if ($connectDb->connect_date) {
-                    $this->buffer .= '2 DATE ' . $this->process_date($connectDb->connect_date) . "\r\n";
-                }
-                if ($addressDb->address_text) {
-                    $this->buffer .= '2 NOTE ' . $this->process_text(3, $addressDb->address_text);
-                }
-
-                // *** Source by address ***
-                if ($this->gedcom_sources == 'yes') {
-                    //if ($connect_kind=='person'){
-                    //	//$this->buffer.='2 SOUR '.$this->process_text(3,$addressDb->address_source);
-                    //	$this->sources_export('person','pers_address_source',$addressDb->address_gedcomnr,2);
-                    //}
-                    //else{
-                    //	$this->sources_export('family','fam_address_source',$addressDb->address_gedcomnr,2);
-                    //}
-
-                    if ($connect_kind == 'person') {
-                        $this->sources_export('person', 'pers_address_connect_source', $connectDb->connect_id, 2);
-                    } else {
-                        $this->sources_export('family', 'fam_address_connect_source', $connectDb->connect_id, 2);
-                    }
-
-                    $this->sources_export('address', 'address_source', $addressDb->address_gedcomnr, 2);
-                }
-            }
-        }
-    }
-
-    // *** Function to export all kind of sources including role, pages etc. ***
-    private function sources_export($connect_kind, $connect_sub_kind, $connect_connect_id, $start_number): void
-    {
-        // *** Search for all connected sources ***
-        $connect_qry = "SELECT * FROM humo_connections LEFT JOIN humo_sources ON source_gedcomnr=connect_source_id
-            WHERE connect_tree_id='" . $this->tree_id . "' AND source_tree_id='" . $this->tree_id . "'
-            AND connect_kind='" . $connect_kind . "'
-            AND connect_sub_kind='" . $connect_sub_kind . "'
-            AND connect_connect_id='" . $connect_connect_id . "'
-            ORDER BY connect_order";
-        $connect_sql = $this->dbh->query($connect_qry);
-        while ($connectDb = $connect_sql->fetch(PDO::FETCH_OBJ)) {
-            //$connect_sql = $this->db_functions->get_connections_connect_id('person','person_address',$person->pers_gedcomnumber);
-            //foreach ($connect_sql as $connectDb){
-
-            // *** Source contains title, can be connected to multiple items ***
-            // 0 @S2@ SOUR
-            // 1 ROLE ROL
-            // 1 PAGE page
-            $this->buffer .= $start_number . ' SOUR @' . $connectDb->connect_source_id . "@\r\n";
-            if ($connectDb->connect_role) {
-                $this->buffer .= ($start_number + 1) . ' ROLE ' . $connectDb->connect_role . "\r\n";
-            }
-            if ($connectDb->connect_page) {
-                $this->buffer .= ($start_number + 1) . ' PAGE ' . $connectDb->connect_page . "\r\n";
-            }
-            if ($connectDb->connect_quality || $connectDb->connect_quality == '0') {
-                $this->buffer .= ($start_number + 1) . ' QUAY ' . $connectDb->connect_quality . "\r\n";
-            }
-
-            // *** Source citation (extra text by source) ***
-            // 3 DATA
-            // 4 DATE ......
-            // 4 PLAC ....... (not in GEDOM specifications).
-            // 4 TEXT text .....
-            // 5 CONT ..........
-            if ($connectDb->connect_text || $connectDb->connect_date || $connectDb->connect_place) {
-                $this->buffer .= ($start_number + 1) . " DATA\r\n";
-
-                if ($connectDb->connect_date) {
-                    $this->buffer .= ($start_number + 2) . ' DATE ' . $this->process_date($connectDb->connect_date) . "\r\n";
-                }
-
-                if ($connectDb->connect_place) {
-                    $this->buffer .= ($start_number + 2) . ' PLAC ' . $connectDb->connect_place . "\r\n";
-                }
-
-                if ($connectDb->connect_text) {
-                    $this->buffer .= ($start_number + 2) . ' TEXT ' . $this->process_text($start_number + 3, $connectDb->connect_text);
-                }
-            }
-        }
-    }
 
     private function descendants($relation_id, $main_person, $generation_number, $max_generations): void
     {
@@ -2226,70 +569,82 @@ class GedcomExport
         }
     }
 
-    private function export_witnesses($event_connect_kind, $event_connect_id, $event_kind): string
+    /**
+     * Export GEDCOM file header for both GEDCOM 5.5.1 and 7.0
+     * 
+     * @param string $gedcom_char_set Character set (UTF-8, ANSI, ASCII)
+     * @param array $export Export configuration array
+     * 
+     * Example GEDCOM header:
+     * 0 HEAD
+     * 1 SOUR HuMo-genealogy
+     * 2 VERS 12.0
+     * 2 NAME HuMo-genealogy
+     * 2 CORP HuMo-genealogy software
+     * 3 ADDR https://humo-gen.com
+     * 1 DATE 28 NOV 2025
+     * 2 TIME 15:39:01
+     * 1 SUBM @SUBM1@
+     * 1 GEDC
+     * 2 VERS 7.0
+     */
+    private function exportHeader($gedcom_char_set, $export): void
     {
-        $witnesses = '';
-        $witness_qry = $this->db_functions->get_events_connect($event_connect_kind, $event_connect_id, $event_kind);
-        foreach ($witness_qry as $witnessDb) {
-            if ($this->gedcom_version == '551') {
-                // *** Baptise witness: 2 _WITN @I1@ or: 2 _WITN firstname lastname ***
-                if ($witnessDb->event_connect_id2) {
-                    $witnesses .= '2 WITN @' . $witnessDb->event_connect_id2 . "@\r\n";
-                } else {
-                    $witnesses .= '2 WITN ' . $witnessDb->event_event . "\r\n";
-                }
+        $this->writeLine(0, 'HEAD');
+        $this->writeLine(1, 'SOUR', 'HuMo-genealogy');
+        $this->writeLine(2, 'VERS', $this->humo_option["version"]);
+        $this->writeLine(2, 'NAME', 'HuMo-genealogy');
+        $this->writeLine(2, 'CORP', 'HuMo-genealogy software');
+        $this->writeLine(3, 'ADDR', 'https://humo-gen.com');
+        $this->writeLine(1, 'DATE', strtoupper(date('d M Y')));
+        $this->writeLine(2, 'TIME', date('H:i:s'));
+        $this->writeLine(1, 'SUBM', '@SUBM@');
+        // 1 FILE isn't probably valid GEDCOM?
+        //$this->writeLine(1, 'FILE', $export['file_name']);
+        $this->writeLine(1, 'LANG', $this->humo_option["default_language"]);
+
+        if ($this->gedcom_version == '551') {
+            // *** GEDCOM 5.5.1 ***
+            $this->writeLine(1, 'GEDC');
+            $this->writeLine(2, 'VERS', '5.5.1');
+            $this->writeLine(2, 'FORM', 'Lineage-Linked');
+
+            // *** Character set ***
+            if ($gedcom_char_set == 'UTF-8') {
+                $this->writeLine(1, 'CHAR', 'UTF-8');
+            } elseif ($gedcom_char_set == 'ANSI') {
+                $this->writeLine(1, 'CHAR', 'ANSI');
             } else {
-                // *** GEDCOM 7 ***
-                // 1 BURI
-                // 2 ASSO @I9@
-                // 3 ROLE OTHER
-                // 4 PHRASE funeral leader
-                if ($witnessDb->event_connect_id2) {
-                    // *** Connected person ***
-                    $witnesses .= '2 ASSO @' . $witnessDb->event_connect_id2 . "@\r\n";
-                } else {
-                    // *** No person connected, text is used for name of person ***
-                    // 2 ASSO @VOID@
-                    // 3 PHRASE Mr Stockdale
-                    // 3 ROLE OTHER
-                    // 4 PHRASE Teacher -> event_event_extra?
-                    $witnesses .= "2 ASSO @VOID@\r\n";
-                    $witnesses .= '3 PHRASE ' . $witnessDb->event_event . "\r\n";
-                }
+                $this->writeLine(1, 'CHAR', 'ASCII');
+            }
+        } else {
+            // *** GEDCOM 7.0 ***
+            $this->writeLine(1, 'GEDC');
+            $this->writeLine(2, 'VERS', '7.0');
+        }
 
-                $witnesses .= '3 ROLE ' . $witnessDb->event_gedcom . "\r\n";
+        // *** Submitter information ***
+        $this->writeLine(0, '@SUBM@ SUBM');
+        if ($export['submit_name']) {
+            $this->writeLine(1, 'NAME', $export['submit_name']);
+        } else {
+            $this->writeLine(1, 'NAME', 'Unknown');
+        }
 
-                // *** 4 PHRASE for role OTHER ***
-                if ($witnessDb->event_gedcom == 'OTHER') {
-                    $witnesses .= '4 PHRASE ' . $witnessDb->event_event_extra . "\r\n";
-                }
+        if ($export['submit_address'] != '') {
+            $this->writeLine(1, 'ADDR', $export['submit_address']);
+            if ($export['submit_country'] != '') {
+                $this->writeLine(2, 'CTRY', $export['submit_country']);
             }
         }
-        return $witnesses;
-    }
 
-    // *** GEDCOM 5.5.1: 1 _NEW. GEDCOM 7.x: 1 CREA ***
-    private function process_datetime($new_changed, $datetime, $user_id): string
-    {
-        $buffer = '';
-        if ($datetime && $datetime != '1970-01-01 00:00:01') {
-            if ($new_changed == 'new' && $this->gedcom_version == '551') {
-                $buffer .= "1 _NEW\r\n";
-            } elseif ($new_changed == 'new') {
-                $buffer .= "1 CREA\r\n";
-            } else {
-                $buffer .= "1 CHAN\r\n";
-            }
-
-            $export_date = strtoupper(date('d M Y', (strtotime($datetime))));
-            $buffer .= "2 DATE " . $this->process_date($export_date) . "\r\n";
-
-            $buffer .= "3 TIME " . date('H:i:s', (strtotime($datetime))) . "\r\n";
-
-            if ($user_id) {
-                $buffer .= "2 _USR " . $user_id . "\r\n";
-            }
+        if ($export['submit_mail'] != '') {
+            $this->writeLine(1, 'EMAIL', $export['submit_mail']);
         }
-        return $buffer;
+
+        // *** Example of custom tags ***
+        // 1 SCHMA
+        // 2 TAG _SKYPEID http://xmlns.com/foaf/0.1/skypeID
+        // 2 TAG _MEMBER http://xmlns.com/foaf/0.1/member
     }
 }

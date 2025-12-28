@@ -542,7 +542,8 @@ if (isset($_GET['re_install'])) {
                     rmdir("update/humo-gen_update");
                 ?>
 
-                    <br><br><?= __('Update completed and installation files removed!'); ?><br><br>
+                    <br><br>
+                    <?php printf(__('Update completed and installation files removed! Click %s to return to the main menu.'), '<a href="index.php">' . __('Main menu') . '</a>'); ?><br><br>
                 <?php } ?>
             </form>
         <?php

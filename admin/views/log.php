@@ -3,6 +3,26 @@
 if (!defined('ADMIN_PAGE')) {
     exit;
 }
+
+// TODO move items to model script.
+if ($log['menu_tab'] == 'log_users') {
+    $logbooksql = "SELECT * FROM humo_user_log ORDER BY log_date DESC";
+    $logbook = $dbh->query($logbooksql);
+}
+
+if ($log['menu_tab'] == 'log_blacklist') {
+    $blacklistQry = $dbh->query("SELECT * FROM humo_settings WHERE setting_variable='ip_blacklist' ORDER BY setting_order");
+    // *** Number for new link ***
+    $count_links = 0;
+    if ($blacklistQry->rowCount()) {
+        $count_links = $blacklistQry->rowCount();
+    }
+    $new_number = 1;
+    if ($count_links) {
+        $new_number = $count_links + 1;
+    }
+    $blacklistCounter = 0;
+}
 ?>
 
 <h1 class="center"><?= __('Log'); ?></h1>
@@ -18,34 +38,27 @@ if (!defined('ADMIN_PAGE')) {
 
 <!-- Align content to the left -->
 <div style="float:left; background-color:white; height:500px; padding:10px;">
-    <?php
-    // *** User log ***
-    if ($log['menu_tab'] == 'log_users') {
-        $logbooksql = "SELECT * FROM humo_user_log ORDER BY log_date DESC";
-        $logbook = $dbh->query($logbooksql);
-    ?>
-        <!-- <div class="table-responsive"> -->
-            <table class="table">
-                <thead class="table-primary">
-                    <tr>
-                        <th><?= __('Date - time'); ?></th>
-                        <th><?= __('User'); ?></th>
-                        <th><?= __('User/ Admin'); ?></th>
-                        <th><?= __('IP address'); ?></th>
-                        <th><?= __('Status'); ?></th>
-                    </tr>
-                </thead>
-                <?php while ($logbookDb = $logbook->fetch(PDO::FETCH_OBJ)) { ?>
-                    <tr>
-                        <td class="text-nowrap"><?= $logbookDb->log_date; ?></td>
-                        <td><?= $logbookDb->log_username; ?></td>
-                        <td><?= $logbookDb->log_user_admin; ?></td>
-                        <td><?= $logbookDb->log_ip_address; ?></td>
-                        <td><?= $logbookDb->log_status; ?></td>
-                    </tr>
-                <?php } ?>
-            </table>
-        <!-- </div> -->
+    <?php if ($log['menu_tab'] == 'log_users') { ?>
+        <table class="table table-bordered">
+            <thead class="table-primary">
+                <tr>
+                    <th><?= __('Date - time'); ?></th>
+                    <th><?= __('User'); ?></th>
+                    <th><?= __('User/ Admin'); ?></th>
+                    <th><?= __('IP address'); ?></th>
+                    <th><?= __('Status'); ?></th>
+                </tr>
+            </thead>
+            <?php while ($logbookDb = $logbook->fetch(PDO::FETCH_OBJ)) { ?>
+                <tr>
+                    <td class="text-nowrap"><?= $logbookDb->log_date; ?></td>
+                    <td><?= $logbookDb->log_username; ?></td>
+                    <td><?= $logbookDb->log_user_admin; ?></td>
+                    <td><?= $logbookDb->log_ip_address; ?></td>
+                    <td><?= $logbookDb->log_status; ?></td>
+                </tr>
+            <?php } ?>
+        </table>
     <?php
     }
 
@@ -54,7 +67,7 @@ if (!defined('ADMIN_PAGE')) {
         printf(__('IP Blacklist: access to %s will be totally blocked for these IP addresses.'), 'HuMo-genealogy');
     ?>
         <form method="post" action="index.php?page=log&amp;menu_admin=log_blacklist" class="mt-2">
-            <table class="table" border="1">
+            <table class="table table-bordered">
                 <tr class="table-primary">
                     <th>Nr.</th>
                     <th><?= __('IP address'); ?></th>
@@ -63,51 +76,35 @@ if (!defined('ADMIN_PAGE')) {
                     <th><?= __('Remove'); ?></th>
                 </tr>
                 <?php
-                $blacklistQry = $dbh->query("SELECT * FROM humo_settings WHERE setting_variable='ip_blacklist' ORDER BY setting_order");
-                // *** Number for new link ***
-                $count_links = 0;
-                if ($blacklistQry->rowCount()) {
-                    $count_links = $blacklistQry->rowCount();
-                }
-                $new_number = 1;
-                if ($count_links) {
-                    $new_number = $count_links + 1;
-                }
                 if ($blacklistQry) {
-                    $teller = 1;
                     while ($blacklist = $blacklistQry->fetch(PDO::FETCH_OBJ)) {
-                        $lijst = explode("|", $blacklist->setting_value);
+                        $blacklistCounter++;
+                        $blacklistItem = explode("|", $blacklist->setting_value);
                 ?>
                         <tr>
                             <td>
-                                <input type="hidden" name="<?= $blacklist->setting_id; ?>id" value="<?= $blacklist->setting_id; ?>"><?= $teller; ?>
+                                <input type="hidden" name="<?= $blacklist->setting_id; ?>id" value="<?= $blacklist->setting_id; ?>"><?= $blacklistCounter; ?>
+                                <?php if ($blacklist->setting_order != '1') { ?>
+                                    <a href="index.php?page=log&amp;menu_admin=log_blacklist&amp;up=1&amp;link_order=<?= $blacklist->setting_order; ?>&amp;id=<?= $blacklist->setting_id; ?>"><img src="images/arrow_up.gif" border="0" alt="up"></a>
                                 <?php
-                                if ($blacklist->setting_order != '1') {
-                                    echo ' <a href="index.php?page=log&amp;menu_admin=log_blacklist&amp;up=1&amp;link_order=' . $blacklist->setting_order .
-                                        '&amp;id=' . $blacklist->setting_id . '"><img src="images/arrow_up.gif" border="0" alt="up"></a>';
                                 }
                                 if ($blacklist->setting_order != $count_links) {
-                                    echo ' <a href="index.php?page=log&amp;menu_admin=log_blacklist&amp;down=1&amp;link_order=' . $blacklist->setting_order . '&amp;id=' .
-                                        $blacklist->setting_id . '"><img src="images/arrow_down.gif" border="0" alt="down"></a>';
-                                }
                                 ?>
+                                    <a href="index.php?page=log&amp;menu_admin=log_blacklist&amp;down=1&amp;link_order=<?= $blacklist->setting_order; ?>&amp;id=<?= $blacklist->setting_id; ?>"><img src="images/arrow_down.gif" border="0" alt="down"></a>
+                                <?php } ?>
                             </td>
-                            <td><input type="text" name="<?= $blacklist->setting_id; ?>own_code" value="<?= $lijst[0]; ?>" size="5" class="form-control form-control-sm"></td>
-                            <td><input type="text" name="<?= $blacklist->setting_id; ?>link_text" value="<?= $lijst[1]; ?>" size="20" class="form-control form-control-sm"></td>
+                            <td><input type="text" name="<?= $blacklist->setting_id; ?>own_code" value="<?= $blacklistItem[0]; ?>" size="5" class="form-control form-control-sm"></td>
+                            <td><input type="text" name="<?= $blacklist->setting_id; ?>link_text" value="<?= $blacklistItem[1]; ?>" size="20" class="form-control form-control-sm"></td>
                             <td><input type="submit" name="change_link" value="<?= __('Change'); ?>" class="btn btn-sm btn-success"></td>
                             <td><input type="submit" name="<?= $blacklist->setting_id; ?>remove_link" value="<?= __('Remove'); ?>" class="btn btn-sm btn-warning"></td>
                         </tr>
-                    <?php
-                        $teller++;
-                    }
+                    <?php } ?>
 
-                    // *** Add new link ***
-                    ?>
                     <tr>
                         <td><br></td>
                         <input type="hidden" name="link_order" value="<?= $new_number; ?>">
-                        <td><input type="text" name="own_code" placeholder="<?= __('IP Address'); ?>" size="5" class="form-control form-control-sm"></td>
-                        <td><input type="text" name="link_text" placeholder="<?= __('Description'); ?>" size="20" class="form-control form-control-sm"></td>
+                        <td><input type="text" name="own_code" placeholder="<?= __('IP Address'); ?>" size="45" class="form-control form-control-sm"></td>
+                        <td><input type="text" name="link_text" placeholder="<?= __('Description'); ?>" size="30" class="form-control form-control-sm"></td>
                         <td><input type="submit" name="add_link" value="<?= __('Add'); ?>" class="btn btn-sm btn-success"></td>
                         <td><br></td>
                     </tr>

@@ -1277,9 +1277,12 @@ class ListModel extends BaseModel
             */
 
             $this->query = "(SELECT SQL_CALC_FOUND_ROWS humo_persons.*,";
-            //$this->query .= "birth_location.location_location as place_order,
-            //    NULL AS pers_address,
-            //    NULL AS event_place,";
+            // Ensure consistent column set across all UNION parts
+            if ($this->user['group_kindindex'] == "j") {
+                $this->query .= "CONCAT(pers_prefix,pers_lastname,pers_firstname) as concat_name,";
+            } else {
+                $this->query .= "NULL AS concat_name,";
+            }
             $this->query .= "birth_location.location_location as place_order,
                 NULL AS event_place,";
             $this->query .= $base_query;
@@ -1312,9 +1315,12 @@ class ListModel extends BaseModel
             */
 
             $this->query .= "(SELECT " . $calc . "humo_persons.*,";
-            //$this->query .= "bapt_location.location_location as place_order,
-            //    NULL AS pers_address,
-            //    NULL AS event_place,";
+            // Ensure consistent column set across all UNION parts
+            if ($this->user['group_kindindex'] == "j") {
+                $this->query .= "CONCAT(pers_prefix,pers_lastname,pers_firstname) as concat_name,";
+            } else {
+                $this->query .= "NULL AS concat_name,";
+            }
             $this->query .= "bapt_location.location_location as place_order,
                 NULL AS event_place,";
             $this->query .= $base_query;
@@ -1377,8 +1383,11 @@ class ListModel extends BaseModel
             */
 
             $this->query .= "(SELECT " . $calc . "humo_persons.*,";
+            // Ensure consistent column set across all UNION parts
             if ($this->user['group_kindindex'] == "j") {
                 $this->query .= "CONCAT(pers_prefix,pers_lastname,pers_firstname) as concat_name,";
+            } else {
+                $this->query .= "NULL AS concat_name,";
             }
             //$this->query .= "
             //    death_location.location_location as place_order,
@@ -1417,8 +1426,11 @@ class ListModel extends BaseModel
             */
 
             $this->query .= "(SELECT " . $calc . "humo_persons.*,";
+            // Ensure consistent column set across all UNION parts
             if ($this->user['group_kindindex'] == "j") {
                 $this->query .= "CONCAT(pers_prefix,pers_lastname,pers_firstname) as concat_name,";
+            } else {
+                $this->query .= "NULL AS concat_name,";
             }
             //$this->query .= "buried_location.location_location as place_order,
             //    NULL AS pers_address,
