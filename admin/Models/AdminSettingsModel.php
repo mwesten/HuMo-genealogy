@@ -49,6 +49,7 @@ class AdminSettingsModel extends AdminBaseModel
 
             $this->db_functions->update_settings('debug_front_pages', $_POST["debug_front_pages"]);
             $this->db_functions->update_settings('debug_admin_pages', $_POST["debug_admin_pages"]);
+            $this->db_functions->update_settings('debug_show_deprecated', $_POST["debug_show_deprecated"]);
 
             $this->db_functions->update_settings('database_name', $_POST["database_name"]);
             $this->db_functions->update_settings('homepage', $_POST["homepage"]);

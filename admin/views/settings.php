@@ -170,6 +170,21 @@ foreach (timezone_identifiers_list() as $key => $zone) {
                 <?= sprintf(__('Only use this option to debug problems in %s.'), 'HuMo-genealogy'); ?>
             </div>
         </div>
+
+        <div class="row mb-2">
+            <div class="col-md-4">
+                <?= __('Show deprecated messages in debug output'); ?>
+            </div>
+            <div class="col-md-auto">
+                <select size="1" name="debug_show_deprecated" class="form-select form-select-sm">
+                    <option value="y"><?= __('Yes'); ?></option>
+                    <option value="n" <?php if ($humo_option["debug_show_deprecated"] != 'y') echo ' selected'; ?>><?= __('No'); ?></option>
+                </select>
+            </div>
+            <div class="col-md-auto">
+                <?= __('This shows all deprecation messages when debug is on'); ?>
+            </div>
+        </div>        
     </div>
 
     <div class="genealogy_search p-2 my-2">
