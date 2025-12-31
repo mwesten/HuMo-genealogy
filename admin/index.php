@@ -118,7 +118,11 @@ if (isset($database_check) && $database_check) {
 
         // *** Debug HuMo-genealogy`admin pages ***
         if ($humo_option["debug_admin_pages"] == 'y') {
-            error_reporting(E_ALL);
+            if ($humo_option["debug_show_deprecated"] == 'n') {
+                error_reporting(E_ALL & ~E_DEPRECATED);
+            } else {
+                error_reporting(E_ALL);
+            }
             ini_set('display_errors', 1);
         }
 
